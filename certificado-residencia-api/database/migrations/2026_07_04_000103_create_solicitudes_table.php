@@ -32,7 +32,7 @@ return new class extends Migration
             // Estado y flujo
             $table->string('estado')->default('radicada'); // App\Enums\EstadoSolicitud
             $table->text('justificacion_especial')->nullable();
-            $table->foreignId('dependencia_id')->nullable()->constrained('dependencias')->nullOnDelete();
+            $table->unsignedBigInteger('dependencia_id')->nullable(); // Referencia a Core, sin FK local
 
             // Términos administrativos
             $table->timestamp('fecha_radicacion');

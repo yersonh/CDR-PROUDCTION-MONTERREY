@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\User;
-use Database\Seeders\DependenciaSeeder;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -19,7 +18,7 @@ class FlujoTramiteTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->seed([RolePermissionSeeder::class, DependenciaSeeder::class]);
+        $this->seed([RolePermissionSeeder::class]);
         Storage::fake('local');
     }
 

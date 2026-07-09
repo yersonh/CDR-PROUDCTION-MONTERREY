@@ -48,11 +48,6 @@ class Solicitud extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    public function dependencia(): BelongsTo
-    {
-        return $this->belongsTo(Dependencia::class);
-    }
-
     public function expediente(): HasOne
     {
         return $this->hasOne(Expediente::class);

@@ -6,7 +6,6 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -40,11 +39,6 @@ class User extends Authenticatable
     // -----------------------------------------------------------------
     // Relaciones
     // -----------------------------------------------------------------
-
-    public function dependencia(): BelongsTo
-    {
-        return $this->belongsTo(Dependencia::class);
-    }
 
     /** Solicitudes de las que el usuario es el ciudadano titular. */
     public function solicitudes(): HasMany

@@ -82,9 +82,6 @@ Route::prefix('v1')->group(function () {
             Route::get('roles', [RolController::class, 'index'])->middleware('permission:admin.roles');
 
             Route::get('dependencias', [DependenciaController::class, 'index'])->middleware('permission:admin.dependencias');
-            Route::post('dependencias', [DependenciaController::class, 'store'])->middleware('permission:admin.dependencias');
-            Route::put('dependencias/{dependencia}', [DependenciaController::class, 'update'])->middleware('permission:admin.dependencias');
-            Route::delete('dependencias/{dependencia}', [DependenciaController::class, 'destroy'])->middleware('permission:admin.dependencias');
         });
     });
 });

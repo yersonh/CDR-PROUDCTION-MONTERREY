@@ -6,11 +6,15 @@ use App\Enums\EstadoSolicitud;
 use App\Enums\MedioAcreditacion;
 use App\Enums\TipoCertificado;
 use App\Http\Controllers\Controller;
-use App\Models\Dependencia;
+use App\Services\ClienteCore;
 use Illuminate\Http\JsonResponse;
 
 class CatalogoController extends Controller
 {
+    public function __construct(protected ClienteCore $core)
+    {
+    }
+
     /**
      * Catálogos para alimentar los formularios del frontend.
      */
@@ -24,10 +28,13 @@ class CatalogoController extends Controller
                 'label' => $e->label(),
                 'color' => $e->color(),
             ]),
-            'tipos_documento' => ['CC', 'TI', 'CE', 'PA', 'PEP', 'NIT'],
-            'dependencias' => Dependencia::where('activa', true)
-                ->orderBy('nombre')
-                ->get(['id', 'nombre']),
+            'tipos_documento' => collect($this->core->tiposIdentificacion())
+                ->pluck('codigo')
+                ->values(),
+            'dependencias' => collect($this->core->dependencias())
+                ->map(fn ($d) => ['id' => $d['id'], 'nombre' => $d['nombre']])
+                ->sortBy('nombre')
+                ->values(),
         ]);
     }
 

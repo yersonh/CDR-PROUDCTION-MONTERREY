@@ -39,4 +39,9 @@ return [
         'key' => env('BREVO_API_KEY'),
     ],
 
+    'core' => [
+        'url'   => env('CORE_API_URL'),
+        'token' => env('CORE_API_TOKEN'),
+    ],
+
 ];

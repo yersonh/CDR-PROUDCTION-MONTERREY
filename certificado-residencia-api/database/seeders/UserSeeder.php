@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\Dependencia;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -22,7 +21,8 @@ class UserSeeder extends Seeder
 
     public function run(): void
     {
-        $despacho = Dependencia::where('nombre', 'Despacho del Alcalde')->first();
+        $despacho = collect(app(\App\Services\ClienteCore::class)->dependencias())
+            ->firstWhere('nombre', 'Despacho del Alcalde');
 
         foreach (self::USERS as $data) {
             $user = User::firstOrCreate(
@@ -33,7 +33,7 @@ class UserSeeder extends Seeder
                     'activo' => true,
                     'email_verified_at' => now(),
                     'dependencia_id' => in_array($data['role'], ['alcalde', 'super_admin'], true)
-                        ? $despacho?->id
+                        ? ($despacho['id'] ?? null)
                         : null,
                 ],
             );
