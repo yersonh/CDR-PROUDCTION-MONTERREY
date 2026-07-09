@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Models\Solicitud;
+use App\Services\ClienteCore;
 use App\Support\SlaCalculator;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -50,7 +51,15 @@ class SolicitudResource extends JsonResource
                     : null,
                 'semaforo' => $this->semaforoSla(),
             ],
-            'dependencia' => $this->whenLoaded('dependencia', fn () => $this->dependencia?->nombre),
+            'dependencia' => $this->when($this->dependencia_id !== null, function () {
+                try {
+                    $dependencia = app(ClienteCore::class)->dependencia($this->dependencia_id);
+                } catch (\Throwable) {
+                    return null;
+                }
+
+                return $dependencia['nombre'] ?? null;
+            }),
             'expediente' => new ExpedienteResource($this->whenLoaded('expediente')),
             'certificado' => new CertificadoResource($this->whenLoaded('certificado')),
             'validaciones' => ValidacionResource::collection($this->whenLoaded('validaciones')),

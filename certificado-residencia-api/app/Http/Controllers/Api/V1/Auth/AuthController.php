@@ -39,7 +39,6 @@ class AuthController extends Controller
         }
 
         $user->forceFill(['last_login_at' => now()])->save();
-        $user->load('dependencia');
 
         $token = $user->createToken('spa')->plainTextToken;
 
@@ -55,7 +54,7 @@ class AuthController extends Controller
      */
     public function me(Request $request): UserResource
     {
-        return new UserResource($request->user()->load('dependencia'));
+        return new UserResource($request->user());
     }
 
     /**

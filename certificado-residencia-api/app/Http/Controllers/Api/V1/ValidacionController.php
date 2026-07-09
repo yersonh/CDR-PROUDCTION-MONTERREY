@@ -72,7 +72,7 @@ class ValidacionController extends Controller
             actor: $request->user(),
         );
 
-        $solicitud->load(['expediente.documentos', 'dependencia', 'seguimientos.actor', 'validaciones.validadoPor']);
+        $solicitud->load(['expediente.documentos', 'seguimientos.actor', 'validaciones.validadoPor']);
 
         return (new SolicitudResource($solicitud))
             ->additional(['message' => 'Concepto de prevalidación registrado.'])

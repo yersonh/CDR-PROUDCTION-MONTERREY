@@ -15,7 +15,7 @@ class UsuarioController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $query = User::query()->with(['roles', 'dependencia'])->latest('id');
+        $query = User::query()->with(['roles'])->latest('id');
 
         if ($buscar = $request->string('buscar')->trim()->value()) {
             $query->where(fn ($q) => $q
@@ -49,7 +49,7 @@ class UsuarioController extends Controller
 
         $user->syncRoles([$data['rol']]);
 
-        return (new UserResource($user->load(['roles', 'dependencia'])))
+        return (new UserResource($user->load(['roles'])))
             ->additional(['message' => 'Usuario creado correctamente.'])
             ->response()
             ->setStatusCode(201);
@@ -69,7 +69,7 @@ class UsuarioController extends Controller
             $usuario->syncRoles([$data['rol']]);
         }
 
-        return (new UserResource($usuario->load(['roles', 'dependencia'])))
+        return (new UserResource($usuario->load(['roles'])))
             ->additional(['message' => 'Usuario actualizado correctamente.'])
             ->response();
     }

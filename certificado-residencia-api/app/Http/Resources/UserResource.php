@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Models\User;
+use App\Services\ClienteCore;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -22,10 +23,15 @@ class UserResource extends JsonResource
             'numero_documento' => $this->numero_documento,
             'celular' => $this->celular,
             'activo' => $this->activo,
-            'dependencia' => $this->whenLoaded('dependencia', fn () => [
-                'id' => $this->dependencia?->id,
-                'nombre' => $this->dependencia?->nombre,
-            ]),
+            'dependencia' => $this->when($this->dependencia_id !== null, function () {
+                try {
+                    $dependencia = app(ClienteCore::class)->dependencia($this->dependencia_id);
+                } catch (\Throwable) {
+                    return null;
+                }
+
+                return $dependencia ? ['id' => $dependencia['id'], 'nombre' => $dependencia['nombre']] : null;
+            }),
             'roles' => $this->getRoleNames(),
             'permisos' => $this->getAllPermissions()->pluck('name'),
             'tiene_firma' => ! empty($this->firma_path),

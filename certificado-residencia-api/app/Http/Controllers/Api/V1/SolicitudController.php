@@ -24,7 +24,7 @@ class SolicitudController extends Controller
         $user = $request->user();
 
         $query = Solicitud::query()
-            ->with(['expediente', 'dependencia'])
+            ->with(['expediente'])
             ->latest('fecha_radicacion');
 
         // Alcance según permisos
@@ -88,7 +88,6 @@ class SolicitudController extends Controller
 
         $solicitud->load([
             'expediente.documentos',
-            'dependencia',
             'seguimientos.actor',
             'validaciones.validadoPor',
             'validaciones.documento',

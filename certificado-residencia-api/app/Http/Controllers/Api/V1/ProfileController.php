@@ -31,7 +31,7 @@ class ProfileController extends Controller
 
         return response()->json([
             'message' => 'Firma cargada correctamente.',
-            'user' => new UserResource($user->load('dependencia')),
+            'user' => new UserResource($user),
         ]);
     }
 }
