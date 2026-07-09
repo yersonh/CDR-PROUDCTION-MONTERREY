@@ -1,0 +1,348 @@
+import { useState } from 'react'
+import { CheckCircle2, ClipboardCheck, Download, Gavel, ShieldCheck, Stamp, Upload } from 'lucide-react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Select } from '@/components/ui/select'
+import { Textarea } from '@/components/ui/textarea'
+import { Field } from '@/components/ui/field'
+import { FileUpload } from '@/components/ui/file-upload'
+import { getApiErrorMessage } from '@/lib/api'
+import { useAuth } from '@/features/auth/useAuth'
+import { useRegistrarValidacion, usePrevalidar, useFirmar, useSubsanar, descargarCertificadoPdf } from './api'
+import type { Solicitud } from './types'
+
+const RESULTADOS = [
+  { value: 'cumple', label: 'Cumple requisitos' },
+  { value: 'subsanar', label: 'Requiere subsanación' },
+  { value: 'rechaza', label: 'Rechazada' },
+]
+
+export function GestionSolicitud({ solicitud }: { solicitud: Solicitud }) {
+  const { hasPermission, hasRole } = useAuth()
+  const medio = solicitud.medio_acreditacion.value
+  const estado = solicitud.estado.value
+  const terminal = estado === 'certificada' || estado === 'rechazada'
+  const puedeSubsanar = hasRole('ciudadano') && estado === 'pendiente_soporte'
+
+  const puedeElectoral = hasPermission('soportes.validar_electoral') && medio === 'electoral'
+  const puedeSisben = hasPermission('soportes.cargar_sisben') && medio === 'sisben'
+  const puedeJac = hasPermission('soportes.cargar_jac') && medio === 'jac'
+  const puedePrevalidar =
+    hasPermission('validacion.prevalidar') &&
+    ['radicada', 'en_validacion', 'pendiente_soporte'].includes(estado)
+  const puedeFirmar = hasPermission('firma.firmar') && estado === 'preaprobada'
+
+  const hayAcciones = puedeElectoral || puedeSisben || puedeJac || puedePrevalidar || puedeFirmar || puedeSubsanar
+  const tieneValidaciones = (solicitud.validaciones?.length ?? 0) > 0
+  const cert = solicitud.certificado
+
+  if (terminal && !tieneValidaciones && !cert) return null
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center gap-2">
+        <ClipboardCheck className="h-4 w-4 text-primary" />
+        <CardTitle>Gestión del trámite</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-5">
+        {cert && <CertificadoBox solicitud={solicitud} />}
+
+        {tieneValidaciones && <ValidacionesList solicitud={solicitud} />}
+
+        {hayAcciones && (
+          <div className="space-y-5">
+            {puedeElectoral && <ElectoralForm solicitud={solicitud} />}
+            {puedeSisben && <SoporteForm solicitud={solicitud} tipo="sisben" titulo="Cargar certificación SISBEN" />}
+            {puedeJac && <JacForm solicitud={solicitud} />}
+            {puedePrevalidar && <PrevalidarForm solicitud={solicitud} />}
+            {puedeFirmar && <FirmaForm solicitud={solicitud} />}
+            {puedeSubsanar && <SubsanarForm solicitud={solicitud} />}
+          </div>
+        )}
+
+        {!hayAcciones && !tieneValidaciones && !cert && (
+          <p className="text-sm text-institutional-muted">No hay acciones disponibles para su rol en este trámite.</p>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
+function ValidacionesList({ solicitud }: { solicitud: Solicitud }) {
+  return (
+    <div>
+      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-institutional-muted">
+        Validaciones registradas
+      </p>
+      <ul className="space-y-2">
+        {solicitud.validaciones!.map((v) => (
+          <li key={v.id} className="rounded-lg border border-institutional-border px-4 py-2.5 text-sm">
+            <div className="flex flex-col gap-1">
+              <span className="font-medium capitalize text-institutional-text">{v.tipo.replaceAll('_', ' ')}</span>
+              {v.resultado_label && (
+                <span className="inline-flex w-fit items-center gap-1 text-xs font-semibold text-primary">
+                  <CheckCircle2 className="h-3.5 w-3.5" /> {v.resultado_label}
+                </span>
+              )}
+            </div>
+            {v.observacion && <p className="mt-0.5 text-institutional-muted">{v.observacion}</p>}
+            {v.meta?.codigo_verificacion && (
+              <p className="mt-1 text-xs text-institutional-muted">
+                Código: {v.meta.codigo_verificacion} · Presidente: {v.meta.presidente} · Vence: {v.meta.fecha_vencimiento}
+              </p>
+            )}
+            <p className="mt-1 text-xs text-institutional-muted">
+              {v.validado_por} · {v.validado_at ? new Date(v.validado_at).toLocaleString('es-CO') : ''}
+            </p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+function FormError({ error }: { error: unknown }) {
+  return (
+    <div role="alert" className="rounded-lg border border-danger/40 bg-red-50 px-3 py-2 text-xs text-danger">
+      {getApiErrorMessage(error, 'No fue posible completar la acción.')}
+    </div>
+  )
+}
+
+/** Validación del certificado electoral (el ciudadano ya lo cargó). */
+function ElectoralForm({ solicitud }: { solicitud: Solicitud }) {
+  const registrar = useRegistrarValidacion(solicitud.id)
+  const [resultado, setResultado] = useState('cumple')
+  const [observacion, setObservacion] = useState('')
+
+  const submit = () => {
+    const fd = new FormData()
+    fd.append('tipo', 'electoral')
+    fd.append('resultado', resultado)
+    if (observacion) fd.append('observacion', observacion)
+    registrar.mutate(fd)
+  }
+
+  return (
+    <FormBox titulo="Validar certificado electoral" icon={ClipboardCheck}>
+      {registrar.isError && <FormError error={registrar.error} />}
+      <Field label="Resultado de la validación" htmlFor="el-res">
+        <Select id="el-res" value={resultado} onChange={(e) => setResultado(e.target.value)}>
+          {RESULTADOS.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
+        </Select>
+      </Field>
+      <Field label="Observación" htmlFor="el-obs">
+        <Textarea id="el-obs" rows={2} value={observacion} onChange={(e) => setObservacion(e.target.value)} placeholder="Autenticidad y consistencia documental" />
+      </Field>
+      <Button variant="primary" onClick={submit} loading={registrar.isPending}>Registrar validación</Button>
+    </FormBox>
+  )
+}
+
+/** Carga de soporte con archivo (SISBEN). */
+function SoporteForm({ solicitud, tipo, titulo }: { solicitud: Solicitud; tipo: string; titulo: string }) {
+  const registrar = useRegistrarValidacion(solicitud.id)
+  const [file, setFile] = useState<File | null>(null)
+  const [observacion, setObservacion] = useState('')
+  const [error, setError] = useState<string>()
+
+  const submit = () => {
+    if (!file) { setError('Debe adjuntar la certificación'); return }
+    const fd = new FormData()
+    fd.append('tipo', tipo)
+    fd.append('soporte', file)
+    fd.append('resultado', 'cumple')
+    if (observacion) fd.append('observacion', observacion)
+    registrar.mutate(fd)
+  }
+
+  return (
+    <FormBox titulo={titulo} icon={Upload}>
+      {registrar.isError && <FormError error={registrar.error} />}
+      <FileUpload file={file} onChange={(f) => { setFile(f); setError(undefined) }} error={error} />
+      <Field label="Observación" htmlFor={`${tipo}-obs`}>
+        <Textarea id={`${tipo}-obs`} rows={2} value={observacion} onChange={(e) => setObservacion(e.target.value)}
+          placeholder="Antigüedad mínima de 1 año verificada" />
+      </Field>
+      <Button variant="primary" onClick={submit} loading={registrar.isPending}>Cargar certificación</Button>
+    </FormBox>
+  )
+}
+
+/** Carga de la certificación JAC con sus campos obligatorios. */
+function JacForm({ solicitud }: { solicitud: Solicitud }) {
+  const registrar = useRegistrarValidacion(solicitud.id)
+  const [file, setFile] = useState<File | null>(null)
+  const [f, setF] = useState({ codigo_verificacion: '', fecha_expedicion: '', fecha_vencimiento: '', presidente: '', sector: '', qr: '' })
+  const [error, setError] = useState<string>()
+  const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement>) => setF((p) => ({ ...p, [k]: e.target.value }))
+
+  const submit = () => {
+    if (!file) { setError('Debe adjuntar la certificación JAC'); return }
+    const fd = new FormData()
+    fd.append('tipo', 'jac')
+    fd.append('soporte', file)
+    Object.entries(f).forEach(([k, v]) => v && fd.append(k, v))
+    registrar.mutate(fd)
+  }
+
+  return (
+    <FormBox titulo="Cargar certificación JAC" icon={Upload}>
+      {registrar.isError && <FormError error={registrar.error} />}
+      <FileUpload file={file} onChange={(x) => { setFile(x); setError(undefined) }} error={error} />
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Field label="Código de verificación" htmlFor="jac-cod" required><Input id="jac-cod" value={f.codigo_verificacion} onChange={set('codigo_verificacion')} /></Field>
+        <Field label="Presidente JAC" htmlFor="jac-pre" required><Input id="jac-pre" value={f.presidente} onChange={set('presidente')} /></Field>
+        <Field label="Fecha de expedición" htmlFor="jac-fe" required><Input id="jac-fe" type="date" value={f.fecha_expedicion} onChange={set('fecha_expedicion')} /></Field>
+        <Field label="Fecha de vencimiento" htmlFor="jac-fv" required><Input id="jac-fv" type="date" value={f.fecha_vencimiento} onChange={set('fecha_vencimiento')} /></Field>
+        <Field label="Sector / barrio / vereda" htmlFor="jac-sec" required><Input id="jac-sec" value={f.sector} onChange={set('sector')} /></Field>
+        <Field label="Código QR (URL)" htmlFor="jac-qr"><Input id="jac-qr" value={f.qr} onChange={set('qr')} placeholder="Opcional" /></Field>
+      </div>
+      <Button variant="primary" onClick={submit} loading={registrar.isPending}>Cargar certificación JAC</Button>
+    </FormBox>
+  )
+}
+
+/** Concepto de prevalidación. */
+function PrevalidarForm({ solicitud }: { solicitud: Solicitud }) {
+  const prevalidar = usePrevalidar(solicitud.id)
+  const [resultado, setResultado] = useState<'cumple' | 'subsanar' | 'rechaza'>('cumple')
+  const [observacion, setObservacion] = useState('')
+  const [error, setError] = useState<string>()
+
+  const submit = () => {
+    if (resultado !== 'cumple' && !observacion.trim()) {
+      setError('Indique el motivo de la subsanación o rechazo')
+      return
+    }
+    prevalidar.mutate({ resultado, observacion: observacion || undefined })
+  }
+
+  return (
+    <FormBox titulo="Prevalidación" icon={Gavel} destacado>
+      {prevalidar.isError && <FormError error={prevalidar.error} />}
+      {error && <p className="text-xs font-medium text-danger">{error}</p>}
+      <Field label="Concepto" htmlFor="pv-res">
+        <Select id="pv-res" value={resultado} onChange={(e) => { setResultado(e.target.value as typeof resultado); setError(undefined) }}>
+          {RESULTADOS.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
+        </Select>
+      </Field>
+      <Field label="Observación" htmlFor="pv-obs" required={resultado !== 'cumple'}>
+        <Textarea id="pv-obs" rows={2} value={observacion} onChange={(e) => setObservacion(e.target.value)}
+          placeholder={resultado === 'cumple' ? 'Opcional' : 'Motivo obligatorio'} />
+      </Field>
+      <Button variant={resultado === 'rechaza' ? 'danger' : 'success'} onClick={submit} loading={prevalidar.isPending}>
+        Emitir concepto
+      </Button>
+    </FormBox>
+  )
+}
+
+/** Subsanación del ciudadano cuando la solicitud está en Pendiente de soporte. */
+function SubsanarForm({ solicitud }: { solicitud: Solicitud }) {
+  const subsanar = useSubsanar(solicitud.id)
+  const medio = solicitud.medio_acreditacion.value
+  const [file, setFile] = useState<File | null>(null)
+  const [justificacion, setJustificacion] = useState('')
+  const [error, setError] = useState<string>()
+
+  const submit = () => {
+    setError(undefined)
+    if (medio === 'electoral' && !file) { setError('Debe adjuntar nuevamente el certificado electoral'); return }
+    if (medio === 'especial' && !justificacion.trim()) { setError('Debe actualizar la justificación'); return }
+    const fd = new FormData()
+    if (file) fd.append('soporte', file)
+    if (justificacion) fd.append('justificacion', justificacion)
+    subsanar.mutate(fd)
+  }
+
+  return (
+    <FormBox titulo="Subsanar solicitud" icon={Upload} destacado>
+      {subsanar.isError && <FormError error={subsanar.error} />}
+      <p className="text-sm text-institutional-muted">
+        Su solicitud requiere subsanación. Aporte la corrección solicitada para continuar el trámite.
+      </p>
+      {(medio === 'electoral' || medio === 'sisben' || medio === 'jac') && (
+        <FileUpload file={file} onChange={(f) => { setFile(f); setError(undefined) }} error={error} />
+      )}
+      {medio === 'especial' && (
+        <Field label="Justificación actualizada" htmlFor="subs-just" required error={error}>
+          <Textarea id="subs-just" rows={3} value={justificacion} onChange={(e) => setJustificacion(e.target.value)} />
+        </Field>
+      )}
+      <Button variant="success" onClick={submit} loading={subsanar.isPending}>Enviar subsanación</Button>
+    </FormBox>
+  )
+}
+
+/** Firma y expedición del certificado (Alcalde). */
+function FirmaForm({ solicitud }: { solicitud: Solicitud }) {
+  const firmar = useFirmar()
+  return (
+    <FormBox titulo="Firma del Alcalde" icon={Stamp} destacado>
+      {firmar.isError && <FormError error={firmar.error} />}
+      <p className="text-sm text-institutional-muted">
+        Al firmar se generará el certificado oficial con firma electrónica, código QR y hash de integridad,
+        y se entregará automáticamente al ciudadano.
+      </p>
+      <Button
+        variant="success"
+        className="h-auto w-full whitespace-normal py-2.5 text-center"
+        onClick={() => firmar.mutate([solicitud.id])}
+        loading={firmar.isPending}
+      >
+        <Stamp className="h-4 w-4 shrink-0" /> Firmar y expedir certificado
+      </Button>
+    </FormBox>
+  )
+}
+
+/** Certificado emitido: descarga y verificación pública. */
+function CertificadoBox({ solicitud }: { solicitud: Solicitud }) {
+  const cert = solicitud.certificado!
+  const [descargando, setDescargando] = useState(false)
+  const verificarUrl = `/verificar?codigo=${cert.codigo_verificacion}`
+
+  const descargar = async () => {
+    setDescargando(true)
+    try {
+      await descargarCertificadoPdf(solicitud.id, cert.consecutivo)
+    } finally {
+      setDescargando(false)
+    }
+  }
+
+  return (
+    <div className="rounded-xl border border-success/40 bg-green-50/60 p-4">
+      <p className="mb-2 flex items-center gap-2 text-sm font-semibold text-success">
+        <ShieldCheck className="h-4 w-4" /> Certificado expedido
+      </p>
+      <dl className="grid grid-cols-2 gap-2 text-sm">
+        <div><dt className="text-xs text-institutional-muted">Consecutivo</dt><dd className="font-semibold text-institutional-text">{cert.consecutivo}</dd></div>
+        <div><dt className="text-xs text-institutional-muted">Código</dt><dd className="font-semibold text-institutional-text">{cert.codigo_verificacion}</dd></div>
+        <div><dt className="text-xs text-institutional-muted">Vigente</dt><dd className="font-medium">{cert.vigente ? 'Sí' : 'No'}</dd></div>
+        <div><dt className="text-xs text-institutional-muted">Vigencia</dt><dd className="font-medium">{cert.vigencia_hasta?.slice(0, 10)}</dd></div>
+      </dl>
+      <div className="mt-3 flex flex-wrap gap-2">
+        <Button variant="primary" size="sm" onClick={descargar} loading={descargando}>
+          <Download className="h-4 w-4" /> Descargar PDF
+        </Button>
+        <a href={verificarUrl} target="_blank" rel="noreferrer">
+          <Button variant="outline" size="sm"><ShieldCheck className="h-4 w-4" /> Verificar</Button>
+        </a>
+      </div>
+    </div>
+  )
+}
+
+function FormBox({ titulo, icon: Icon, destacado, children }: { titulo: string; icon: React.ElementType; destacado?: boolean; children: React.ReactNode }) {
+  return (
+    <div className={destacado ? 'rounded-xl border border-primary-100 bg-primary-50/40 p-4' : 'rounded-xl border border-institutional-border p-4'}>
+      <p className="mb-3 flex items-center gap-2 text-sm font-semibold text-institutional-text">
+        <Icon className="h-4 w-4 text-primary" /> {titulo}
+      </p>
+      <div className="space-y-3">{children}</div>
+    </div>
+  )
+}

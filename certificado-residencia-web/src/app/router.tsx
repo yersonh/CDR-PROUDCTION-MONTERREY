@@ -1,0 +1,46 @@
+import { createBrowserRouter, Navigate } from 'react-router-dom'
+import { LoginPage } from '@/features/auth/LoginPage'
+import { ForgotPasswordPage } from '@/features/auth/ForgotPasswordPage'
+import { ResetPasswordPage } from '@/features/auth/ResetPasswordPage'
+import { ProtectedRoute } from '@/features/auth/ProtectedRoute'
+import { AppLayout } from '@/components/layout/AppLayout'
+import { DashboardPage } from '@/features/dashboard/DashboardPage'
+import { MisSolicitudesPage } from '@/features/solicitudes/MisSolicitudesPage'
+import { NuevaSolicitudPage } from '@/features/solicitudes/NuevaSolicitudPage'
+import { SolicitudDetallePage } from '@/features/solicitudes/SolicitudDetallePage'
+import { FirmaPage } from '@/features/firma/FirmaPage'
+import { VerificarPage } from '@/features/consulta/VerificarPage'
+import { AuditoriaPage } from '@/features/auditoria/AuditoriaPage'
+import { PerfilPage } from '@/features/perfil/PerfilPage'
+import { UsuariosPage } from '@/features/admin/UsuariosPage'
+import { DependenciasPage } from '@/features/admin/DependenciasPage'
+import { RolesPage } from '@/features/admin/RolesPage'
+
+export const router = createBrowserRouter([
+  { path: '/login', element: <LoginPage /> },
+  { path: '/recuperar', element: <ForgotPasswordPage /> },
+  { path: '/restablecer', element: <ResetPasswordPage /> },
+  { path: '/verificar', element: <VerificarPage /> },
+  {
+    element: <ProtectedRoute />,
+    children: [
+      {
+        element: <AppLayout />,
+        children: [
+          { path: '/dashboard', element: <DashboardPage /> },
+          { path: '/solicitudes', element: <MisSolicitudesPage /> },
+          { path: '/solicitudes/nueva', element: <NuevaSolicitudPage /> },
+          { path: '/solicitudes/:id', element: <SolicitudDetallePage /> },
+          { path: '/firma', element: <FirmaPage /> },
+          { path: '/auditoria', element: <AuditoriaPage /> },
+          { path: '/perfil', element: <PerfilPage /> },
+          { path: '/admin/usuarios', element: <UsuariosPage /> },
+          { path: '/admin/dependencias', element: <DependenciasPage /> },
+          { path: '/admin/roles', element: <RolesPage /> },
+        ],
+      },
+    ],
+  },
+  { path: '/', element: <Navigate to="/dashboard" replace /> },
+  { path: '*', element: <Navigate to="/dashboard" replace /> },
+])
