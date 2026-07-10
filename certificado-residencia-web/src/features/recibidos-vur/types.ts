@@ -6,6 +6,8 @@ export interface RecibidoVur {
   numero_identificacion: string | null
   correo: string | null
   celular: string | null
+  direccion: string | null
+  motivo: string | null
   nombre_original_pdf: string
   estado: 'pendiente' | 'procesado'
   solicitud_id: number | null

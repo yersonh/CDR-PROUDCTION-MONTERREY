@@ -26,6 +26,8 @@ interface PrecargaVur {
   numero_identificacion: string
   correo: string
   celular: string
+  direccion: string
+  motivo: string
 }
 
 export function NuevaSolicitudPage() {
@@ -45,10 +47,11 @@ export function NuevaSolicitudPage() {
       nombre_completo: precarga?.nombre_completo ?? '',
       tipo_documento: precarga?.tipo_documento ?? '',
       numero_identificacion: precarga?.numero_identificacion ?? '',
-      direccion: '',
+      direccion: precarga?.direccion ?? '',
       correo: precarga?.correo ?? '',
       celular: precarga?.celular ?? '',
-      barrio_vereda_sector: '', motivo: '',
+      barrio_vereda_sector: '',
+      motivo: precarga?.motivo ?? '',
       tipo_certificado: '', medio_acreditacion: '', justificacion_especial: '',
     },
   })

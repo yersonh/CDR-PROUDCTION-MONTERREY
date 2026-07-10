@@ -23,6 +23,8 @@ export function RecibidosVurPage() {
           numero_identificacion: r.numero_identificacion ?? '',
           correo: r.correo ?? '',
           celular: r.celular ?? '',
+          direccion: r.direccion ?? '',
+          motivo: r.motivo ?? '',
         },
       },
     })
