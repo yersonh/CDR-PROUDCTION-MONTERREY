@@ -16,6 +16,7 @@ class RecibidoVur extends Model
     protected $fillable = [
         'radicado_vur', 'nombre_completo', 'tipo_documento',
         'numero_identificacion', 'correo', 'celular',
+        'direccion', 'motivo',
         'nombre_original_pdf', 'ruta_pdf', 'estado',
         'solicitud_id', 'procesado_at',
     ];

@@ -24,6 +24,8 @@ class StoreRecibidoVurRequest extends FormRequest
             'numero_identificacion' => ['nullable', 'string', 'max:40'],
             'correo' => ['nullable', 'email', 'max:255'],
             'celular' => ['nullable', 'string', 'max:30'],
+            'direccion' => ['nullable', 'string', 'max:255'],
+            'motivo' => ['nullable', 'string', 'max:1000'],
             'pdf' => ['required', 'file', 'mimes:pdf', 'max:20480'],
         ];
     }
