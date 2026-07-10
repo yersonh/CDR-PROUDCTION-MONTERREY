@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { ArrowLeft, ArrowRight, CheckCircle2, Send } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -18,9 +18,21 @@ import { solicitudSchema, STEP_FIELDS, type SolicitudFormValues } from './solici
 
 const STEPS = ['Datos del ciudadano', 'Certificado y soporte', 'Confirmación']
 
+interface PrecargaVur {
+  recibido_vur_id: number
+  radicado_vur: string
+  nombre_completo: string
+  tipo_documento: string
+  numero_identificacion: string
+  correo: string
+  celular: string
+}
+
 export function NuevaSolicitudPage() {
   const { data: catalogos } = useCatalogos()
   const crear = useCreateSolicitud()
+  const location = useLocation()
+  const precarga = (location.state as { precarga?: PrecargaVur } | null)?.precarga
   const [step, setStep] = useState(0)
   const [soporte, setSoporte] = useState<File | null>(null)
   const [soporteError, setSoporteError] = useState<string>()
@@ -30,8 +42,13 @@ export function NuevaSolicitudPage() {
     resolver: zodResolver(solicitudSchema),
     mode: 'onTouched',
     defaultValues: {
-      nombre_completo: '', tipo_documento: '', numero_identificacion: '', direccion: '',
-      correo: '', celular: '', barrio_vereda_sector: '', motivo: '',
+      nombre_completo: precarga?.nombre_completo ?? '',
+      tipo_documento: precarga?.tipo_documento ?? '',
+      numero_identificacion: precarga?.numero_identificacion ?? '',
+      direccion: '',
+      correo: precarga?.correo ?? '',
+      celular: precarga?.celular ?? '',
+      barrio_vereda_sector: '', motivo: '',
       tipo_certificado: '', medio_acreditacion: '', justificacion_especial: '',
     },
   })
@@ -55,6 +72,10 @@ export function NuevaSolicitudPage() {
       if (val) fd.append(k, val as string)
     })
     if (soporte) fd.append('soporte', soporte)
+    if (precarga) {
+      fd.append('recibido_vur_id', String(precarga.recibido_vur_id))
+      fd.append('radicado_vur', precarga.radicado_vur)
+    }
 
     crear.mutate(fd, { onSuccess: (data) => setResult(data) })
   }

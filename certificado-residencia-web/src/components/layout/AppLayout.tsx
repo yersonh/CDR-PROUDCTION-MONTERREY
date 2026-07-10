@@ -4,6 +4,7 @@ import {
   Building2,
   FileText,
   History,
+  Inbox,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -31,6 +32,7 @@ interface NavItem {
 const NAV: NavItem[] = [
   { to: '/dashboard', label: 'Inicio', icon: LayoutDashboard },
   { to: '/solicitudes', label: 'Solicitudes', icon: FileText },
+  { to: '/recibidos-vur', label: 'Recibidos de VUR', icon: Inbox, permiso: 'recibidos-vur.ver' },
   { to: '/solicitudes/nueva', label: 'Nueva solicitud', icon: PlusCircle, permiso: 'solicitudes.crear' },
   { to: '/firma', label: 'Bandeja de firma', icon: Stamp, permiso: 'firma.ver_bandeja' },
   { to: '/admin/usuarios', label: 'Usuarios', icon: UserCog, permiso: 'admin.usuarios' },
