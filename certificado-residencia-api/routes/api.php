@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\V1\Admin\DependenciaController;
 use App\Http\Controllers\Api\V1\Admin\RolController;
 use App\Http\Controllers\Api\V1\Admin\UsuarioController;
 use App\Http\Controllers\Api\V1\ProfileController;
+use App\Http\Controllers\Api\V1\RecibidoVurController;
 use App\Http\Controllers\Api\V1\SolicitudController;
 use App\Http\Controllers\Api\V1\ValidacionController;
 use Illuminate\Support\Facades\Route;
@@ -43,6 +44,15 @@ Route::prefix('v1')->group(function () {
     // ---------------------------------------------------------------
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('catalogos', [CatalogoController::class, 'index']);
+
+        // Recibidos de VUR (bandeja de entrada — solicitudes de Carta de
+        // Residencia enviadas peer-to-peer desde VUR, sin pasar por el Core)
+        Route::post('recibidos-vur', [RecibidoVurController::class, 'store'])
+            ->middleware('permission:recibidos-vur.crear');
+        Route::get('recibidos-vur', [RecibidoVurController::class, 'index'])
+            ->middleware('permission:recibidos-vur.ver');
+        Route::get('recibidos-vur/{recibidoVur}/pdf', [RecibidoVurController::class, 'descargarPdf'])
+            ->middleware('permission:recibidos-vur.ver');
 
         // Solicitudes / radicación
         Route::get('solicitudes', [SolicitudController::class, 'index']);

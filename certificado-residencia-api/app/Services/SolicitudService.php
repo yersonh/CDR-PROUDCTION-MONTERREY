@@ -6,6 +6,7 @@ use App\DTOs\CreateSolicitudData;
 use App\Enums\EstadoSolicitud;
 use App\Enums\MedioAcreditacion;
 use App\Models\Expediente;
+use App\Models\RecibidoVur;
 use App\Models\Solicitud;
 use App\Notifications\SolicitudRadicadaNotification;
 use App\Models\User;
@@ -72,6 +73,7 @@ class SolicitudService
 
             $solicitud = Solicitud::create([
                 'radicado' => $this->radicados->nuevoRadicado((int) $ahora->year),
+                'radicado_vur' => $data->radicadoVur,
                 'ciudadano_id' => $data->ciudadanoId,
                 'tipo_certificado' => $data->tipoCertificado,
                 'medio_acreditacion' => $data->medioAcreditacion,
@@ -107,6 +109,15 @@ class SolicitudService
                 'nota' => 'Solicitud radicada automáticamente por el sistema.',
                 'actor_id' => $data->createdBy,
             ]);
+
+            // Vincula el recibido de VUR de origen, si aplica (bandeja de entrada externa)
+            if ($data->recibidoVurId) {
+                RecibidoVur::whereKey($data->recibidoVurId)->update([
+                    'estado' => 'procesado',
+                    'solicitud_id' => $solicitud->id,
+                    'procesado_at' => $ahora,
+                ]);
+            }
 
             return $solicitud;
         });

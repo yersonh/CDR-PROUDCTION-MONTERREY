@@ -19,7 +19,7 @@ class Solicitud extends Model
     protected $table = 'solicitudes';
 
     protected $fillable = [
-        'radicado', 'ciudadano_id', 'tipo_certificado', 'medio_acreditacion',
+        'radicado', 'radicado_vur', 'ciudadano_id', 'tipo_certificado', 'medio_acreditacion',
         'nombre_completo', 'tipo_documento', 'numero_identificacion', 'direccion',
         'correo', 'celular', 'barrio_vereda_sector', 'motivo', 'estado',
         'justificacion_especial', 'dependencia_id', 'fecha_radicacion',

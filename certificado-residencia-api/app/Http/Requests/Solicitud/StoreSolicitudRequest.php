@@ -31,6 +31,10 @@ class StoreSolicitudRequest extends FormRequest
             'tipo_certificado' => ['required', Rule::enum(TipoCertificado::class)],
             'medio_acreditacion' => ['required', Rule::enum(MedioAcreditacion::class)],
 
+            // Vínculo opcional con un recibido de VUR (bandeja de entrada externa)
+            'radicado_vur' => ['nullable', 'string', 'max:30'],
+            'recibido_vur_id' => ['nullable', 'integer', 'exists:recibidos_vur,id'],
+
             // Justificación obligatoria para Caso Especial
             'justificacion_especial' => [
                 'nullable', 'string', 'max:1500',

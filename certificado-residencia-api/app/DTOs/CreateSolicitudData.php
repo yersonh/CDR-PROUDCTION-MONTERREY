@@ -26,6 +26,8 @@ readonly class CreateSolicitudData
         public ?UploadedFile $soporte = null,
         public ?int $ciudadanoId = null,
         public ?int $createdBy = null,
+        public ?string $radicadoVur = null,
+        public ?int $recibidoVurId = null,
     ) {}
 
     /**
@@ -48,6 +50,8 @@ readonly class CreateSolicitudData
             soporte: $soporte,
             ciudadanoId: $ciudadanoId,
             createdBy: $createdBy,
+            radicadoVur: $v['radicado_vur'] ?? null,
+            recibidoVurId: $v['recibido_vur_id'] ?? null,
         );
     }
 }

@@ -28,6 +28,9 @@ class RolePermissionSeeder extends Seeder
         'solicitudes.ver_propias',
         'solicitudes.ver_todas',
         'solicitudes.direccionar',
+        // Recibidos de VUR (bandeja peer-to-peer, no pasa por el Core)
+        'recibidos-vur.crear',
+        'recibidos-vur.ver',
         // Soportes / documentos
         'soportes.subir',
         'soportes.validar_electoral',
@@ -61,10 +64,10 @@ class RolePermissionSeeder extends Seeder
         ],
         'recepcionista' => [
             'solicitudes.crear', 'solicitudes.ver_todas', 'solicitudes.direccionar',
-            'soportes.subir', 'expedientes.ver', 'dashboard.ver',
+            'recibidos-vur.ver', 'soportes.subir', 'expedientes.ver', 'dashboard.ver',
         ],
         'operador' => [
-            'solicitudes.ver_todas', 'soportes.subir', 'soportes.validar_electoral',
+            'solicitudes.ver_todas', 'recibidos-vur.ver', 'soportes.subir', 'soportes.validar_electoral',
             'validacion.prevalidar', 'expedientes.ver', 'dashboard.ver',
         ],
         'funcionario_sisben' => [
