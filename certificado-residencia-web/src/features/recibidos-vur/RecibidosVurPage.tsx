@@ -85,7 +85,12 @@ export function RecibidosVurPage() {
                       <p>{r.correo}</p>
                       <p className="text-xs">{r.celular}</p>
                     </td>
-                    <td className="px-5 py-3 text-institutional-muted">{r.created_at.slice(0, 10)}</td>
+                    <td className="px-5 py-3 text-institutional-muted">
+                      {new Date(r.created_at).toLocaleString('es-CO', {
+                        dateStyle: 'short',
+                        timeStyle: 'short',
+                      })}
+                    </td>
                     <td className="px-5 py-3">
                       <span className={
                         r.estado === 'pendiente'
