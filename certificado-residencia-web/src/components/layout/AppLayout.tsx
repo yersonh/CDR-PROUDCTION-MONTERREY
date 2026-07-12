@@ -69,7 +69,7 @@ export function AppLayout() {
         style={{ backgroundImage: `url(${fondoCasa})` }}
         aria-hidden
       />
-      <div className="fixed inset-0 -z-10 bg-gradient-to-b from-[#050b18]/60 via-[#0d1c3d]/45 to-[#050b18]/70" aria-hidden />
+      <div className="fixed inset-0 -z-10 bg-gradient-to-b from-[#04060d]/60 via-[#0a0e1c]/45 to-[#04060d]/70" aria-hidden />
 
       {/* Header institucional */}
       <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-3 bg-primary px-4 text-white shadow-md sm:px-6">

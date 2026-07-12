@@ -37,8 +37,8 @@ export function MisSolicitudesPage() {
     <div className="animate-fade-up">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-institutional-text">{titulo}</h1>
-          <p className="text-institutional-muted">Consulte el estado y seguimiento de los trámites.</p>
+          <h1 className="text-2xl font-bold text-white">{titulo}</h1>
+          <p className="text-white/70">Consulte el estado y seguimiento de los trámites.</p>
         </div>
       </div>
 

@@ -42,10 +42,10 @@ export function FirmaPage() {
     <div className="animate-fade-up">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="flex items-center gap-2 text-2xl font-bold text-institutional-text">
-            <Stamp className="h-6 w-6 text-primary" /> Bandeja de firma
+          <h1 className="flex items-center gap-2 text-2xl font-bold text-white">
+            <Stamp className="h-6 w-6 text-gold-light" /> Bandeja de firma
           </h1>
-          <p className="text-institutional-muted">Solicitudes preaprobadas listas para firma digital.</p>
+          <p className="text-white/70">Solicitudes preaprobadas listas para firma digital.</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => firmarSeleccionadas(false)} disabled={sel.size === 0 || firmar.isPending}>

@@ -14,8 +14,8 @@ export function RecibidosVurPage() {
     <div className="animate-fade-up">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-institutional-text">Recibidos de VUR</h1>
-          <p className="text-institutional-muted">
+          <h1 className="text-2xl font-bold text-white">Recibidos de VUR</h1>
+          <p className="text-white/70">
             Solicitudes de Carta de Residencia radicadas desde el sistema de correspondencia (VUR).
           </p>
         </div>

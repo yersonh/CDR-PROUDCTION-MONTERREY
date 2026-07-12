@@ -11,8 +11,8 @@ import type { User } from '@/types/auth'
 import { useUsuarios, useGuardarUsuario, useToggleUsuario, useRoles, useDependencias } from './api'
 
 const ROL_LABEL: Record<string, string> = {
-  super_admin: 'Super Administrador', alcalde: 'Alcalde', recepcionista: 'Recepcionista',
-  operador: 'Operador', funcionario_sisben: 'Funcionario SISBEN', presidente_jac: 'Presidente JAC', ciudadano: 'Ciudadano',
+  super_admin: 'Super Administrador', alcalde: 'Alcalde', secretaria: 'Secretaría',
+  funcionario_sisben: 'Funcionario SISBEN', presidente_jac: 'Presidente JAC',
 }
 
 export function UsuariosPage() {
@@ -25,8 +25,8 @@ export function UsuariosPage() {
     <div className="animate-fade-up">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="flex items-center gap-2 text-2xl font-bold text-institutional-text"><UserCog className="h-6 w-6 text-primary" /> Usuarios</h1>
-          <p className="text-institutional-muted">Gestión de usuarios, roles y dependencias.</p>
+          <h1 className="flex items-center gap-2 text-2xl font-bold text-white"><UserCog className="h-6 w-6 text-gold-light" /> Usuarios</h1>
+          <p className="text-white/70">Gestión de usuarios, roles y dependencias.</p>
         </div>
         <Button variant="primary" onClick={() => setEditando(null)}><PlusCircle className="h-4 w-4" /> Nuevo usuario</Button>
       </div>

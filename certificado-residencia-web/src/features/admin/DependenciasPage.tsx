@@ -17,8 +17,8 @@ export function DependenciasPage() {
     <div className="animate-fade-up">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="flex items-center gap-2 text-2xl font-bold text-institutional-text"><Building2 className="h-6 w-6 text-primary" /> Dependencias</h1>
-          <p className="text-institutional-muted">Catálogo organizacional de la Alcaldía.</p>
+          <h1 className="flex items-center gap-2 text-2xl font-bold text-white"><Building2 className="h-6 w-6 text-gold-light" /> Dependencias</h1>
+          <p className="text-white/70">Catálogo organizacional de la Alcaldía.</p>
         </div>
         <Button variant="primary" onClick={() => setEditando(null)}><PlusCircle className="h-4 w-4" /> Nueva dependencia</Button>
       </div>

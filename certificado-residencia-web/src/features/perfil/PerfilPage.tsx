@@ -15,8 +15,8 @@ export function PerfilPage() {
   return (
     <div className="mx-auto max-w-2xl animate-fade-up space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-institutional-text">Mi perfil</h1>
-        <p className="text-institutional-muted">{user?.name} · {user?.email}</p>
+        <h1 className="text-2xl font-bold text-white">Mi perfil</h1>
+        <p className="text-white/70">{user?.name} · {user?.email}</p>
       </div>
 
       <CambiarPassword />

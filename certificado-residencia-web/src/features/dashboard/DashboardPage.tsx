@@ -22,8 +22,8 @@ export function DashboardPage() {
           <ShieldCheck className="h-5 w-5" />
           <span className="text-sm font-semibold">Sesión activa</span>
         </div>
-        <h1 className="text-2xl font-bold text-institutional-text">Bienvenido, {user?.name}</h1>
-        <p className="text-institutional-muted">{user?.email}</p>
+        <h1 className="text-2xl font-bold text-white">Bienvenido, {user?.name}</h1>
+        <p className="text-white/70">{user?.email}</p>
         <div className="mt-6 flex flex-wrap gap-3">
           <Link to="/solicitudes"><Button variant="outline"><FileText className="h-4 w-4" /> Mis solicitudes</Button></Link>
         </div>
@@ -32,7 +32,7 @@ export function DashboardPage() {
   }
 
   if (isLoading || !data) {
-    return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+    return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-white" /></div>
   }
 
   const { resumen, por_estado, por_medio, por_sector, tendencia, bandeja_rol } = data
@@ -45,8 +45,8 @@ export function DashboardPage() {
   return (
     <div className="animate-fade-up space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-institutional-text">Panel de indicadores</h1>
-        <p className="text-institutional-muted">Certificado de Residencia · datos en tiempo real</p>
+        <h1 className="text-2xl font-bold text-white">Panel de indicadores</h1>
+        <p className="text-white/70">Certificado de Residencia · datos en tiempo real</p>
       </div>
 
       {/* KPIs principales */}

@@ -18,10 +18,10 @@ export function AuditoriaPage() {
   return (
     <div className="animate-fade-up">
       <div className="mb-6">
-        <h1 className="flex items-center gap-2 text-2xl font-bold text-institutional-text">
-          <History className="h-6 w-6 text-primary" /> Bitácora de auditoría
+        <h1 className="flex items-center gap-2 text-2xl font-bold text-white">
+          <History className="h-6 w-6 text-gold-light" /> Bitácora de auditoría
         </h1>
-        <p className="text-institutional-muted">Trazabilidad total de las acciones del sistema.</p>
+        <p className="text-white/70">Trazabilidad total de las acciones del sistema.</p>
       </div>
 
       <div className="mb-4 max-w-md">

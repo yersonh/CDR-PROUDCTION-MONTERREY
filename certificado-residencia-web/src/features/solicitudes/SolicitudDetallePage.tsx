@@ -19,30 +19,30 @@ export function SolicitudDetallePage() {
   if (isLoading) {
     return (
       <div className="flex justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <Loader2 className="h-8 w-8 animate-spin text-white" />
       </div>
     )
   }
   if (isError || !s) {
     return (
       <div className="mx-auto max-w-lg py-20 text-center">
-        <p className="text-institutional-muted">No se encontró la solicitud o no tiene acceso.</p>
-        <Link to="/solicitudes" className="mt-3 inline-block text-primary hover:underline">Volver</Link>
+        <p className="text-white/70">No se encontró la solicitud o no tiene acceso.</p>
+        <Link to="/solicitudes" className="mt-3 inline-block text-gold-light hover:underline">Volver</Link>
       </div>
     )
   }
 
   return (
     <div className="mx-auto max-w-4xl animate-fade-up">
-      <Link to="/solicitudes" className="mb-3 inline-flex items-center gap-1 text-sm text-institutional-muted hover:text-primary">
+      <Link to="/solicitudes" className="mb-3 inline-flex items-center gap-1 text-sm text-white/70 hover:text-gold-light">
         <ArrowLeft className="h-4 w-4" /> Volver
       </Link>
 
       {/* Cabecera */}
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-primary">{s.radicado}</h1>
-          <p className="text-institutional-muted">{s.tipo_certificado.label}</p>
+          <h1 className="text-2xl font-bold text-white">{s.radicado}</h1>
+          <p className="text-white/70">{s.tipo_certificado.label}</p>
         </div>
         <div className="flex flex-col items-end gap-2">
           <EstadoBadge label={s.estado.label} color={s.estado.color} />
