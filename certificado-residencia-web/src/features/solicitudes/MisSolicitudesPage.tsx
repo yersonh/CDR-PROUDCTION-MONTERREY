@@ -110,7 +110,12 @@ export function MisSolicitudesPage() {
                     <td className="px-5 py-3 text-institutional-muted">{s.tipo_certificado.label}</td>
                     <td className="px-5 py-3"><EstadoBadge label={s.estado.label} color={s.estado.color} /></td>
                     <td className="px-5 py-3"><SemaforoSla semaforo={s.sla.semaforo} dias={s.sla.dias_habiles_restantes} /></td>
-                    <td className="px-5 py-3 text-institutional-muted">{s.fecha_radicacion.slice(0, 10)}</td>
+                    <td className="px-5 py-3 text-institutional-muted">
+                      {new Date(s.fecha_radicacion).toLocaleString('es-CO', {
+                        dateStyle: 'short',
+                        timeStyle: 'short',
+                      })}
+                    </td>
                     <td className="px-5 py-3 text-right">
                       <Link to={`/solicitudes/${s.id}`} onClick={(e) => e.stopPropagation()}>
                         <Button variant="outline">
