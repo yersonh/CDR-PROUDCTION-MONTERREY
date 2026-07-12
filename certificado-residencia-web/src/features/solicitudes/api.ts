@@ -5,6 +5,7 @@ import type { Paginated, Solicitud } from './types'
 export interface SolicitudFilters {
   estado?: string
   buscar?: string
+  medio_acreditacion?: string
   page?: number
 }
 
@@ -16,6 +17,7 @@ export function useSolicitudes(filters: SolicitudFilters = {}) {
         params: {
           estado: filters.estado || undefined,
           buscar: filters.buscar || undefined,
+          medio_acreditacion: filters.medio_acreditacion || undefined,
           page: filters.page,
         },
       })
@@ -107,6 +109,16 @@ export async function descargarCertificadoPdf(solicitudId: number, consecutivo: 
   a.click()
   a.remove()
   URL.revokeObjectURL(url)
+}
+
+/** Abre un documento del expediente en una pestaña nueva (autenticado, vía blob). */
+export async function verDocumentoExpediente(solicitudId: number, documentoId: number) {
+  const res = await api.get(`/solicitudes/${solicitudId}/documentos/${documentoId}/descargar`, {
+    responseType: 'blob',
+  })
+  const url = URL.createObjectURL(res.data as Blob)
+  window.open(url, '_blank', 'noopener')
+  setTimeout(() => URL.revokeObjectURL(url), 60_000)
 }
 
 /** Subsanación del ciudadano: re-cargar soporte / actualizar justificación. */

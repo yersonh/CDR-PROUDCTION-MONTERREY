@@ -6,11 +6,14 @@ use App\DTOs\CreateSolicitudData;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Solicitud\StoreSolicitudRequest;
 use App\Http\Resources\SolicitudResource;
+use App\Models\ExpedienteDocumento;
 use App\Models\Solicitud;
 use App\Services\SolicitudService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class SolicitudController extends Controller
 {
@@ -38,6 +41,10 @@ class SolicitudController extends Controller
             $query->where('estado', $estado);
         }
 
+        if ($medio = $request->string('medio_acreditacion')->trim()->value()) {
+            $query->where('medio_acreditacion', $medio);
+        }
+
         if ($buscar = $request->string('buscar')->trim()->value()) {
             $query->where(function ($q) use ($buscar) {
                 $q->where('radicado', 'like', "%{$buscar}%")
@@ -61,7 +68,7 @@ class SolicitudController extends Controller
         $data = CreateSolicitudData::fromValidated(
             $request->validated(),
             $request->file('soporte'),
-            ciudadanoId: $user->hasRole('ciudadano') ? $user->id : null,
+            ciudadanoId: null,
             createdBy: $user->id,
         );
 
@@ -95,5 +102,27 @@ class SolicitudController extends Controller
         ]);
 
         return new SolicitudResource($solicitud);
+    }
+
+    /**
+     * Descarga un documento del expediente de la solicitud (soporte,
+     * documento de identidad, solicitud firmada, certificado, etc.). Mismo
+     * criterio de autorización que show(): dueño del expediente o quien
+     * tenga solicitudes.ver_todas.
+     */
+    public function descargarDocumento(Request $request, Solicitud $solicitud, ExpedienteDocumento $documento): StreamedResponse
+    {
+        $user = $request->user();
+
+        $esPropia = $solicitud->ciudadano_id === $user->id;
+        abort_unless(
+            $user->can('solicitudes.ver_todas') || ($user->can('solicitudes.ver_propias') && $esPropia),
+            Response::HTTP_FORBIDDEN,
+        );
+
+        abort_unless($documento->expediente->solicitud_id === $solicitud->id, Response::HTTP_NOT_FOUND);
+        abort_unless(Storage::disk($documento->disk)->exists($documento->path), Response::HTTP_NOT_FOUND);
+
+        return Storage::disk($documento->disk)->response($documento->path, $documento->nombre_original);
     }
 }

@@ -3,8 +3,9 @@ import { ArrowLeft, FileText, Loader2, MapPin, Paperclip, User } from 'lucide-re
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { EstadoBadge, SemaforoSla } from '@/components/ui/estado-badge'
 import { cn } from '@/lib/utils'
-import { useSolicitud } from './api'
+import { useSolicitud, verDocumentoExpediente } from './api'
 import { GestionSolicitud } from './GestionSolicitud'
+import type { Documento } from './types'
 
 const COLOR_DOT: Record<string, string> = {
   blue: 'bg-blue-500', indigo: 'bg-indigo-500', amber: 'bg-amber-500',
@@ -77,24 +78,20 @@ export function SolicitudDetallePage() {
               <Paperclip className="h-4 w-4 text-primary" />
               <CardTitle>Expediente {s.expediente?.codigo}</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-5">
               {s.expediente && s.expediente.documentos.length > 0 ? (
-                <ul className="space-y-2">
-                  {s.expediente.documentos.map((d) => (
-                    <li key={d.id} className={cn('flex items-center gap-3 rounded-lg border px-4 py-2.5', d.vigente ? 'border-institutional-border' : 'border-institutional-border/60 bg-institutional-bg/50 opacity-70')}>
-                      <FileText className={cn('h-5 w-5', d.vigente ? 'text-primary' : 'text-institutional-muted')} />
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium">{d.nombre_original}</p>
-                        <p className="text-xs text-institutional-muted">
-                          {d.tipo.replaceAll('_', ' ')} · {(d.size / 1024).toFixed(0)} KB · v{d.version}
-                          {!d.vigente && ' · reemplazado'}
-                        </p>
-                      </div>
-                      {d.es_certificado && <EstadoBadge label="Certificado" color="green" />}
-                      {!d.vigente && <EstadoBadge label={`v${d.version}`} color="slate" />}
-                    </li>
-                  ))}
-                </ul>
+                <>
+                  <DocumentosGrupo
+                    titulo="Solicitud"
+                    solicitudId={s.id}
+                    documentos={s.expediente.documentos.filter((d) => d.tipo === 'solicitud_firmada')}
+                  />
+                  <DocumentosGrupo
+                    titulo="Anexos"
+                    solicitudId={s.id}
+                    documentos={s.expediente.documentos.filter((d) => d.tipo !== 'solicitud_firmada')}
+                  />
+                </>
               ) : (
                 <p className="text-sm text-institutional-muted">Aún no se han cargado documentos al expediente.</p>
               )}
@@ -126,6 +123,41 @@ export function SolicitudDetallePage() {
           </Card>
         </div>
       </div>
+    </div>
+  )
+}
+
+function DocumentosGrupo({ titulo, solicitudId, documentos }: { titulo: string; solicitudId: number; documentos: Documento[] }) {
+  if (documentos.length === 0) return null
+
+  return (
+    <div>
+      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-institutional-muted">{titulo}</p>
+      <ul className="space-y-2">
+        {documentos.map((d) => (
+          <li key={d.id}>
+            <button
+              type="button"
+              onClick={() => verDocumentoExpediente(solicitudId, d.id)}
+              className={cn(
+                'flex w-full items-center gap-3 rounded-lg border px-4 py-2.5 text-left transition-colors hover:bg-primary-50/40',
+                d.vigente ? 'border-institutional-border' : 'border-institutional-border/60 bg-institutional-bg/50 opacity-70',
+              )}
+            >
+              <FileText className={cn('h-5 w-5', d.vigente ? 'text-primary' : 'text-institutional-muted')} />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium text-primary hover:underline">{d.nombre_original}</p>
+                <p className="text-xs text-institutional-muted">
+                  {d.tipo.replaceAll('_', ' ')} · {(d.size / 1024).toFixed(0)} KB · v{d.version}
+                  {!d.vigente && ' · reemplazado'}
+                </p>
+              </div>
+              {d.es_certificado && <EstadoBadge label="Certificado" color="green" />}
+              {!d.vigente && <EstadoBadge label={`v${d.version}`} color="slate" />}
+            </button>
+          </li>
+        ))}
+      </ul>
     </div>
   )
 }

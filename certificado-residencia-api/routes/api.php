@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\V1\Admin\UsuarioController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\RecibidoVurController;
 use App\Http\Controllers\Api\V1\SolicitudController;
+use App\Http\Controllers\Api\V1\SolicitudPublicaController;
 use App\Http\Controllers\Api\V1\ValidacionController;
 use Illuminate\Support\Facades\Route;
 
@@ -22,6 +23,19 @@ Route::prefix('v1')->group(function () {
     // ---------------------------------------------------------------
     Route::get('public/verificar/{codigo}', [ConsultaPublicaController::class, 'verificar']);
     Route::get('public/certificados/{codigo}/pdf', [ConsultaPublicaController::class, 'descargar']);
+
+    // Formulario público de solicitud (sin login): captación ciudadana que
+    // se envía a VUR para su radicación. Throttle por IP contra abuso.
+    Route::post('public/solicitudes', [SolicitudPublicaController::class, 'store'])
+        ->middleware('throttle:5,1');
+
+    // Vista previa del PDF antes de confirmar el envío (no persiste nada).
+    Route::post('public/solicitudes/preview', [SolicitudPublicaController::class, 'preview'])
+        ->middleware('throttle:20,1');
+
+    // Catálogos para alimentar el formulario público (mismos datos que
+    // /catalogos, sin autenticación).
+    Route::get('public/catalogos', [CatalogoController::class, 'index']);
 
     // ---------------------------------------------------------------
     // Autenticación
@@ -59,6 +73,7 @@ Route::prefix('v1')->group(function () {
         Route::post('solicitudes', [SolicitudController::class, 'store'])
             ->middleware('permission:solicitudes.crear');
         Route::get('solicitudes/{solicitud}', [SolicitudController::class, 'show']);
+        Route::get('solicitudes/{solicitud}/documentos/{documento}/descargar', [SolicitudController::class, 'descargarDocumento']);
 
         // Validación de soportes y prevalidación
         Route::post('solicitudes/{solicitud}/validaciones', [ValidacionController::class, 'store']);
