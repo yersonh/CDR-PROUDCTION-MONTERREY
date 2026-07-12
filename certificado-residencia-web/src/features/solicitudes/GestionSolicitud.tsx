@@ -140,19 +140,26 @@ function ElectoralForm({ solicitud }: { solicitud: Solicitud }) {
   )
 }
 
-/** Carga de soporte con archivo (SISBEN). */
+const RESULTADOS_SOPORTE = [
+  { value: 'cumple', label: 'Cumple requisitos' },
+  { value: 'rechaza', label: 'No cumple requisitos' },
+]
+
+/** Carga de soporte con archivo (SISBEN): el funcionario decide aquí si cumple o no. */
 function SoporteForm({ solicitud, tipo, titulo }: { solicitud: Solicitud; tipo: string; titulo: string }) {
   const registrar = useRegistrarValidacion(solicitud.id)
   const [file, setFile] = useState<File | null>(null)
+  const [resultado, setResultado] = useState<'cumple' | 'rechaza'>('cumple')
   const [observacion, setObservacion] = useState('')
   const [error, setError] = useState<string>()
 
   const submit = () => {
     if (!file) { setError('Debe adjuntar la certificación'); return }
+    if (resultado === 'rechaza' && !observacion.trim()) { setError('Indique el motivo del no cumplimiento'); return }
     const fd = new FormData()
     fd.append('tipo', tipo)
     fd.append('soporte', file)
-    fd.append('resultado', 'cumple')
+    fd.append('resultado', resultado)
     if (observacion) fd.append('observacion', observacion)
     registrar.mutate(fd)
   }
@@ -161,11 +168,19 @@ function SoporteForm({ solicitud, tipo, titulo }: { solicitud: Solicitud; tipo: 
     <FormBox titulo={titulo} icon={Upload}>
       {registrar.isError && <FormError error={registrar.error} />}
       <FileUpload file={file} onChange={(f) => { setFile(f); setError(undefined) }} error={error} />
-      <Field label="Observación" htmlFor={`${tipo}-obs`}>
-        <Textarea id={`${tipo}-obs`} rows={2} value={observacion} onChange={(e) => setObservacion(e.target.value)}
-          placeholder="Antigüedad mínima de 1 año verificada" />
+      <Field label="Resultado de la validación" htmlFor={`${tipo}-res`}>
+        <Select id={`${tipo}-res`} value={resultado}
+          onChange={(e) => { setResultado(e.target.value as typeof resultado); setError(undefined) }}>
+          {RESULTADOS_SOPORTE.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
+        </Select>
       </Field>
-      <Button variant="primary" onClick={submit} loading={registrar.isPending}>Cargar certificación</Button>
+      <Field label="Observación" htmlFor={`${tipo}-obs`} required={resultado === 'rechaza'} error={error}>
+        <Textarea id={`${tipo}-obs`} rows={2} value={observacion} onChange={(e) => { setObservacion(e.target.value); setError(undefined) }}
+          placeholder={resultado === 'cumple' ? 'Antigüedad mínima de 1 año verificada' : 'Motivo obligatorio'} />
+      </Field>
+      <Button variant={resultado === 'rechaza' ? 'danger' : 'primary'} onClick={submit} loading={registrar.isPending}>
+        Cargar certificación
+      </Button>
     </FormBox>
   )
 }
@@ -204,9 +219,18 @@ function JacForm({ solicitud }: { solicitud: Solicitud }) {
   )
 }
 
-/** Concepto de prevalidación. */
+/**
+ * Concepto de prevalidación. Para SISBEN/JAC el especialista ya decidió si
+ * cumple o no — Secretaría solo oficializa esa decisión, no vuelve a
+ * calificar la calidad del documento, así que "Requiere subsanación" no
+ * aplica para esos dos medios (solo Cumple/Rechaza).
+ */
 function PrevalidarForm({ solicitud }: { solicitud: Solicitud }) {
   const prevalidar = usePrevalidar(solicitud.id)
+  const medio = solicitud.medio_acreditacion.value
+  const resultados = ['sisben', 'jac'].includes(medio)
+    ? RESULTADOS.filter((r) => r.value !== 'subsanar')
+    : RESULTADOS
   const [resultado, setResultado] = useState<'cumple' | 'subsanar' | 'rechaza'>('cumple')
   const [observacion, setObservacion] = useState('')
   const [error, setError] = useState<string>()
@@ -225,7 +249,7 @@ function PrevalidarForm({ solicitud }: { solicitud: Solicitud }) {
       {error && <p className="text-xs font-medium text-danger">{error}</p>}
       <Field label="Concepto" htmlFor="pv-res">
         <Select id="pv-res" value={resultado} onChange={(e) => { setResultado(e.target.value as typeof resultado); setError(undefined) }}>
-          {RESULTADOS.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
+          {resultados.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
         </Select>
       </Field>
       <Field label="Observación" htmlFor="pv-obs" required={resultado !== 'cumple'}>
