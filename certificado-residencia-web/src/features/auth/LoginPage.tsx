@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useNavigate, useLocation, Navigate, Link } from 'react-router-dom'
+import { useNavigate, Navigate, Link } from 'react-router-dom'
 import { Eye, EyeOff, Lock, Mail, ShieldCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -18,7 +18,6 @@ export function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [showNexGovIA, setShowNexGovIA] = useState(false)
   const navigate = useNavigate()
-  const location = useLocation()
   const { isAuthenticated } = useAuth()
   const login = useLogin()
 
@@ -32,15 +31,13 @@ export function LoginPage() {
   })
 
   if (isAuthenticated) {
-    const from = (location.state as { from?: string })?.from ?? '/dashboard'
-    return <Navigate to={from} replace />
+    return <Navigate to="/dashboard" replace />
   }
 
   const onSubmit = (values: LoginFormValues) => {
     login.mutate(values, {
       onSuccess: () => {
-        const from = (location.state as { from?: string })?.from ?? '/dashboard'
-        navigate(from, { replace: true })
+        navigate('/dashboard', { replace: true })
       },
     })
   }
