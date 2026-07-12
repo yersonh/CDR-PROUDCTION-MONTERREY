@@ -20,6 +20,7 @@ import { useAuth } from '@/features/auth/useAuth'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { NexGovIAInfoModal } from '@/components/nexgovia-info-modal'
 import escudo from '@/assets/logo-alcaldia.png'
+import fondoCasa from '@/assets/fondo-casa.png'
 
 interface NavItem {
   to: string
@@ -61,7 +62,15 @@ export function AppLayout() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-institutional-bg">
+    <div className="relative flex min-h-screen flex-col">
+      {/* Fondo institucional: foto de la Alcaldía + degradado oscuro para legibilidad */}
+      <div
+        className="fixed inset-0 -z-10 bg-cover bg-center bg-fixed"
+        style={{ backgroundImage: `url(${fondoCasa})` }}
+        aria-hidden
+      />
+      <div className="fixed inset-0 -z-10 bg-gradient-to-b from-[#050b18]/90 via-[#0d1c3d]/85 to-[#050b18]/95" aria-hidden />
+
       {/* Header institucional */}
       <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-3 bg-primary px-4 text-white shadow-md sm:px-6">
         <div className="flex items-center gap-3">
@@ -104,7 +113,7 @@ export function AppLayout() {
         {/* Sidebar */}
         <aside
           className={cn(
-            'fixed inset-y-0 left-0 top-16 z-20 w-64 transform border-r border-institutional-border bg-white p-4 transition-transform lg:static lg:top-0 lg:translate-x-0',
+            'fixed inset-y-0 left-0 top-16 z-20 w-64 transform border-r border-white/10 bg-primary p-4 transition-transform lg:static lg:top-0 lg:translate-x-0',
             open ? 'translate-x-0' : '-translate-x-full',
           )}
         >
@@ -119,8 +128,8 @@ export function AppLayout() {
                   cn(
                     'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
                     isActive
-                      ? 'bg-primary text-white shadow-sm'
-                      : 'text-institutional-text hover:bg-institutional-bg',
+                      ? 'bg-gold text-primary shadow-sm'
+                      : 'text-white/70 hover:bg-white/10 hover:text-white',
                   )
                 }
               >
