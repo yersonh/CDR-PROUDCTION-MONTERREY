@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ArrowUpRight, FileText, PlusCircle, Search } from 'lucide-react'
+import { ArrowUpRight, FileText, Search } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -19,7 +19,7 @@ const MEDIO_POR_ROL: Record<string, string> = {
 }
 
 export function MisSolicitudesPage() {
-  const { hasPermission, hasRole } = useAuth()
+  const { hasRole } = useAuth()
   const { data: catalogos } = useCatalogos()
   const navigate = useNavigate()
   // Derivado del rol en cada render, no un useState — no hay ningún control
@@ -40,11 +40,6 @@ export function MisSolicitudesPage() {
           <h1 className="text-2xl font-bold text-institutional-text">{titulo}</h1>
           <p className="text-institutional-muted">Consulte el estado y seguimiento de los trámites.</p>
         </div>
-        {hasPermission('solicitudes.crear') && (
-          <Link to="/solicitudes/nueva">
-            <Button variant="primary"><PlusCircle className="h-4 w-4" /> Nueva solicitud</Button>
-          </Link>
-        )}
       </div>
 
       {/* Filtros */}

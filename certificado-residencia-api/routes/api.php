@@ -68,10 +68,10 @@ Route::prefix('v1')->group(function () {
         Route::get('recibidos-vur/{recibidoVur}/pdf', [RecibidoVurController::class, 'descargarPdf'])
             ->middleware('permission:recibidos-vur.ver');
 
-        // Solicitudes / radicación
+        // Solicitudes / radicación (la radicación manual se retiró — todas las
+        // solicitudes entran vía el formulario público + VUR, ver SolicitudPublicaController
+        // y RecibidoVurService::procesarAutomaticamente)
         Route::get('solicitudes', [SolicitudController::class, 'index']);
-        Route::post('solicitudes', [SolicitudController::class, 'store'])
-            ->middleware('permission:solicitudes.crear');
         Route::get('solicitudes/{solicitud}', [SolicitudController::class, 'show']);
         Route::get('solicitudes/{solicitud}/documentos/{documento}/descargar', [SolicitudController::class, 'descargarDocumento']);
 

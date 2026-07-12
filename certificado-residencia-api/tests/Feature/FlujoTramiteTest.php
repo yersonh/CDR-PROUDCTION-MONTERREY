@@ -2,7 +2,12 @@
 
 namespace Tests\Feature;
 
+use App\DTOs\CreateSolicitudData;
+use App\Enums\MedioAcreditacion;
+use App\Enums\TipoCertificado;
+use App\Models\Solicitud;
 use App\Models\User;
+use App\Services\SolicitudService;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -30,9 +35,36 @@ class FlujoTramiteTest extends TestCase
         return $user;
     }
 
+    /**
+     * Ya no hay endpoint de radicación manual (toda solicitud entra vía el
+     * formulario público + VUR, o vía RecibidoVurService::procesarAutomaticamente)
+     * — para los tests que solo necesitan una Solicitud existente como fixture,
+     * se crea directamente por el servicio, igual que hace la auto-creación.
+     */
+    private function radicar(array $overrides = []): Solicitud
+    {
+        $data = new CreateSolicitudData(
+            nombreCompleto: $overrides['nombre_completo'] ?? 'Test',
+            tipoDocumento: 'CC',
+            numeroIdentificacion: $overrides['numero_identificacion'] ?? '777',
+            direccion: 'x',
+            correo: 't@t.com',
+            celular: '3001112233',
+            barrioVeredaSector: 'y',
+            motivo: null,
+            tipoCertificado: TipoCertificado::General,
+            medioAcreditacion: MedioAcreditacion::from($overrides['medio_acreditacion'] ?? 'electoral'),
+            justificacionEspecial: $overrides['justificacion_especial'] ?? null,
+            soporte: $overrides['soporte'] ?? null,
+            createdBy: $this->usuarioCon('secretaria')->id,
+        );
+
+        return app(SolicitudService::class)->radicar($data);
+    }
+
     public function test_login_devuelve_token(): void
     {
-        $user = $this->usuarioCon('ciudadano');
+        $user = $this->usuarioCon('secretaria');
 
         $this->postJson('/api/v1/auth/login', ['email' => $user->email, 'password' => 'password'])
             ->assertOk()
@@ -41,63 +73,24 @@ class FlujoTramiteTest extends TestCase
 
     public function test_login_falla_con_credenciales_invalidas(): void
     {
-        $user = $this->usuarioCon('ciudadano');
+        $user = $this->usuarioCon('secretaria');
 
         $this->postJson('/api/v1/auth/login', ['email' => $user->email, 'password' => 'malo'])
             ->assertStatus(422);
     }
 
-    public function test_ciudadano_puede_radicar_con_soporte(): void
-    {
-        Sanctum::actingAs($this->usuarioCon('ciudadano'));
-
-        $res = $this->postJson('/api/v1/solicitudes', [
-            'nombre_completo' => 'Juan Perez',
-            'tipo_documento' => 'CC',
-            'numero_identificacion' => '123456',
-            'direccion' => 'Calle 1',
-            'correo' => 'juan@example.com',
-            'celular' => '3001112233',
-            'barrio_vereda_sector' => 'Centro',
-            'tipo_certificado' => 'general',
-            'medio_acreditacion' => 'electoral',
-            'soporte' => UploadedFile::fake()->create('soporte.pdf', 50, 'application/pdf'),
-        ]);
-
-        $res->assertCreated()
-            ->assertJsonPath('data.estado.value', 'radicada');
-
-        $this->assertMatchesRegularExpression('/^R-\d{4}-\d{6}$/', $res->json('data.radicado'));
-        $this->assertNotNull($res->json('data.expediente.codigo'));
-        $this->assertNotNull($res->json('data.sla.fecha_limite'));
-        $this->assertCount(1, $res->json('data.expediente.documentos'));
-    }
-
-    public function test_radicacion_electoral_exige_soporte(): void
-    {
-        Sanctum::actingAs($this->usuarioCon('ciudadano'));
-
-        $this->postJson('/api/v1/solicitudes', [
-            'nombre_completo' => 'Ana', 'numero_identificacion' => '9', 'direccion' => 'x',
-            'correo' => 'a@a.com', 'celular' => '3', 'barrio_vereda_sector' => 'y',
-            'tipo_certificado' => 'general', 'medio_acreditacion' => 'electoral',
-        ])->assertStatus(422)->assertJsonValidationErrors('soporte');
-    }
-
     public function test_flujo_completo_hasta_certificado(): void
     {
-        // 1. Ciudadano radica
-        $ciudadano = $this->usuarioCon('ciudadano');
-        Sanctum::actingAs($ciudadano);
-        $id = $this->postJson('/api/v1/solicitudes', [
-            'nombre_completo' => 'Maria Lopez', 'tipo_documento' => 'CC', 'numero_identificacion' => '555',
-            'direccion' => 'Cra 2', 'correo' => 'maria@example.com', 'celular' => '3009998877',
-            'barrio_vereda_sector' => 'Norte', 'tipo_certificado' => 'general', 'medio_acreditacion' => 'electoral',
+        // 1. Solicitud radicada (vía el servicio, como la crearía el auto-enrutamiento)
+        $id = $this->radicar([
+            'nombre_completo' => 'Maria Lopez', 'numero_identificacion' => '555',
+            'medio_acreditacion' => 'electoral',
             'soporte' => UploadedFile::fake()->create('e.pdf', 30, 'application/pdf'),
-        ])->json('data.id');
+        ])->id;
 
-        // 2. Operador valida y prevalida
-        Sanctum::actingAs($this->usuarioCon('operador'));
+        // 2. Secretaría valida y prevalida
+        $secretaria = $this->usuarioCon('secretaria');
+        Sanctum::actingAs($secretaria);
         $this->postJson("/api/v1/solicitudes/{$id}/validaciones", ['tipo' => 'electoral', 'resultado' => 'cumple'])
             ->assertCreated();
         $this->postJson("/api/v1/solicitudes/{$id}/prevalidacion", ['resultado' => 'cumple'])
@@ -122,23 +115,20 @@ class FlujoTramiteTest extends TestCase
             ->assertJsonPath('vigente', true);
     }
 
-    public function test_operador_no_puede_firmar(): void
+    public function test_funcionario_sisben_no_puede_firmar(): void
     {
-        Sanctum::actingAs($this->usuarioCon('operador'));
+        Sanctum::actingAs($this->usuarioCon('funcionario_sisben'));
         $this->postJson('/api/v1/certificados/firmar', ['solicitud_ids' => [1]])
             ->assertForbidden();
     }
 
-    public function test_ciudadano_no_puede_prevalidar(): void
+    public function test_funcionario_sisben_no_puede_prevalidar(): void
     {
-        Sanctum::actingAs($this->usuarioCon('ciudadano'));
+        $id = $this->radicar([
+            'medio_acreditacion' => 'especial', 'justificacion_especial' => 'motivo',
+        ])->id;
 
-        $id = $this->postJson('/api/v1/solicitudes', [
-            'nombre_completo' => 'Test', 'tipo_documento' => 'CC', 'numero_identificacion' => '777',
-            'direccion' => 'x', 'correo' => 't@t.com', 'celular' => '3', 'barrio_vereda_sector' => 'y',
-            'tipo_certificado' => 'general', 'medio_acreditacion' => 'especial', 'justificacion_especial' => 'motivo',
-        ])->json('data.id');
-
+        Sanctum::actingAs($this->usuarioCon('funcionario_sisben'));
         $this->postJson("/api/v1/solicitudes/{$id}/prevalidacion", ['resultado' => 'cumple'])
             ->assertForbidden();
     }

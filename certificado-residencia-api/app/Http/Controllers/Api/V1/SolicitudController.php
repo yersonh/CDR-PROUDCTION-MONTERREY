@@ -2,9 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\DTOs\CreateSolicitudData;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Solicitud\StoreSolicitudRequest;
 use App\Http\Resources\SolicitudResource;
 use App\Models\ExpedienteDocumento;
 use App\Models\Solicitud;
@@ -56,28 +54,6 @@ class SolicitudController extends Controller
         $solicitudes = $query->paginate($request->integer('per_page', 15));
 
         return SolicitudResource::collection($solicitudes)->response();
-    }
-
-    /**
-     * Radicar una nueva solicitud.
-     */
-    public function store(StoreSolicitudRequest $request): JsonResponse
-    {
-        $user = $request->user();
-
-        $data = CreateSolicitudData::fromValidated(
-            $request->validated(),
-            $request->file('soporte'),
-            ciudadanoId: null,
-            createdBy: $user->id,
-        );
-
-        $solicitud = $this->solicitudes->radicar($data);
-
-        return (new SolicitudResource($solicitud))
-            ->additional(['message' => "Solicitud radicada con el número {$solicitud->radicado}."])
-            ->response()
-            ->setStatusCode(Response::HTTP_CREATED);
     }
 
     /**

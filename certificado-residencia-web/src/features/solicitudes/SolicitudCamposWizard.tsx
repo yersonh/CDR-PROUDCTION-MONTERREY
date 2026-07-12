@@ -76,10 +76,28 @@ interface CertificadoStepProps extends StepProps {
   soporte: File | null
   soporteError?: string
   onSoporteChange: (file: File | null) => void
+  /**
+   * En el wizard interno (staff radicando), SISBEN/JAC se deja para que el
+   * funcionario cargue el soporte después. En el formulario público no hay
+   * funcionario detrás en ese momento — si el ciudadano no lo sube aquí, no
+   * lo sube nadie. Poner en `true` exige el archivo también para esos dos
+   * medios, no solo electoral.
+   */
+  soporteInmediato?: boolean
+}
+
+const SOPORTE_LABEL: Record<string, string> = {
+  electoral: 'Certificado electoral',
+  sisben: 'Soporte de antigüedad SISBEN',
+  jac: 'Certificación de la Junta de Acción Comunal (JAC)',
 }
 
 /** Paso 2 del wizard: tipo de certificado, medio de acreditación y soporte. */
-export function CertificadoSoporteStep({ register, errors, catalogos, medio, soporte, soporteError, onSoporteChange }: CertificadoStepProps) {
+export function CertificadoSoporteStep({
+  register, errors, catalogos, medio, soporte, soporteError, onSoporteChange, soporteInmediato = false,
+}: CertificadoStepProps) {
+  const requiereSoporteAhora = medio === 'electoral' || (soporteInmediato && (medio === 'sisben' || medio === 'jac'))
+
   return (
     <div className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-2">
@@ -97,8 +115,8 @@ export function CertificadoSoporteStep({ register, errors, catalogos, medio, sop
         </Field>
       </div>
 
-      {medio === 'electoral' && (
-        <Field label="Certificado electoral" htmlFor="soporte" required>
+      {requiereSoporteAhora && (
+        <Field label={SOPORTE_LABEL[medio ?? ''] ?? 'Soporte de acreditación'} htmlFor="soporte" required>
           <FileUpload file={soporte} onChange={onSoporteChange} error={soporteError} />
         </Field>
       )}
@@ -110,54 +128,12 @@ export function CertificadoSoporteStep({ register, errors, catalogos, medio, sop
         </Field>
       )}
 
-      {(medio === 'sisben' || medio === 'jac') && (
+      {!soporteInmediato && (medio === 'sisben' || medio === 'jac') && (
         <div className="rounded-lg border border-primary-100 bg-primary-50 px-4 py-3 text-sm text-primary-700">
           El soporte de <strong>{medio === 'sisben' ? 'SISBEN' : 'la JAC'}</strong> será cargado por el
           funcionario autorizado una vez radicada la solicitud.
         </div>
       )}
-    </div>
-  )
-}
-
-/** Paso 3 del wizard: revisión antes de enviar. */
-export function ReviewStep({
-  values,
-  soporte,
-  catalogos,
-}: {
-  values: SolicitudFormValues
-  soporte: File | null
-  catalogos?: Catalogos
-}) {
-  const tipo = catalogos?.tipos_certificado.find((t) => t.value === values.tipo_certificado)?.label
-  const medio = catalogos?.medios_acreditacion.find((m) => m.value === values.medio_acreditacion)?.label
-
-  const rows: [string, string | undefined | null][] = [
-    ['Nombre', values.nombre_completo],
-    ['Documento', `${values.tipo_documento} ${values.numero_identificacion}`],
-    ['Correo', values.correo],
-    ['Celular', values.celular],
-    ['Dirección', values.direccion],
-    ['Barrio / vereda', values.barrio_vereda_sector],
-    ['Motivo', values.motivo || '—'],
-    ['Tipo de certificado', tipo],
-    ['Medio de acreditación', medio],
-    ['Justificación', values.justificacion_especial || undefined],
-    ['Soporte adjunto', soporte?.name],
-  ]
-
-  return (
-    <div>
-      <p className="mb-3 text-sm text-institutional-muted">Revise la información antes de continuar:</p>
-      <dl className="divide-y divide-institutional-border rounded-lg border border-institutional-border">
-        {rows.filter(([, v]) => v).map(([k, v]) => (
-          <div key={k} className="flex justify-between gap-4 px-4 py-2.5 text-sm">
-            <dt className="text-institutional-muted">{k}</dt>
-            <dd className="text-right font-medium text-institutional-text">{v}</dd>
-          </div>
-        ))}
-      </dl>
     </div>
   )
 }

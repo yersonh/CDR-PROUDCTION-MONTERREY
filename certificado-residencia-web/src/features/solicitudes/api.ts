@@ -37,27 +37,6 @@ export function useSolicitud(id: number | string | undefined) {
   })
 }
 
-export interface CreateSolicitudResult {
-  data: Solicitud
-  message: string
-}
-
-export function useCreateSolicitud() {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: async (formData: FormData) => {
-      const { data } = await api.post<CreateSolicitudResult>('/solicitudes', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      })
-      return data
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['solicitudes'] })
-    },
-  })
-}
-
 /** Registrar validación/carga de soporte (electoral, SISBEN, JAC, especial). */
 export function useRegistrarValidacion(solicitudId: number) {
   const queryClient = useQueryClient()

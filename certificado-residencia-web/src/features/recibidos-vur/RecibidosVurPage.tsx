@@ -1,34 +1,14 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { FileText, Eye, PlusCircle } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { FileText, Eye, ArrowUpRight } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Select } from '@/components/ui/select'
 import { useRecibidosVur, verRecibidoVurPdf } from './api'
-import type { RecibidoVur } from './types'
 
 export function RecibidosVurPage() {
   const [estado, setEstado] = useState('pendiente')
   const { data, isLoading } = useRecibidosVur({ estado: estado || undefined })
-  const navigate = useNavigate()
-
-  const crearSolicitud = (r: RecibidoVur) => {
-    navigate('/solicitudes/nueva', {
-      state: {
-        precarga: {
-          recibido_vur_id: r.id,
-          radicado_vur: r.radicado_vur,
-          nombre_completo: r.nombre_completo,
-          tipo_documento: r.tipo_documento ?? '',
-          numero_identificacion: r.numero_identificacion ?? '',
-          correo: r.correo ?? '',
-          celular: r.celular ?? '',
-          direccion: r.direccion ?? '',
-          motivo: r.motivo ?? '',
-        },
-      },
-    })
-  }
 
   return (
     <div className="animate-fade-up">
@@ -43,6 +23,7 @@ export function RecibidosVurPage() {
           <Select value={estado} onChange={(e) => setEstado(e.target.value)}>
             <option value="">Todos</option>
             <option value="pendiente">Pendientes</option>
+            <option value="en_tramite">En trámite</option>
             <option value="procesado">Procesados</option>
           </Select>
         </div>
@@ -92,12 +73,12 @@ export function RecibidosVurPage() {
                       })}
                     </td>
                     <td className="px-5 py-3">
-                      <span className={
-                        r.estado === 'pendiente'
-                          ? 'rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-700'
-                          : 'rounded-full bg-green-100 px-2.5 py-1 text-xs font-medium text-green-700'
-                      }>
-                        {r.estado === 'pendiente' ? 'Pendiente' : 'Procesado'}
+                      <span className={{
+                        pendiente: 'rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-700',
+                        en_tramite: 'rounded-full bg-indigo-100 px-2.5 py-1 text-xs font-medium text-indigo-700',
+                        procesado: 'rounded-full bg-green-100 px-2.5 py-1 text-xs font-medium text-green-700',
+                      }[r.estado]}>
+                        {{ pendiente: 'Pendiente', en_tramite: 'En trámite', procesado: 'Procesado' }[r.estado]}
                       </span>
                     </td>
                     <td className="px-5 py-3">
@@ -105,10 +86,12 @@ export function RecibidosVurPage() {
                         <Button variant="outline" onClick={() => verRecibidoVurPdf(r.id)}>
                           <Eye className="h-4 w-4" /> Ver PDF
                         </Button>
-                        {r.estado === 'pendiente' && (
-                          <Button variant="primary" onClick={() => crearSolicitud(r)}>
-                            <PlusCircle className="h-4 w-4" /> Crear solicitud
-                          </Button>
+                        {r.solicitud_id && (
+                          <Link to={`/solicitudes/${r.solicitud_id}`}>
+                            <Button variant="primary">
+                              <ArrowUpRight className="h-4 w-4" /> Ver solicitud
+                            </Button>
+                          </Link>
                         )}
                       </div>
                     </td>

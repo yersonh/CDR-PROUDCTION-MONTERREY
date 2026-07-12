@@ -14,17 +14,14 @@ class RolePermissionSeeder extends Seeder
     public const ROLES = [
         'super_admin' => 'Super Administrador',
         'alcalde' => 'Alcalde',
-        'recepcionista' => 'Recepcionista',
-        'operador' => 'Operador',
+        'secretaria' => 'Secretaría',
         'funcionario_sisben' => 'Funcionario SISBEN',
         'presidente_jac' => 'Presidente JAC',
-        'ciudadano' => 'Ciudadano',
     ];
 
     /** Permisos agrupados por módulo. */
     public const PERMISSIONS = [
         // Solicitudes
-        'solicitudes.crear',
         'solicitudes.ver_propias',
         'solicitudes.ver_todas',
         'solicitudes.direccionar',
@@ -62,12 +59,12 @@ class RolePermissionSeeder extends Seeder
             'casos_especiales.gestionar', 'certificados.ver', 'certificados.revocar',
             'expedientes.ver', 'dashboard.ver',
         ],
-        'recepcionista' => [
-            'solicitudes.crear', 'solicitudes.ver_todas', 'solicitudes.direccionar',
-            'recibidos-vur.ver', 'soportes.subir', 'expedientes.ver', 'dashboard.ver',
-        ],
-        'operador' => [
-            'solicitudes.ver_todas', 'recibidos-vur.ver', 'soportes.subir', 'soportes.validar_electoral',
+        // Secretaría fusiona lo que antes eran Recepcionista (radica,
+        // direcciona) y Operador (valida electoral, prevalida) — la misma
+        // persona hace ambas cosas en la práctica.
+        'secretaria' => [
+            'solicitudes.ver_todas', 'solicitudes.direccionar',
+            'recibidos-vur.ver', 'soportes.subir', 'soportes.validar_electoral',
             'validacion.prevalidar', 'expedientes.ver', 'dashboard.ver',
         ],
         'funcionario_sisben' => [
@@ -75,9 +72,6 @@ class RolePermissionSeeder extends Seeder
         ],
         'presidente_jac' => [
             'solicitudes.ver_todas', 'soportes.cargar_jac', 'expedientes.ver', 'dashboard.ver',
-        ],
-        'ciudadano' => [
-            'solicitudes.crear', 'solicitudes.ver_propias', 'soportes.subir',
         ],
     ];
 

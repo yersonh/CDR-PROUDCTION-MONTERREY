@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import {
-  Clock, FileCheck2, FileText, Loader2, PlusCircle, ShieldCheck, Stamp, XCircle,
+  Clock, FileCheck2, FileText, Loader2, ShieldCheck, Stamp, XCircle,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -26,9 +26,6 @@ export function DashboardPage() {
         <p className="text-institutional-muted">{user?.email}</p>
         <div className="mt-6 flex flex-wrap gap-3">
           <Link to="/solicitudes"><Button variant="outline"><FileText className="h-4 w-4" /> Mis solicitudes</Button></Link>
-          {hasPermission('solicitudes.crear') && (
-            <Link to="/solicitudes/nueva"><Button variant="primary"><PlusCircle className="h-4 w-4" /> Nueva solicitud</Button></Link>
-          )}
         </div>
       </div>
     )

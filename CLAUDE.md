@@ -84,22 +84,40 @@ Supplementary flows: password recovery/reset/change, citizen "subsanación" (re-
 support document when a request is `pendiente_soporte` — each re-upload versions the previous
 `ExpedienteDocumento`), and admin CRUD for users/dependencias/roles (via spatie/laravel-permission).
 
+**VUR integration.** This system is one of several downstream services fed by an institutional
+"Core" and a separate VUR (Ventanilla Única de Registro) system:
+
+- `App\Services\ClienteCore` reads shared catalogs (dependencias, tipos de identificación) from
+  the Core institutional API over HTTP (`services.core.url` / `services.core.token` config),
+  cached 5–60 min via `Cache::remember`. CDR only reads from Core, never writes.
+- `RecibidoVur` (table `recibidos_vur`) is an inbox for residency requests VUR sends peer-to-peer
+  (not a `Solicitud`). `RecibidoVurController` + `RecibidoVurService::crear` persist the incoming
+  PDF idempotently (duplicate `radicado_vur` → 409, not a second row). Secretaría reviews these
+  in `RecibidosVurPage` and radicates them manually by launching the existing wizard
+  (`NuevaSolicitudPage`) pre-filled with the recibido's `direccion`/`motivo`, linking
+  `RecibidoVur.solicitud_id` back once radicated.
+
 ### Backend structure (`certificado-residencia-api/app`)
 
 - `Http/Controllers/Api/V1/**` — one controller per resource, thin; business logic lives in
   `Services/`. `Admin/` and `Auth/` subnamespaces group admin and auth endpoints.
 - `Services/` — `SolicitudService` (create/radicar), `ValidacionService` (validate/prevalidar/
   subsanar), `CertificadoService` (sign/generate PDF), `DocumentoService` (upload/version
-  documents), `QrService`, `RadicadoGenerator`, `AuditService` (writes `Auditoria` rows).
+  documents), `QrService`, `RadicadoGenerator`, `AuditService` (writes `Auditoria` rows),
+  `ClienteCore` (reads dependencias/catálogos from the institutional Core API),
+  `RecibidoVurService` (idempotent intake of VUR-forwarded requests).
 - `Enums/` — `EstadoSolicitud`, `EstadoCertificado`, `TipoCertificado`, `MedioAcreditacion`,
   `ResultadoValidacion`. These are the vocabulary of the state machine; check them before
   adding new states/statuses.
 - `DTOs/` — typed payloads for service inputs (e.g. `CreateSolicitudData`).
 - `Support/` — `ColombiaHolidays`, `SlaCalculator` — pure logic for the 15-business-day SLA.
 - Authorization is permission-based (spatie/laravel-permission), enforced via
-  `middleware('permission:xxx')` on routes in `routes/api.php` (e.g. `solicitudes.crear`,
+  `middleware('permission:xxx')` on routes in `routes/api.php` (e.g. `recibidos-vur.ver`,
   `validacion.prevalidar`, `firma.firmar`, `admin.usuarios`, `dashboard.ver`, `auditoria.ver`).
-  Check `RolePermissionSeeder` for the permission catalogue and role assignments.
+  Check `RolePermissionSeeder` for the permission catalogue and role assignments. There is no
+  manual "crear solicitud" endpoint/permission — every `Solicitud` originates from the public
+  form (`SolicitudPublica`) or is auto-created by `RecibidoVurService::procesarAutomaticamente`
+  when VUR forwards a SISBEN/JAC radicado (Electoral's entry path is still pending redefinition).
 - Auth is Sanctum (bearer tokens, not SPA cookie mode) — see `AuthController` under
   `Http/Controllers/Api/V1/Auth`.
 - File storage: local disk (`storage/app`) in dev; production sets `LOCAL_STORAGE_PATH`
@@ -118,9 +136,9 @@ support document when a request is `pendiente_soporte` — each re-upload versio
 
 - `features/<domain>/` — one folder per domain area (`auth`, `solicitudes`, `firma`,
   `validacion` logic embedded in `solicitudes`, `consulta`, `dashboard`, `auditoria`, `perfil`,
-  `admin`, `catalogos`). Each typically has a page component, a `use<Domain>.ts` hook wrapping
-  TanStack Query, and sometimes a local `api.ts` / `*-schema.ts` (Zod validation for forms via
-  `@hookform/resolvers`).
+  `admin`, `catalogos`, `recibidos-vur`). Each typically has a page component, a
+  `use<Domain>.ts` hook wrapping TanStack Query, and sometimes a local `api.ts` / `*-schema.ts`
+  (Zod validation for forms via `@hookform/resolvers`).
 - `app/router.tsx` — single source of truth for routes. Public: `/login`, `/recuperar`,
   `/restablecer`, `/verificar` (public certificate authenticity check, no auth). Everything
   else nests under `ProtectedRoute` → `AppLayout`.

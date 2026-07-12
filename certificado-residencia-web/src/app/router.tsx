@@ -7,10 +7,10 @@ import { AppLayout } from '@/components/layout/AppLayout'
 import { DashboardPage } from '@/features/dashboard/DashboardPage'
 import { MisSolicitudesPage } from '@/features/solicitudes/MisSolicitudesPage'
 import { RecibidosVurPage } from '@/features/recibidos-vur/RecibidosVurPage'
-import { NuevaSolicitudPage } from '@/features/solicitudes/NuevaSolicitudPage'
 import { SolicitudDetallePage } from '@/features/solicitudes/SolicitudDetallePage'
 import { FirmaPage } from '@/features/firma/FirmaPage'
 import { VerificarPage } from '@/features/consulta/VerificarPage'
+import { SolicitudPublicaPage } from '@/features/solicitud-publica/SolicitudPublicaPage'
 import { AuditoriaPage } from '@/features/auditoria/AuditoriaPage'
 import { PerfilPage } from '@/features/perfil/PerfilPage'
 import { UsuariosPage } from '@/features/admin/UsuariosPage'
@@ -22,6 +22,7 @@ export const router = createBrowserRouter([
   { path: '/recuperar', element: <ForgotPasswordPage /> },
   { path: '/restablecer', element: <ResetPasswordPage /> },
   { path: '/verificar', element: <VerificarPage /> },
+  { path: '/solicitud-publica', element: <SolicitudPublicaPage /> },
   {
     element: <ProtectedRoute />,
     children: [
@@ -31,7 +32,6 @@ export const router = createBrowserRouter([
           { path: '/dashboard', element: <DashboardPage /> },
           { path: '/solicitudes', element: <MisSolicitudesPage /> },
           { path: '/recibidos-vur', element: <RecibidosVurPage /> },
-          { path: '/solicitudes/nueva', element: <NuevaSolicitudPage /> },
           { path: '/solicitudes/:id', element: <SolicitudDetallePage /> },
           { path: '/firma', element: <FirmaPage /> },
           { path: '/auditoria', element: <AuditoriaPage /> },

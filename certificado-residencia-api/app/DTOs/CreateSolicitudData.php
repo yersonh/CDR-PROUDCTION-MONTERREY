@@ -29,29 +29,4 @@ readonly class CreateSolicitudData
         public ?string $radicadoVur = null,
         public ?int $recibidoVurId = null,
     ) {}
-
-    /**
-     * @param  array<string, mixed>  $v  Datos validados del Form Request.
-     */
-    public static function fromValidated(array $v, ?UploadedFile $soporte, ?int $ciudadanoId, ?int $createdBy): self
-    {
-        return new self(
-            nombreCompleto: $v['nombre_completo'],
-            tipoDocumento: $v['tipo_documento'] ?? null,
-            numeroIdentificacion: $v['numero_identificacion'],
-            direccion: $v['direccion'],
-            correo: $v['correo'],
-            celular: $v['celular'],
-            barrioVeredaSector: $v['barrio_vereda_sector'],
-            motivo: $v['motivo'] ?? null,
-            tipoCertificado: TipoCertificado::from($v['tipo_certificado']),
-            medioAcreditacion: MedioAcreditacion::from($v['medio_acreditacion']),
-            justificacionEspecial: $v['justificacion_especial'] ?? null,
-            soporte: $soporte,
-            ciudadanoId: $ciudadanoId,
-            createdBy: $createdBy,
-            radicadoVur: $v['radicado_vur'] ?? null,
-            recibidoVurId: $v['recibido_vur_id'] ?? null,
-        );
-    }
 }
