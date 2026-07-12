@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { FileText, PlusCircle, Search } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
+import { ArrowUpRight, FileText, PlusCircle, Search } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -10,14 +10,28 @@ import { useAuth } from '@/features/auth/useAuth'
 import { useCatalogos } from '@/features/catalogos/useCatalogos'
 import { useSolicitudes } from './api'
 
+// Cada especialista cae directo en las solicitudes de su medio de
+// acreditación en vez de la bandeja general — no hay una página dedicada
+// nueva, solo un filtro por defecto sobre la lista ya existente.
+const MEDIO_POR_ROL: Record<string, string> = {
+  funcionario_sisben: 'sisben',
+  presidente_jac: 'jac',
+}
+
 export function MisSolicitudesPage() {
   const { hasPermission, hasRole } = useAuth()
   const { data: catalogos } = useCatalogos()
+  const navigate = useNavigate()
+  // Derivado del rol en cada render, no un useState — no hay ningún control
+  // en pantalla que lo cambie, y guardarlo en estado con el valor inicial
+  // solo se evaluaría una vez: si los datos del usuario cargan un instante
+  // después del primer render, el filtro se quedaría vacío para siempre.
+  const medioAcreditacion = Object.entries(MEDIO_POR_ROL).find(([rol]) => hasRole(rol))?.[1] ?? ''
   const [buscar, setBuscar] = useState('')
   const [estado, setEstado] = useState('')
-  const { data, isLoading } = useSolicitudes({ buscar, estado })
+  const { data, isLoading } = useSolicitudes({ buscar, estado, medio_acreditacion: medioAcreditacion })
 
-  const titulo = hasRole('ciudadano') ? 'Mis solicitudes' : 'Bandeja de solicitudes'
+  const titulo = 'Bandeja de solicitudes'
 
   return (
     <div className="animate-fade-up">
@@ -64,24 +78,33 @@ export function MisSolicitudesPage() {
                   <th className="px-5 py-3 font-semibold">Estado</th>
                   <th className="px-5 py-3 font-semibold">Término</th>
                   <th className="px-5 py-3 font-semibold">Radicación</th>
+                  <th className="px-5 py-3 font-semibold" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-institutional-border">
                 {isLoading && (
-                  <tr><td colSpan={6} className="px-5 py-10 text-center text-institutional-muted">Cargando…</td></tr>
+                  <tr><td colSpan={7} className="px-5 py-10 text-center text-institutional-muted">Cargando…</td></tr>
                 )}
                 {!isLoading && data?.data.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="px-5 py-12 text-center">
+                    <td colSpan={7} className="px-5 py-12 text-center">
                       <FileText className="mx-auto mb-2 h-8 w-8 text-institutional-muted/50" />
                       <p className="text-institutional-muted">No hay solicitudes para mostrar.</p>
                     </td>
                   </tr>
                 )}
                 {data?.data.map((s) => (
-                  <tr key={s.id} className="transition-colors hover:bg-primary-50/40">
+                  <tr
+                    key={s.id}
+                    onClick={() => navigate(`/solicitudes/${s.id}`)}
+                    className="cursor-pointer transition-colors hover:bg-primary-50/40"
+                  >
                     <td className="px-5 py-3">
-                      <Link to={`/solicitudes/${s.id}`} className="font-semibold text-primary hover:underline">
+                      <Link
+                        to={`/solicitudes/${s.id}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="font-semibold text-primary hover:underline"
+                      >
                         {s.radicado}
                       </Link>
                     </td>
@@ -93,6 +116,13 @@ export function MisSolicitudesPage() {
                     <td className="px-5 py-3"><EstadoBadge label={s.estado.label} color={s.estado.color} /></td>
                     <td className="px-5 py-3"><SemaforoSla semaforo={s.sla.semaforo} dias={s.sla.dias_habiles_restantes} /></td>
                     <td className="px-5 py-3 text-institutional-muted">{s.fecha_radicacion.slice(0, 10)}</td>
+                    <td className="px-5 py-3 text-right">
+                      <Link to={`/solicitudes/${s.id}`} onClick={(e) => e.stopPropagation()}>
+                        <Button variant="outline">
+                          <ArrowUpRight className="h-4 w-4" /> Ver
+                        </Button>
+                      </Link>
+                    </td>
                   </tr>
                 ))}
               </tbody>
