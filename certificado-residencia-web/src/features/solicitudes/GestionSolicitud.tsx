@@ -28,9 +28,15 @@ export function GestionSolicitud({ solicitud }: { solicitud: Solicitud }) {
   const puedeElectoral = hasPermission('soportes.validar_electoral') && medio === 'electoral'
   const puedeSisben = hasPermission('soportes.cargar_sisben') && medio === 'sisben'
   const puedeJac = hasPermission('soportes.cargar_jac') && medio === 'jac'
-  const puedePrevalidar =
-    hasPermission('validacion.prevalidar') &&
-    ['radicada', 'en_validacion', 'pendiente_soporte'].includes(estado)
+  // Para SISBEN/JAC la prevalidación de Secretaría oficializa el concepto
+  // del especialista — no debe verse mientras la solicitud siga "radicada"
+  // (o sea, antes de que el especialista haya cargado su certificación).
+  // Electoral/especial sí se validan directamente en ese estado.
+  const requiereEspecialistaPrevio = medio === 'sisben' || medio === 'jac'
+  const estadosPrevalidables = requiereEspecialistaPrevio
+    ? ['en_validacion', 'pendiente_soporte']
+    : ['radicada', 'en_validacion', 'pendiente_soporte']
+  const puedePrevalidar = hasPermission('validacion.prevalidar') && estadosPrevalidables.includes(estado)
   const puedeFirmar = hasPermission('firma.firmar') && estado === 'preaprobada'
 
   const hayAcciones = puedeElectoral || puedeSisben || puedeJac || puedePrevalidar || puedeFirmar || puedeSubsanar
