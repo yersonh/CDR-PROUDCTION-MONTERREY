@@ -1,12 +1,10 @@
-import { useState } from 'react'
-import { CheckCircle2, KeyRound, PenTool, Upload } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { Briefcase, CheckCircle2, PenTool, Upload, UserCircle } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Field } from '@/components/ui/field'
 import { api, getApiErrorMessage } from '@/lib/api'
 import { useAuth } from '@/features/auth/useAuth'
-import { useChangePassword } from '@/features/auth/usePasswords'
+import type { Funcionario } from '@/types/auth'
 
 export function PerfilPage() {
   const { user } = useAuth()
@@ -19,55 +17,128 @@ export function PerfilPage() {
         <p className="text-white/70">{user?.name} · {user?.email}</p>
       </div>
 
-      <CambiarPassword />
+      <FotoPerfil tieneFoto={user?.tiene_foto ?? false} />
+      <InfoFuncionario funcionario={user?.funcionario} />
       {esAlcalde && <SubirFirma tieneFirma={user?.tiene_firma ?? false} />}
     </div>
   )
 }
 
-function CambiarPassword() {
-  const change = useChangePassword()
-  const [f, setF] = useState({ current_password: '', password: '', password_confirmation: '' })
-  const [error, setError] = useState<string>()
-  const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement>) => setF((p) => ({ ...p, [k]: e.target.value }))
+function FotoPerfil({ tieneFoto }: { tieneFoto: boolean }) {
+  const { refreshUser } = useAuth()
+  const [file, setFile] = useState<File | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [estado, setEstado] = useState<'idle' | 'ok' | 'error'>('idle')
+  const [msg, setMsg] = useState<string>()
+  const objectUrlRef = useRef<string | null>(null)
 
-  const submit = (e: React.FormEvent) => {
-    e.preventDefault()
-    setError(undefined)
-    if (f.password !== f.password_confirmation) { setError('Las contraseñas no coinciden'); return }
-    change.mutate(f, { onSuccess: () => setF({ current_password: '', password: '', password_confirmation: '' }) })
+  // Trae la foto actual (endpoint autenticado, no es una URL pública) cada
+  // vez que el usuario tenga una registrada.
+  useEffect(() => {
+    let active = true
+    if (!tieneFoto) {
+      setPreviewUrl(null)
+      return
+    }
+    api.get('/perfil/foto', { responseType: 'blob' }).then((res) => {
+      if (!active) return
+      if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current)
+      const url = URL.createObjectURL(res.data as Blob)
+      objectUrlRef.current = url
+      setPreviewUrl(url)
+    }).catch(() => {})
+    return () => {
+      active = false
+    }
+  }, [tieneFoto])
+
+  useEffect(() => () => {
+    if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current)
+  }, [])
+
+  const subir = async () => {
+    if (!file) return
+    setLoading(true); setMsg(undefined)
+    try {
+      const fd = new FormData()
+      fd.append('foto', file)
+      const { data } = await api.post('/perfil/foto', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+      setEstado('ok'); setMsg(data.message); setFile(null)
+      await refreshUser()
+    } catch (e) {
+      setEstado('error'); setMsg(getApiErrorMessage(e, 'No fue posible cargar la foto.'))
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
     <Card>
       <CardHeader className="flex flex-row items-center gap-2">
-        <KeyRound className="h-4 w-4 text-primary" /><CardTitle>Cambiar contraseña</CardTitle>
+        <UserCircle className="h-4 w-4 text-primary" /><CardTitle>Foto de perfil</CardTitle>
       </CardHeader>
       <CardContent>
-        {change.isSuccess && (
-          <div className="mb-4 flex items-center gap-2 rounded-lg border border-success/40 bg-green-50 px-4 py-2.5 text-sm text-success">
-            <CheckCircle2 className="h-4 w-4" /> {change.data.message}
+        <div className="flex items-center gap-4">
+          <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border border-institutional-border bg-institutional-bg">
+            {previewUrl ? (
+              <img src={previewUrl} alt="Foto de perfil" className="h-full w-full object-cover" />
+            ) : (
+              <UserCircle className="h-10 w-10 text-institutional-muted" />
+            )}
           </div>
-        )}
-        {(change.isError || error) && (
-          <div className="mb-4 rounded-lg border border-danger/40 bg-red-50 px-4 py-2.5 text-sm text-danger">
-            {error ?? getApiErrorMessage(change.error, 'No fue posible cambiar la contraseña.')}
+          <div className="flex-1 space-y-3">
+            {msg && (
+              <div className={`rounded-lg border px-3 py-2 text-sm ${estado === 'error' ? 'border-danger/40 bg-red-50 text-danger' : 'border-success/40 bg-green-50 text-success'}`}>
+                {msg}
+              </div>
+            )}
+            <input type="file" accept=".png,.jpg,.jpeg" onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+              className="block w-full text-sm text-institutional-muted file:mr-3 file:rounded-lg file:border-0 file:bg-primary file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-primary-700" />
+            <Button variant="primary" onClick={subir} disabled={!file} loading={loading}>
+              <Upload className="h-4 w-4" /> Guardar foto
+            </Button>
           </div>
-        )}
-        <form onSubmit={submit} className="space-y-4">
-          <Field label="Contraseña actual" htmlFor="cur" required>
-            <Input id="cur" type="password" value={f.current_password} onChange={set('current_password')} required />
-          </Field>
-          <Field label="Nueva contraseña" htmlFor="new" required hint="Mínimo 8 caracteres, con letras y números">
-            <Input id="new" type="password" value={f.password} onChange={set('password')} required />
-          </Field>
-          <Field label="Confirmar nueva contraseña" htmlFor="conf" required>
-            <Input id="conf" type="password" value={f.password_confirmation} onChange={set('password_confirmation')} required />
-          </Field>
-          <Button type="submit" variant="primary" loading={change.isPending}>Actualizar contraseña</Button>
-        </form>
+        </div>
       </CardContent>
     </Card>
+  )
+}
+
+function InfoFuncionario({ funcionario }: { funcionario: Funcionario | null | undefined }) {
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center gap-2">
+        <Briefcase className="h-4 w-4 text-primary" /><CardTitle>Información del funcionario</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {funcionario ? (
+          <dl className="grid gap-4 sm:grid-cols-2">
+            <DatoFuncionario label="Cargo" value={funcionario.cargo} />
+            <DatoFuncionario label="Dependencia" value={funcionario.dependencia} />
+            <DatoFuncionario label="Teléfono" value={funcionario.telefono} />
+            <DatoFuncionario label="Correo institucional" value={funcionario.correo_institucional} />
+            <DatoFuncionario
+              label="Fecha de vinculación"
+              value={funcionario.fecha_vinculacion ? new Date(funcionario.fecha_vinculacion).toLocaleDateString('es-CO') : null}
+            />
+          </dl>
+        ) : (
+          <p className="text-sm text-institutional-muted">
+            No se encontró información de este usuario en el sistema Core institucional.
+          </p>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
+function DatoFuncionario({ label, value }: { label: string; value: string | null | undefined }) {
+  return (
+    <div>
+      <dt className="text-xs uppercase tracking-wide text-institutional-muted">{label}</dt>
+      <dd className="text-sm font-medium text-institutional-text">{value ?? '—'}</dd>
+    </div>
   )
 }
 

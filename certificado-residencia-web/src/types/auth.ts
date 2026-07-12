@@ -3,6 +3,14 @@ export interface Dependencia {
   nombre: string
 }
 
+export interface Funcionario {
+  cargo: string | null
+  dependencia: string | null
+  telefono: string | null
+  correo_institucional: string | null
+  fecha_vinculacion: string | null
+}
+
 export interface User {
   id: number
   name: string
@@ -15,6 +23,8 @@ export interface User {
   roles: string[]
   permisos: string[]
   tiene_firma?: boolean
+  tiene_foto?: boolean
+  funcionario?: Funcionario | null
   last_login_at: string | null
 }
 

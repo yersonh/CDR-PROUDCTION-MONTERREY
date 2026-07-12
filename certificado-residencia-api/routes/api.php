@@ -96,6 +96,8 @@ Route::prefix('v1')->group(function () {
 
         // Perfil
         Route::post('perfil/firma', [ProfileController::class, 'subirFirma']);
+        Route::post('perfil/foto', [ProfileController::class, 'subirFoto']);
+        Route::get('perfil/foto', [ProfileController::class, 'verFoto']);
 
         // Administración
         Route::prefix('admin')->group(function () {

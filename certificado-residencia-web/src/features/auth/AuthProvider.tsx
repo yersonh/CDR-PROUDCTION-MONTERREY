@@ -20,6 +20,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null)
   }, [])
 
+  /** Vuelve a pedir /auth/me — usado tras cargar una foto/firma para refrescar los flags derivados. */
+  const refreshUser = useCallback(async () => {
+    const res = await api.get<{ data: User }>('/auth/me')
+    setUser(res.data.data)
+  }, [])
+
   // Rehidrata la sesión al recargar (valida el token contra /auth/me)
   useEffect(() => {
     if (!token) {
@@ -54,10 +60,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isAuthenticated: !!user && !!token,
       setSession,
       clearSession,
+      refreshUser,
       hasPermission: (permiso) => user?.permisos.includes(permiso) ?? false,
       hasRole: (rol) => user?.roles.includes(rol) ?? false,
     }),
-    [user, token, isLoading, setSession, clearSession],
+    [user, token, isLoading, setSession, clearSession, refreshUser],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

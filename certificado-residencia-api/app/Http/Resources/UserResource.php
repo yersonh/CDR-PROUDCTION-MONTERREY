@@ -35,6 +35,26 @@ class UserResource extends JsonResource
             'roles' => $this->getRoleNames(),
             'permisos' => $this->getAllPermissions()->pluck('name'),
             'tiene_firma' => ! empty($this->firma_path),
+            'tiene_foto' => ! empty($this->foto_path),
+            'funcionario' => $this->when($this->numero_documento !== null, function () {
+                try {
+                    $funcionario = app(ClienteCore::class)->funcionario($this->numero_documento);
+                } catch (\Throwable) {
+                    return null;
+                }
+
+                if (! $funcionario) {
+                    return null;
+                }
+
+                return [
+                    'cargo' => $funcionario['cargo'] ?? null,
+                    'dependencia' => $funcionario['dependencia']['nombre'] ?? null,
+                    'telefono' => $funcionario['persona']['telefono'] ?? null,
+                    'correo_institucional' => $funcionario['persona']['email'] ?? null,
+                    'fecha_vinculacion' => $funcionario['fecha_vinculacion'] ?? null,
+                ];
+            }),
             'last_login_at' => $this->last_login_at,
         ];
     }

@@ -65,6 +65,27 @@ class ClienteCore
         });
     }
 
+    // ── Funcionarios ─────────────────────────────────────────────
+    // Respuesta: paginada (envoltorio Laravel con "data"). El Core no expone
+    // un filtro por número de identificación que funcione (se probó por
+    // query string y siempre devuelve la página completa), así que se trae
+    // la lista completa (hoy son pocos registros) y se filtra en memoria,
+    // igual que dependencia() hace con dependencias().
+
+    public function funcionarios(): array
+    {
+        return Cache::remember('core:funcionarios', 300, function () {
+            return $this->get('funcionarios', ['per_page' => 200])['data'] ?? [];
+        });
+    }
+
+    /** Busca el funcionario cuya persona tenga este número de identificación (cédula del usuario en CDR). */
+    public function funcionario(string $numeroDocumento): ?array
+    {
+        return collect($this->funcionarios())
+            ->firstWhere('persona.numero_identificacion', $numeroDocumento);
+    }
+
     public function verificarConexion(): bool
     {
         try {

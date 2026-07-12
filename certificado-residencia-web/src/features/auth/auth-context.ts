@@ -8,6 +8,7 @@ export interface AuthContextValue {
   isAuthenticated: boolean
   setSession: (user: User, token: string) => void
   clearSession: () => void
+  refreshUser: () => Promise<void>
   hasPermission: (permiso: string) => boolean
   hasRole: (rol: string) => boolean
 }
