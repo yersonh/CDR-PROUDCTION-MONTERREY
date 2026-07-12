@@ -62,9 +62,13 @@ class RolePermissionSeeder extends Seeder
         // Secretaría fusiona lo que antes eran Recepcionista (radica,
         // direcciona) y Operador (valida electoral, prevalida) — la misma
         // persona hace ambas cosas en la práctica.
+        // recibidos-vur.ver se retiró: sin "Crear solicitud" (ver commit que
+        // lo elimina), Secretaría no tiene ninguna acción real en esa
+        // bandeja — SISBEN/JAC se auto-procesan solos. Pendiente reevaluar
+        // cuando se defina cómo entra Electoral.
         'secretaria' => [
             'solicitudes.ver_todas', 'solicitudes.direccionar',
-            'recibidos-vur.ver', 'soportes.subir', 'soportes.validar_electoral',
+            'soportes.subir', 'soportes.validar_electoral',
             'validacion.prevalidar', 'expedientes.ver', 'dashboard.ver',
         ],
         'funcionario_sisben' => [
