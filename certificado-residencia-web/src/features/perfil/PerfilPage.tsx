@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Briefcase, CheckCircle2, PenTool, Upload, UserCircle } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { api, getApiErrorMessage } from '@/lib/api'
 import { useAuth } from '@/features/auth/useAuth'
+import { useFotoPerfil } from './useFotoPerfil'
 import type { Funcionario } from '@/types/auth'
 
 export function PerfilPage() {
@@ -26,36 +27,24 @@ export function PerfilPage() {
 
 function FotoPerfil({ tieneFoto }: { tieneFoto: boolean }) {
   const { refreshUser } = useAuth()
+  const fotoActual = useFotoPerfil(tieneFoto)
   const [file, setFile] = useState<File | null>(null)
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [previewLocal, setPreviewLocal] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [estado, setEstado] = useState<'idle' | 'ok' | 'error'>('idle')
   const [msg, setMsg] = useState<string>()
-  const objectUrlRef = useRef<string | null>(null)
 
-  // Trae la foto actual (endpoint autenticado, no es una URL pública) cada
-  // vez que el usuario tenga una registrada.
-  useEffect(() => {
-    let active = true
-    if (!tieneFoto) {
-      setPreviewUrl(null)
-      return
-    }
-    api.get('/perfil/foto', { responseType: 'blob' }).then((res) => {
-      if (!active) return
-      if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current)
-      const url = URL.createObjectURL(res.data as Blob)
-      objectUrlRef.current = url
-      setPreviewUrl(url)
-    }).catch(() => {})
-    return () => {
-      active = false
-    }
-  }, [tieneFoto])
-
+  // Previsualiza el archivo elegido de inmediato, antes de subirlo — libera
+  // la URL anterior cada vez que cambia o al desmontar.
   useEffect(() => () => {
-    if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current)
-  }, [])
+    if (previewLocal) URL.revokeObjectURL(previewLocal)
+  }, [previewLocal])
+
+  const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0] ?? null
+    setFile(f)
+    setPreviewLocal(f ? URL.createObjectURL(f) : null)
+  }
 
   const subir = async () => {
     if (!file) return
@@ -64,7 +53,7 @@ function FotoPerfil({ tieneFoto }: { tieneFoto: boolean }) {
       const fd = new FormData()
       fd.append('foto', file)
       const { data } = await api.post('/perfil/foto', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
-      setEstado('ok'); setMsg(data.message); setFile(null)
+      setEstado('ok'); setMsg(data.message); setFile(null); setPreviewLocal(null)
       await refreshUser()
     } catch (e) {
       setEstado('error'); setMsg(getApiErrorMessage(e, 'No fue posible cargar la foto.'))
@@ -72,6 +61,8 @@ function FotoPerfil({ tieneFoto }: { tieneFoto: boolean }) {
       setLoading(false)
     }
   }
+
+  const foto = previewLocal ?? fotoActual
 
   return (
     <Card>
@@ -81,19 +72,22 @@ function FotoPerfil({ tieneFoto }: { tieneFoto: boolean }) {
       <CardContent>
         <div className="flex items-center gap-4">
           <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border border-institutional-border bg-institutional-bg">
-            {previewUrl ? (
-              <img src={previewUrl} alt="Foto de perfil" className="h-full w-full object-cover" />
+            {foto ? (
+              <img src={foto} alt="Foto de perfil" className="h-full w-full object-cover" />
             ) : (
               <UserCircle className="h-10 w-10 text-institutional-muted" />
             )}
           </div>
           <div className="flex-1 space-y-3">
+            {previewLocal && !msg && (
+              <p className="text-xs text-institutional-muted">Vista previa — aún no se ha guardado.</p>
+            )}
             {msg && (
               <div className={`rounded-lg border px-3 py-2 text-sm ${estado === 'error' ? 'border-danger/40 bg-red-50 text-danger' : 'border-success/40 bg-green-50 text-success'}`}>
                 {msg}
               </div>
             )}
-            <input type="file" accept=".png,.jpg,.jpeg" onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+            <input type="file" accept=".png,.jpg,.jpeg" onChange={onFileChange}
               className="block w-full text-sm text-institutional-muted file:mr-3 file:rounded-lg file:border-0 file:bg-primary file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-primary-700" />
             <Button variant="primary" onClick={subir} disabled={!file} loading={loading}>
               <Upload className="h-4 w-4" /> Guardar foto

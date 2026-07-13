@@ -6,7 +6,6 @@ import {
   History,
   Inbox,
   LayoutDashboard,
-  LogOut,
   Menu,
   ShieldCheck,
   Stamp,
@@ -19,6 +18,7 @@ import { cn } from '@/lib/utils'
 import { useAuth } from '@/features/auth/useAuth'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { NexGovIAInfoModal } from '@/components/nexgovia-info-modal'
+import { UserMenu } from './UserMenu'
 import escudo from '@/assets/logo-alcaldia.png'
 import fondoCasa from '@/assets/fondo-casa.png'
 
@@ -42,7 +42,7 @@ const NAV: NavItem[] = [
 ]
 
 export function AppLayout() {
-  const { user, clearSession, hasPermission } = useAuth()
+  const { clearSession, hasPermission } = useAuth()
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   const [confirmLogoutOpen, setConfirmLogoutOpen] = useState(false)
@@ -95,18 +95,7 @@ export function AppLayout() {
             <p className="hidden text-xs text-white/70 sm:block">Certificado de Residencia Digital</p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="hidden text-right sm:block">
-            <p className="text-sm font-medium leading-tight">{user?.name}</p>
-            <p className="text-xs capitalize text-white/60">{user?.roles.join(', ').replaceAll('_', ' ')}</p>
-          </div>
-          <button
-            onClick={() => setConfirmLogoutOpen(true)}
-            className="flex items-center gap-1.5 rounded-lg border border-white/25 bg-white/10 px-3 py-1.5 text-sm hover:bg-white/20"
-          >
-            <LogOut className="h-4 w-4" /> Salir
-          </button>
-        </div>
+        <UserMenu onLogoutClick={() => setConfirmLogoutOpen(true)} />
       </header>
 
       <div className="flex flex-1">
