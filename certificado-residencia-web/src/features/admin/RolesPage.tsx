@@ -7,6 +7,32 @@ const ROL_LABEL: Record<string, string> = {
   funcionario_sisben: 'Funcionario SISBEN', presidente_jac: 'Presidente JAC',
 }
 
+const PERMISO_LABEL: Record<string, string> = {
+  'solicitudes.crear': 'Crear solicitudes',
+  'solicitudes.ver_propias': 'Ver solicitudes propias',
+  'solicitudes.ver_todas': 'Ver todas las solicitudes',
+  'solicitudes.direccionar': 'Direccionar solicitudes',
+  'recibidos-vur.crear': 'Registrar recibidos de VUR',
+  'recibidos-vur.ver': 'Ver recibidos de VUR',
+  'soportes.subir': 'Subir soportes',
+  'soportes.validar_electoral': 'Validar soporte electoral',
+  'soportes.cargar_sisben': 'Cargar soporte SISBEN',
+  'soportes.cargar_jac': 'Cargar soporte JAC',
+  'validacion.prevalidar': 'Prevalidar solicitudes',
+  'firma.ver_bandeja': 'Ver bandeja de firma',
+  'firma.firmar': 'Firmar certificados',
+  'casos_especiales.gestionar': 'Gestionar casos especiales',
+  'certificados.ver': 'Ver certificados',
+  'certificados.revocar': 'Revocar certificados',
+  'expedientes.ver': 'Ver expedientes',
+  'dashboard.ver': 'Ver dashboard',
+  'auditoria.ver': 'Ver auditoría',
+  'reportes.ver': 'Ver reportes',
+  'admin.usuarios': 'Administrar usuarios',
+  'admin.roles': 'Administrar roles',
+  'admin.dependencias': 'Administrar dependencias',
+}
+
 export function RolesPage() {
   const { data, isLoading } = useRoles()
 
@@ -29,7 +55,7 @@ export function RolesPage() {
             <CardContent>
               <div className="flex flex-wrap gap-1.5">
                 {r.permisos.map((p) => (
-                  <span key={p} className="rounded-md bg-institutional-bg px-2 py-0.5 text-xs text-institutional-text">{p}</span>
+                  <span key={p} title={p} className="rounded-md bg-institutional-bg px-2 py-0.5 text-xs text-institutional-text">{PERMISO_LABEL[p] ?? p}</span>
                 ))}
               </div>
             </CardContent>
