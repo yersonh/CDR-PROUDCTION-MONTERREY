@@ -9,6 +9,17 @@ const ACCION_COLOR: Record<string, string> = {
   'prevalidacion.concepto': 'bg-cyan-100 text-cyan-700',
   'validacion.registrada': 'bg-indigo-100 text-indigo-700',
   'solicitud.cambio_estado': 'bg-blue-100 text-blue-700',
+  'solicitud.subsanada': 'bg-amber-100 text-amber-700',
+  'documento.versionado': 'bg-slate-100 text-slate-600',
+}
+
+const ACCION_LABEL: Record<string, string> = {
+  'certificado.emitido': 'Certificado emitido',
+  'prevalidacion.concepto': 'Concepto de prevalidación',
+  'validacion.registrada': 'Validación registrada',
+  'solicitud.cambio_estado': 'Cambio de estado',
+  'solicitud.subsanada': 'Solicitud subsanada',
+  'documento.versionado': 'Documento versionado',
 }
 
 export function AuditoriaPage() {
@@ -55,8 +66,8 @@ export function AuditoriaPage() {
                       {new Date(a.fecha).toLocaleString('es-CO')}
                     </td>
                     <td className="px-5 py-3">
-                      <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${ACCION_COLOR[a.accion] ?? 'bg-slate-100 text-slate-600'}`}>
-                        {a.accion}
+                      <span title={a.accion} className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${ACCION_COLOR[a.accion] ?? 'bg-slate-100 text-slate-600'}`}>
+                        {ACCION_LABEL[a.accion] ?? a.accion}
                       </span>
                     </td>
                     <td className="px-5 py-3 text-institutional-text">{a.descripcion ?? '—'}</td>
