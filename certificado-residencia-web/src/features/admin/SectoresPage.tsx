@@ -1,11 +1,12 @@
 import { useState } from 'react'
-import { MapPin, PlusCircle } from 'lucide-react'
+import { MapPin, Pencil, PlusCircle } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { Field } from '@/components/ui/field'
 import { Modal } from '@/components/ui/modal'
+import { RowActionButton } from '@/components/ui/row-action-button'
 import { getApiErrorMessage } from '@/lib/api'
 import { useSectoresAdmin, useGuardarSector, type SectorAdmin } from './api'
 
@@ -50,7 +51,7 @@ export function SectoresPage() {
                     </span>
                   </td>
                   <td className="px-5 py-3 text-right">
-                    <button onClick={() => setEditando(s)} className="text-sm text-primary hover:underline">Editar</button>
+                    <RowActionButton icon={Pencil} label="Editar" onClick={() => setEditando(s)} />
                   </td>
                 </tr>
               ))}

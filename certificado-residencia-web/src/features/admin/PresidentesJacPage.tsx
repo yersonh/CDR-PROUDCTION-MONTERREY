@@ -1,11 +1,12 @@
 import { useState } from 'react'
-import { PlusCircle, UserCheck } from 'lucide-react'
+import { PlusCircle, RefreshCw, UserCheck } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { Field } from '@/components/ui/field'
 import { Modal } from '@/components/ui/modal'
+import { RowActionButton } from '@/components/ui/row-action-button'
 import { getApiErrorMessage } from '@/lib/api'
 import {
   useSectoresAdmin, usePresidentesJac, useCrearPresidenteJac, useReemplazarPresidenteJac,
@@ -66,7 +67,7 @@ export function PresidentesJacPage() {
                   </td>
                   <td className="px-5 py-3 text-right">
                     {p.estado === 'activo' && (
-                      <button onClick={() => setReemplazando(p)} className="text-sm text-primary hover:underline">Reemplazar</button>
+                      <RowActionButton icon={RefreshCw} label="Reemplazar" onClick={() => setReemplazando(p)} />
                     )}
                   </td>
                 </tr>

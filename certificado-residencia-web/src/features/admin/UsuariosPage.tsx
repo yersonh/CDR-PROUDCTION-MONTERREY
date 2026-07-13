@@ -1,11 +1,12 @@
 import { useState } from 'react'
-import { PlusCircle, Search, UserCog } from 'lucide-react'
+import { Ban, Pencil, PlusCircle, Power, Search, UserCog } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { Field } from '@/components/ui/field'
 import { Modal } from '@/components/ui/modal'
+import { RowActionButton } from '@/components/ui/row-action-button'
 import { getApiErrorMessage } from '@/lib/api'
 import type { User } from '@/types/auth'
 import { useUsuarios, useGuardarUsuario, useToggleUsuario, useRoles, useDependencias } from './api'
@@ -66,11 +67,14 @@ export function UsuariosPage() {
                       </span>
                     </td>
                     <td className="px-5 py-3 text-right">
-                      <div className="flex justify-end gap-2">
-                        <button onClick={() => setEditando(u)} className="text-sm text-primary hover:underline">Editar</button>
-                        <button onClick={() => toggle.mutate(u.id)} className="text-sm text-institutional-muted hover:underline">
-                          {u.activo ? 'Desactivar' : 'Activar'}
-                        </button>
+                      <div className="flex justify-end gap-1">
+                        <RowActionButton icon={Pencil} label="Editar" onClick={() => setEditando(u)} />
+                        <RowActionButton
+                          icon={u.activo ? Ban : Power}
+                          label={u.activo ? 'Desactivar' : 'Activar'}
+                          variant={u.activo ? 'danger' : 'success'}
+                          onClick={() => toggle.mutate(u.id)}
+                        />
                       </div>
                     </td>
                   </tr>

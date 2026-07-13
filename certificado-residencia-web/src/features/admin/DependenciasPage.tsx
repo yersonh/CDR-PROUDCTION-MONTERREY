@@ -1,10 +1,11 @@
 import { useState } from 'react'
-import { Building2, PlusCircle } from 'lucide-react'
+import { Building2, Pencil, PlusCircle, Trash2 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Field } from '@/components/ui/field'
 import { Modal } from '@/components/ui/modal'
+import { RowActionButton } from '@/components/ui/row-action-button'
 import { getApiErrorMessage } from '@/lib/api'
 import { useDependencias, useGuardarDependencia, useEliminarDependencia, type DependenciaAdmin } from './api'
 
@@ -48,10 +49,10 @@ export function DependenciasPage() {
                     </span>
                   </td>
                   <td className="px-5 py-3 text-right">
-                    <div className="flex justify-end gap-2">
-                      <button onClick={() => setEditando(d)} className="text-sm text-primary hover:underline">Editar</button>
+                    <div className="flex justify-end gap-1">
+                      <RowActionButton icon={Pencil} label="Editar" onClick={() => setEditando(d)} />
                       {d.usuarios_count === 0 && (
-                        <button onClick={() => eliminar.mutate(d.id)} className="text-sm text-danger hover:underline">Eliminar</button>
+                        <RowActionButton icon={Trash2} label="Eliminar" variant="danger" onClick={() => eliminar.mutate(d.id)} />
                       )}
                     </div>
                   </td>
