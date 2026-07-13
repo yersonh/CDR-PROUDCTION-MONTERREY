@@ -3,6 +3,7 @@ import { LoginPage } from '@/features/auth/LoginPage'
 import { ForgotPasswordPage } from '@/features/auth/ForgotPasswordPage'
 import { ResetPasswordPage } from '@/features/auth/ResetPasswordPage'
 import { ProtectedRoute } from '@/features/auth/ProtectedRoute'
+import { CambiarPasswordTemporalPage } from '@/features/auth/CambiarPasswordTemporalPage'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { DashboardPage } from '@/features/dashboard/DashboardPage'
 import { MisSolicitudesPage } from '@/features/solicitudes/MisSolicitudesPage'
@@ -29,6 +30,7 @@ export const router = createBrowserRouter([
   {
     element: <ProtectedRoute />,
     children: [
+      { path: '/cambiar-password-temporal', element: <CambiarPasswordTemporalPage /> },
       {
         element: <AppLayout />,
         children: [

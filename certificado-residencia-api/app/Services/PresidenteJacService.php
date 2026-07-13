@@ -4,14 +4,19 @@ namespace App\Services;
 
 use App\Models\PresidenteJac;
 use App\Models\User;
+use App\Notifications\CredencialesTemporalesNotification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 /**
  * Alta y reemplazo de presidentes JAC. Cada presidente tiene su propio
  * login (rol presidente_jac) con acceso restringido a las solicitudes de su
- * sector — ver el scoping en SolicitudController y ValidacionService.
+ * sector — ver el scoping en SolicitudController y ValidacionService. La
+ * contraseña siempre la genera el sistema y se envía por correo — nunca la
+ * escribe quien crea la cuenta (ver CredencialesTemporalesNotification).
  */
 class PresidenteJacService
 {
@@ -26,32 +31,40 @@ class PresidenteJacService
             ]);
         }
 
-        return DB::transaction(function () use ($datos) {
+        $passwordTemporal = Str::password(12);
+
+        return DB::transaction(function () use ($datos, $passwordTemporal) {
             $user = User::create([
                 'name' => $datos['nombre_completo'],
-                'email' => $datos['correo'] ?? $this->emailProvisional($datos),
-                'password' => Hash::make($datos['password']),
+                'email' => $datos['correo'],
+                'password' => Hash::make($passwordTemporal),
                 'tipo_documento' => $datos['tipo_documento'],
                 'numero_documento' => $datos['numero_identificacion'],
                 'celular' => $datos['celular'],
                 'activo' => true,
                 'email_verified_at' => now(),
+                'must_change_password' => true,
+                'password_expires_at' => now()->addHours(24),
             ]);
             $user->syncRoles(['presidente_jac']);
 
-            return PresidenteJac::create([
+            $presidente = PresidenteJac::create([
                 'sector_id' => $datos['sector_id'],
                 'nombre_completo' => $datos['nombre_completo'],
                 'tipo_documento' => $datos['tipo_documento'],
                 'numero_identificacion' => $datos['numero_identificacion'],
                 'direccion' => $datos['direccion'],
                 'celular' => $datos['celular'],
-                'correo' => $datos['correo'] ?? null,
+                'correo' => $datos['correo'],
                 'fecha_inicio_periodo' => $datos['fecha_inicio_periodo'],
                 'fecha_fin_periodo' => $datos['fecha_fin_periodo'] ?? null,
                 'estado' => 'activo',
                 'user_id' => $user->id,
             ])->load(['sector', 'user']);
+
+            $this->enviarCredenciales($user, $passwordTemporal);
+
+            return $presidente;
         });
     }
 
@@ -73,18 +86,18 @@ class PresidenteJacService
                 $actual->user->forceFill(['activo' => false])->save();
             }
 
-            $nuevo = $this->crear([...$datos, 'sector_id' => $actual->sector_id]);
-
-            return $nuevo;
+            return $this->crear([...$datos, 'sector_id' => $actual->sector_id]);
         });
     }
 
-    /**
-     * Email provisional cuando el presidente no tiene correo propio — el
-     * login sigue siendo válido, solo no recibe notificaciones por mail.
-     */
-    private function emailProvisional(array $datos): string
+    /** No bloquea la creación si el correo falla — queda registrado para diagnóstico. */
+    private function enviarCredenciales(User $user, string $passwordTemporal): void
     {
-        return 'jac.'.$datos['numero_identificacion'].'@monterrey-casanare.gov.co';
+        try {
+            Notification::route('mail', $user->email)
+                ->notify(new CredencialesTemporalesNotification($user, $passwordTemporal));
+        } catch (\Throwable $e) {
+            report($e);
+        }
     }
 }

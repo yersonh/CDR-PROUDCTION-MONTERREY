@@ -88,7 +88,11 @@ class AuthController extends Controller
     public function changePassword(ChangePasswordRequest $request): JsonResponse
     {
         $user = $request->user();
-        $user->forceFill(['password' => Hash::make($request->validated('password'))])->save();
+        $user->forceFill([
+            'password' => Hash::make($request->validated('password')),
+            'must_change_password' => false,
+            'password_expires_at' => null,
+        ])->save();
 
         // Revocar los demás tokens por seguridad
         $user->tokens()->where('id', '!=', $user->currentAccessToken()->id)->delete();
@@ -120,6 +124,8 @@ class AuthController extends Controller
                 $user->forceFill([
                     'password' => Hash::make($password),
                     'remember_token' => Str::random(60),
+                    'must_change_password' => false,
+                    'password_expires_at' => null,
                 ])->save();
 
                 $user->tokens()->delete();

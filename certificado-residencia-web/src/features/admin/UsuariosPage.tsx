@@ -94,7 +94,6 @@ function UsuarioModal({ usuario, onClose }: { usuario: User | null; onClose: () 
   const [f, setF] = useState({
     name: usuario?.name ?? '', email: usuario?.email ?? '', celular: usuario?.celular ?? '',
     rol: usuario?.roles[0] ?? '', dependencia_id: usuario?.dependencia?.id ? String(usuario.dependencia.id) : '',
-    password: '', password_confirmation: '',
   })
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setF((p) => ({ ...p, [k]: e.target.value }))
 
@@ -104,7 +103,6 @@ function UsuarioModal({ usuario, onClose }: { usuario: User | null; onClose: () 
       name: f.name, email: f.email, celular: f.celular || null, rol: f.rol,
       dependencia_id: f.dependencia_id ? Number(f.dependencia_id) : null,
     }
-    if (f.password) { payload.password = f.password; payload.password_confirmation = f.password_confirmation }
     guardar.mutate({ id: usuario?.id, payload }, { onSuccess: onClose })
   }
 
@@ -133,14 +131,11 @@ function UsuarioModal({ usuario, onClose }: { usuario: User | null; onClose: () 
           </Field>
           <Field label="Celular" htmlFor="u-cel"><Input id="u-cel" value={f.celular} onChange={set('celular')} /></Field>
         </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label={esNuevo ? 'Contraseña' : 'Nueva contraseña'} htmlFor="u-pass" required={esNuevo} hint="Mín. 8, con letras y números">
-            <Input id="u-pass" type="password" value={f.password} onChange={set('password')} required={esNuevo} />
-          </Field>
-          <Field label="Confirmar contraseña" htmlFor="u-pass2" required={esNuevo}>
-            <Input id="u-pass2" type="password" value={f.password_confirmation} onChange={set('password_confirmation')} required={esNuevo && !!f.password} />
-          </Field>
-        </div>
+        {esNuevo && (
+          <p className="text-xs text-institutional-muted">
+            Se generará una contraseña temporal y se enviará por correo al usuario, con 24 horas para cambiarla.
+          </p>
+        )}
         <div className="flex justify-end gap-2 pt-2">
           <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
           <Button type="submit" variant="primary" loading={guardar.isPending}>Guardar</Button>

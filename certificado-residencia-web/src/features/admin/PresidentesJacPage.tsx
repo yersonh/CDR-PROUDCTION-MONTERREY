@@ -27,7 +27,7 @@ export function PresidentesJacPage() {
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="flex items-center gap-2 text-2xl font-bold text-white"><UserCheck className="h-6 w-6 text-gold-light" /> Presidentes JAC</h1>
-          <p className="text-white/70">Un presidente activo por sector; cada uno tiene su propio acceso al sistema.</p>
+          <p className="text-white/70">Un presidente por sector.</p>
         </div>
         <Button variant="primary" onClick={() => setNuevoOpen(true)} disabled={sectoresDisponibles.length === 0}>
           <PlusCircle className="h-4 w-4" /> Nuevo presidente
@@ -114,7 +114,6 @@ function PresidenteJacModal({
     nombre_completo: '', tipo_documento: 'CC', numero_identificacion: '',
     direccion: '', celular: '', correo: '',
     fecha_inicio_periodo: new Date().toISOString().slice(0, 10), fecha_fin_periodo: '',
-    password: '', password_confirmation: '',
   })
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setF((p) => ({ ...p, [k]: e.target.value }))
 
@@ -122,7 +121,6 @@ function PresidenteJacModal({
     e.preventDefault()
     const payload = {
       ...f,
-      correo: f.correo || undefined,
       fecha_fin_periodo: f.fecha_fin_periodo || undefined,
     }
     if (modo === 'crear') {
@@ -176,8 +174,8 @@ function PresidenteJacModal({
           <Field label="Celular" htmlFor="pj-cel" required>
             <Input id="pj-cel" value={f.celular} onChange={set('celular')} required />
           </Field>
-          <Field label="Correo (será su usuario)" htmlFor="pj-correo" hint="Opcional; si lo deja vacío se genera uno provisional">
-            <Input id="pj-correo" type="email" value={f.correo} onChange={set('correo')} />
+          <Field label="Correo" htmlFor="pj-correo" required hint="Aquí llegarán sus credenciales de acceso">
+            <Input id="pj-correo" type="email" value={f.correo} onChange={set('correo')} required />
           </Field>
           <Field label="Inicio de periodo" htmlFor="pj-inicio" required>
             <Input id="pj-inicio" type="date" value={f.fecha_inicio_periodo} onChange={set('fecha_inicio_periodo')} required />
@@ -186,14 +184,9 @@ function PresidenteJacModal({
             <Input id="pj-fin" type="date" value={f.fecha_fin_periodo} onChange={set('fecha_fin_periodo')} />
           </Field>
         </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Contraseña" htmlFor="pj-pass" required hint="Mín. 8, con letras y números">
-            <Input id="pj-pass" type="password" value={f.password} onChange={set('password')} required />
-          </Field>
-          <Field label="Confirmar contraseña" htmlFor="pj-pass2" required>
-            <Input id="pj-pass2" type="password" value={f.password_confirmation} onChange={set('password_confirmation')} required />
-          </Field>
-        </div>
+        <p className="text-xs text-institutional-muted">
+          Se generará una contraseña temporal y se enviará a ese correo, con 24 horas para cambiarla.
+        </p>
         <div className="flex justify-end gap-2 pt-2">
           <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
           <Button type="submit" variant="primary" loading={mutando.isPending}>

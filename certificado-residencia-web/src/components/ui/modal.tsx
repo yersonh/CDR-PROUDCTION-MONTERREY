@@ -22,16 +22,18 @@ export function Modal({
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
+    <div className="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} aria-hidden />
-      <div className="relative z-10 w-full max-w-lg animate-fade-up rounded-2xl bg-white shadow-2xl">
-        <div className="flex items-center justify-between border-b border-institutional-border bg-primary px-5 py-3.5 text-white rounded-t-2xl">
-          <h2 className="font-semibold">{title}</h2>
-          <button onClick={onClose} className="rounded-md p-1 hover:bg-white/15" aria-label="Cerrar">
-            <X className="h-5 w-5" />
-          </button>
+      <div className="relative z-10 flex min-h-full items-center justify-center p-4">
+        <div className="my-8 w-full max-w-lg animate-fade-up rounded-2xl bg-white shadow-2xl">
+          <div className="flex items-center justify-between border-b border-institutional-border bg-primary px-5 py-3.5 text-white rounded-t-2xl">
+            <h2 className="font-semibold">{title}</h2>
+            <button onClick={onClose} className="rounded-md p-1 hover:bg-white/15" aria-label="Cerrar">
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+          <div className="p-5">{children}</div>
         </div>
-        <div className="max-h-[75vh] overflow-y-auto p-5">{children}</div>
       </div>
     </div>
   )

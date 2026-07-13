@@ -7,9 +7,12 @@ use App\Http\Requests\Admin\StoreUsuarioRequest;
 use App\Http\Requests\Admin\UpdateUsuarioRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
+use App\Notifications\CredencialesTemporalesNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Str;
 
 class UsuarioController extends Controller
 {
@@ -34,23 +37,28 @@ class UsuarioController extends Controller
     public function store(StoreUsuarioRequest $request): JsonResponse
     {
         $data = $request->validated();
+        $passwordTemporal = Str::password(12);
 
         $user = User::create([
             'name' => $data['name'],
             'email' => $data['email'],
-            'password' => Hash::make($data['password']),
+            'password' => Hash::make($passwordTemporal),
             'tipo_documento' => $data['tipo_documento'] ?? null,
             'numero_documento' => $data['numero_documento'] ?? null,
             'celular' => $data['celular'] ?? null,
             'dependencia_id' => $data['dependencia_id'] ?? null,
             'activo' => true,
             'email_verified_at' => now(),
+            'must_change_password' => true,
+            'password_expires_at' => now()->addHours(24),
         ]);
 
         $user->syncRoles([$data['rol']]);
 
+        $this->enviarCredenciales($user, $passwordTemporal);
+
         return (new UserResource($user->load(['roles'])))
-            ->additional(['message' => 'Usuario creado correctamente.'])
+            ->additional(['message' => 'Usuario creado correctamente. Se enviaron las credenciales de acceso por correo.'])
             ->response()
             ->setStatusCode(201);
     }
@@ -59,10 +67,7 @@ class UsuarioController extends Controller
     {
         $data = $request->validated();
 
-        $usuario->fill(collect($data)->except(['password', 'rol'])->all());
-        if (! empty($data['password'])) {
-            $usuario->password = Hash::make($data['password']);
-        }
+        $usuario->fill(collect($data)->except(['rol'])->all());
         $usuario->save();
 
         if (! empty($data['rol'])) {
@@ -83,5 +88,16 @@ class UsuarioController extends Controller
             'message' => $usuario->activo ? 'Usuario activado.' : 'Usuario desactivado.',
             'activo' => $usuario->activo,
         ]);
+    }
+
+    /** No bloquea la creación del usuario si el correo falla — queda registrado para diagnóstico. */
+    private function enviarCredenciales(User $user, string $passwordTemporal): void
+    {
+        try {
+            Notification::route('mail', $user->email)
+                ->notify(new CredencialesTemporalesNotification($user, $passwordTemporal));
+        } catch (\Throwable $e) {
+            report($e);
+        }
     }
 }

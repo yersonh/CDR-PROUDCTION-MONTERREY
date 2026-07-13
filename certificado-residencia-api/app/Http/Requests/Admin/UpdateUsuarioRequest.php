@@ -4,7 +4,6 @@ namespace App\Http\Requests\Admin;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules\Password;
 
 class UpdateUsuarioRequest extends FormRequest
 {
@@ -23,7 +22,6 @@ class UpdateUsuarioRequest extends FormRequest
         return [
             'name' => ['sometimes', 'string', 'max:255'],
             'email' => ['sometimes', 'email', 'max:255', Rule::unique('users', 'email')->ignore($id)],
-            'password' => ['nullable', 'confirmed', Password::min(8)->letters()->numbers()],
             'tipo_documento' => ['nullable', 'string', 'max:10'],
             'numero_documento' => ['nullable', 'string', 'max:40', Rule::unique('users', 'numero_documento')->ignore($id)],
             'celular' => ['nullable', 'string', 'max:30'],

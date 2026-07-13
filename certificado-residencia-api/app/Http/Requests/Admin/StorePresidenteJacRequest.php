@@ -3,7 +3,6 @@
 namespace App\Http\Requests\Admin;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rules\Password;
 
 class StorePresidenteJacRequest extends FormRequest
 {
@@ -24,10 +23,9 @@ class StorePresidenteJacRequest extends FormRequest
             'numero_identificacion' => ['required', 'string', 'max:40', 'unique:users,numero_documento', 'unique:presidentes_jac,numero_identificacion'],
             'direccion' => ['required', 'string', 'max:255'],
             'celular' => ['required', 'string', 'max:30'],
-            'correo' => ['nullable', 'email', 'max:255', 'unique:users,email'],
+            'correo' => ['required', 'email', 'max:255', 'unique:users,email'],
             'fecha_inicio_periodo' => ['required', 'date'],
             'fecha_fin_periodo' => ['nullable', 'date', 'after:fecha_inicio_periodo'],
-            'password' => ['required', 'confirmed', Password::min(8)->letters()->numbers()],
         ];
     }
 }

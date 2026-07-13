@@ -17,6 +17,7 @@ use Spatie\Permission\Traits\HasRoles;
 #[Fillable([
     'name', 'email', 'password', 'tipo_documento', 'numero_documento',
     'celular', 'dependencia_id', 'activo', 'last_login_at', 'firma_path', 'foto_path',
+    'must_change_password', 'password_expires_at',
 ])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
@@ -34,6 +35,8 @@ class User extends Authenticatable
             'last_login_at' => 'datetime',
             'password' => 'hashed',
             'activo' => 'boolean',
+            'must_change_password' => 'boolean',
+            'password_expires_at' => 'datetime',
         ];
     }
 

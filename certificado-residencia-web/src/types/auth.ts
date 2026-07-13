@@ -19,6 +19,7 @@ export interface User {
   numero_documento: string | null
   celular: string | null
   activo: boolean
+  must_change_password: boolean
   dependencia?: Dependencia | null
   roles: string[]
   permisos: string[]

@@ -23,6 +23,7 @@ class UserResource extends JsonResource
             'numero_documento' => $this->numero_documento,
             'celular' => $this->celular,
             'activo' => $this->activo,
+            'must_change_password' => $this->must_change_password,
             'dependencia' => $this->when($this->dependencia_id !== null, function () {
                 try {
                     $dependencia = app(ClienteCore::class)->dependencia($this->dependencia_id);
