@@ -82,3 +82,74 @@ export function useEliminarDependencia() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'dependencias'] }),
   })
 }
+
+// ---------------- Sectores ----------------
+export interface SectorAdmin {
+  id: number
+  nombre: string
+  tipo: 'barrio' | 'vereda'
+  zona: 'urbana' | 'rural'
+  activo: boolean
+  presidentes_jac_count: number
+}
+export function useSectoresAdmin() {
+  return useQuery({
+    queryKey: ['admin', 'sectores'],
+    queryFn: async () => (await api.get<{ data: SectorAdmin[] }>('/admin/sectores')).data.data,
+  })
+}
+export function useGuardarSector() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, payload }: { id?: number; payload: Record<string, unknown> }) => {
+      const { data } = id
+        ? await api.put(`/admin/sectores/${id}`, payload)
+        : await api.post('/admin/sectores', payload)
+      return data
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin', 'sectores'] })
+      qc.invalidateQueries({ queryKey: ['catalogos'] })
+      qc.invalidateQueries({ queryKey: ['public-catalogos'] })
+    },
+  })
+}
+
+// ---------------- Presidentes JAC ----------------
+export interface PresidenteJac {
+  id: number
+  sector: { id: number; nombre: string }
+  nombre_completo: string
+  tipo_documento: string
+  numero_identificacion: string
+  direccion: string
+  celular: string
+  correo: string | null
+  fecha_inicio_periodo: string
+  fecha_fin_periodo: string | null
+  estado: 'activo' | 'reemplazado'
+  user: { id: number; email: string; activo: boolean } | null
+}
+export function usePresidentesJac(sectorId?: number) {
+  return useQuery({
+    queryKey: ['admin', 'presidentes-jac', sectorId],
+    queryFn: async () => (await api.get<Paginated<PresidenteJac>>('/admin/presidentes-jac', {
+      params: { sector_id: sectorId, per_page: 50 },
+    })).data,
+  })
+}
+export function useCrearPresidenteJac() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (payload: Record<string, unknown>) => (await api.post('/admin/presidentes-jac', payload)).data,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'presidentes-jac'] }),
+  })
+}
+export function useReemplazarPresidenteJac() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, payload }: { id: number; payload: Record<string, unknown> }) =>
+      (await api.post(`/admin/presidentes-jac/${id}/reemplazar`, payload)).data,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'presidentes-jac'] }),
+  })
+}

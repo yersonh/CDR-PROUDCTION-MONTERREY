@@ -34,7 +34,7 @@ class StoreSolicitudPublicaRequest extends FormRequest
             'direccion' => ['required', 'string', 'max:255'],
             'correo' => ['required', 'email', 'max:255'],
             'celular' => ['required', 'string', 'max:10', 'regex:/^\d{7,10}$/'],
-            'barrio_vereda_sector' => ['required', 'string', 'max:255'],
+            'sector_id' => ['required', 'exists:sectores,id'],
             'motivo' => ['nullable', 'string', 'max:1000'],
             'tipo_certificado' => ['required', Rule::enum(TipoCertificado::class)],
             'medio_acreditacion' => ['required', Rule::enum(MedioAcreditacion::class)],
@@ -102,7 +102,7 @@ class StoreSolicitudPublicaRequest extends FormRequest
         return [
             'nombre_completo' => 'nombre completo',
             'numero_identificacion' => 'número de identificación',
-            'barrio_vereda_sector' => 'barrio, vereda o sector',
+            'sector_id' => 'barrio, vereda o sector',
             'tipo_certificado' => 'tipo de certificado',
             'medio_acreditacion' => 'medio de acreditación',
         ];

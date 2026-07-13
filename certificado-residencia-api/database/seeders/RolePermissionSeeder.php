@@ -24,6 +24,7 @@ class RolePermissionSeeder extends Seeder
         // Solicitudes
         'solicitudes.ver_propias',
         'solicitudes.ver_todas',
+        'solicitudes.ver_sector',
         'solicitudes.direccionar',
         // Recibidos de VUR (bandeja peer-to-peer, no pasa por el Core)
         'recibidos-vur.crear',
@@ -51,6 +52,8 @@ class RolePermissionSeeder extends Seeder
         'admin.usuarios',
         'admin.roles',
         'admin.dependencias',
+        'admin.sectores',
+        'admin.presidentes_jac',
     ];
 
     /** Permisos asignados a cada rol (super_admin recibe todos). */
@@ -75,8 +78,11 @@ class RolePermissionSeeder extends Seeder
         'funcionario_sisben' => [
             'solicitudes.ver_todas', 'soportes.cargar_sisben', 'expedientes.ver', 'dashboard.ver',
         ],
+        // Cada Presidente JAC tiene su propio login, atado a un sector
+        // (ver PresidenteJac) — solicitudes.ver_sector reemplaza a
+        // ver_todas para que solo vea/certifique lo de su propio sector.
         'presidente_jac' => [
-            'solicitudes.ver_todas', 'soportes.cargar_jac', 'expedientes.ver', 'dashboard.ver',
+            'solicitudes.ver_sector', 'soportes.cargar_jac', 'expedientes.ver', 'dashboard.ver',
         ],
     ];
 

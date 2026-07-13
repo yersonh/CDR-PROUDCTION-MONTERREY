@@ -28,5 +28,6 @@ readonly class CreateSolicitudData
         public ?int $createdBy = null,
         public ?string $radicadoVur = null,
         public ?int $recibidoVurId = null,
+        public ?int $sectorId = null,
     ) {}
 }

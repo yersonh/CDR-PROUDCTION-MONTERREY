@@ -197,11 +197,17 @@ function SoporteForm({ solicitud, tipo, titulo }: { solicitud: Solicitud; tipo: 
   )
 }
 
-/** Carga de la certificación JAC con sus campos obligatorios. */
+/**
+ * Carga de la certificación JAC. Presidente y sector ya no se escriben a
+ * mano: cada Presidente JAC tiene su propio login atado a un sector (ver
+ * PresidenteJac en el backend), así que aquí solo se muestran de solo
+ * lectura, tomados de la sesión y de la solicitud.
+ */
 function JacForm({ solicitud }: { solicitud: Solicitud }) {
+  const { user } = useAuth()
   const registrar = useRegistrarValidacion(solicitud.id)
   const [file, setFile] = useState<File | null>(null)
-  const [f, setF] = useState({ codigo_verificacion: '', fecha_expedicion: '', fecha_vencimiento: '', presidente: '', sector: '', qr: '' })
+  const [f, setF] = useState({ codigo_verificacion: '', fecha_expedicion: '', fecha_vencimiento: '', qr: '' })
   const [error, setError] = useState<string>()
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement>) => setF((p) => ({ ...p, [k]: e.target.value }))
 
@@ -210,6 +216,8 @@ function JacForm({ solicitud }: { solicitud: Solicitud }) {
     const fd = new FormData()
     fd.append('tipo', 'jac')
     fd.append('soporte', file)
+    fd.append('presidente', user?.name ?? '')
+    fd.append('sector', solicitud.sector?.nombre ?? solicitud.ciudadano.barrio_vereda_sector)
     Object.entries(f).forEach(([k, v]) => v && fd.append(k, v))
     registrar.mutate(fd)
   }
@@ -220,10 +228,10 @@ function JacForm({ solicitud }: { solicitud: Solicitud }) {
       <FileUpload file={file} onChange={(x) => { setFile(x); setError(undefined) }} error={error} />
       <div className="grid gap-3 sm:grid-cols-2">
         <Field label="Código de verificación" htmlFor="jac-cod" required><Input id="jac-cod" value={f.codigo_verificacion} onChange={set('codigo_verificacion')} /></Field>
-        <Field label="Presidente JAC" htmlFor="jac-pre" required><Input id="jac-pre" value={f.presidente} onChange={set('presidente')} /></Field>
+        <Field label="Presidente JAC" htmlFor="jac-pre"><Input id="jac-pre" value={user?.name ?? ''} disabled /></Field>
         <Field label="Fecha de expedición" htmlFor="jac-fe" required><Input id="jac-fe" type="date" value={f.fecha_expedicion} onChange={set('fecha_expedicion')} /></Field>
         <Field label="Fecha de vencimiento" htmlFor="jac-fv" required><Input id="jac-fv" type="date" value={f.fecha_vencimiento} onChange={set('fecha_vencimiento')} /></Field>
-        <Field label="Sector / barrio / vereda" htmlFor="jac-sec" required><Input id="jac-sec" value={f.sector} onChange={set('sector')} /></Field>
+        <Field label="Sector / barrio / vereda" htmlFor="jac-sec"><Input id="jac-sec" value={solicitud.sector?.nombre ?? solicitud.ciudadano.barrio_vereda_sector} disabled /></Field>
         <Field label="Código QR (URL)" htmlFor="jac-qr"><Input id="jac-qr" value={f.qr} onChange={set('qr')} placeholder="Opcional" /></Field>
       </div>
       <Button variant="primary" onClick={submit} loading={registrar.isPending}>Cargar certificación JAC</Button>

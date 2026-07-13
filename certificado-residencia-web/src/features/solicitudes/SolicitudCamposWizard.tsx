@@ -61,8 +61,11 @@ export function DatosCiudadanoStep({ register, errors, catalogos }: StepProps) {
       <Field label="Dirección de residencia" htmlFor="direccion" required error={errors.direccion?.message} className="sm:col-span-2">
         <Input id="direccion" aria-invalid={!!errors.direccion} {...register('direccion')} />
       </Field>
-      <Field label="Barrio, vereda o sector" htmlFor="barrio_vereda_sector" required error={errors.barrio_vereda_sector?.message}>
-        <Input id="barrio_vereda_sector" aria-invalid={!!errors.barrio_vereda_sector} {...register('barrio_vereda_sector')} />
+      <Field label="Barrio, vereda o sector" htmlFor="sector_id" required error={errors.sector_id?.message}>
+        <Select id="sector_id" aria-invalid={!!errors.sector_id} {...register('sector_id')}>
+          <option value="">Seleccione…</option>
+          {catalogos?.sectores.map((s) => <option key={s.id} value={s.id}>{s.nombre}</option>)}
+        </Select>
       </Field>
       <Field label="Motivo de la solicitud" htmlFor="motivo" error={errors.motivo?.message}>
         <Input id="motivo" placeholder="Opcional" {...register('motivo')} />

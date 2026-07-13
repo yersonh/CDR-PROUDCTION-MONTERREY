@@ -7,7 +7,9 @@ use App\Http\Controllers\Api\V1\CertificadoController;
 use App\Http\Controllers\Api\V1\ConsultaPublicaController;
 use App\Http\Controllers\Api\V1\DashboardController;
 use App\Http\Controllers\Api\V1\Admin\DependenciaController;
+use App\Http\Controllers\Api\V1\Admin\PresidenteJacController;
 use App\Http\Controllers\Api\V1\Admin\RolController;
+use App\Http\Controllers\Api\V1\Admin\SectorController;
 use App\Http\Controllers\Api\V1\Admin\UsuarioController;
 use App\Http\Controllers\Api\V1\NotificacionController;
 use App\Http\Controllers\Api\V1\ProfileController;
@@ -123,6 +125,15 @@ Route::prefix('v1')->group(function () {
             Route::get('roles', [RolController::class, 'index'])->middleware('permission:admin.roles');
 
             Route::get('dependencias', [DependenciaController::class, 'index'])->middleware('permission:admin.dependencias');
+
+            Route::get('sectores', [SectorController::class, 'index'])->middleware('permission:admin.sectores');
+            Route::post('sectores', [SectorController::class, 'store'])->middleware('permission:admin.sectores');
+            Route::put('sectores/{sector}', [SectorController::class, 'update'])->middleware('permission:admin.sectores');
+
+            Route::get('presidentes-jac', [PresidenteJacController::class, 'index'])->middleware('permission:admin.presidentes_jac');
+            Route::post('presidentes-jac', [PresidenteJacController::class, 'store'])->middleware('permission:admin.presidentes_jac');
+            Route::put('presidentes-jac/{presidenteJac}', [PresidenteJacController::class, 'update'])->middleware('permission:admin.presidentes_jac');
+            Route::post('presidentes-jac/{presidenteJac}/reemplazar', [PresidenteJacController::class, 'reemplazar'])->middleware('permission:admin.presidentes_jac');
         });
     });
 });

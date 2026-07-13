@@ -6,6 +6,8 @@ use App\DTOs\CreateSolicitudData;
 use App\Enums\MedioAcreditacion;
 use App\Enums\ResultadoValidacion;
 use App\Enums\TipoCertificado;
+use App\Models\PresidenteJac;
+use App\Models\Sector;
 use App\Models\User;
 use App\Services\CertificadoService;
 use App\Services\SolicitudService;
@@ -36,6 +38,27 @@ class DemoSeeder extends Seeder
             return;
         }
 
+        // El usuario demo "Presidente JAC" (ver UserSeeder) necesita estar
+        // atado a un sector para poder certificar algo — cada presidente
+        // ahora solo ve/certifica lo de su propio sector.
+        $barrioCentro = Sector::where('nombre', 'Barrio Centro')->first();
+        $jac = User::role('presidente_jac')->first();
+
+        if ($barrioCentro && $jac && ! PresidenteJac::where('user_id', $jac->id)->exists()) {
+            PresidenteJac::create([
+                'sector_id' => $barrioCentro->id,
+                'nombre_completo' => $jac->name,
+                'tipo_documento' => 'CC',
+                'numero_identificacion' => '43000111',
+                'direccion' => 'Dirección Presidente JAC (demo)',
+                'celular' => '3100000000',
+                'correo' => $jac->email,
+                'fecha_inicio_periodo' => now()->subYear()->toDateString(),
+                'estado' => 'activo',
+                'user_id' => $jac->id,
+            ]);
+        }
+
         $solicitudes = app(SolicitudService::class);
         $validaciones = app(ValidacionService::class);
         $certificados = app(CertificadoService::class);
@@ -62,6 +85,7 @@ class DemoSeeder extends Seeder
                 correo: strtolower(explode(' ', $nombre)[0]).'@example.com',
                 celular: '31000'.$doc,
                 barrioVeredaSector: $sector,
+                sectorId: Sector::where('nombre', $sector)->value('id'),
                 motivo: 'Trámite de demostración',
                 tipoCertificado: TipoCertificado::General,
                 medioAcreditacion: $medio,

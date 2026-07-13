@@ -7,6 +7,7 @@ use App\Enums\EstadoSolicitud;
 use App\Enums\MedioAcreditacion;
 use App\Jobs\NotificarEstadoRecibidoAVur;
 use App\Models\Expediente;
+use App\Models\PresidenteJac;
 use App\Models\RecibidoVur;
 use App\Models\Solicitud;
 use App\Notifications\SolicitudRadicadaNotification;
@@ -112,6 +113,7 @@ class SolicitudService
                 'correo' => $data->correo,
                 'celular' => $data->celular,
                 'barrio_vereda_sector' => $data->barrioVeredaSector,
+                'sector_id' => $data->sectorId,
                 'motivo' => $data->motivo,
                 'estado' => EstadoSolicitud::Radicada,
                 'justificacion_especial' => $data->justificacionEspecial,
@@ -193,17 +195,33 @@ class SolicitudService
     private function notificarNuevaSolicitud(Solicitud $solicitud): void
     {
         try {
+            $mensaje = "Nueva solicitud {$solicitud->radicado} de {$solicitud->nombre_completo} requiere su gestión.";
+
+            // JAC ya no es un rol genérico: cada presidente solo ve su
+            // propio sector (ver PresidenteJac), así que se notifica
+            // puntualmente al presidente vigente de ese sector, no a todos
+            // los que tengan el rol. Si el sector no tiene presidente
+            // asignado todavía, se avisa a Secretaría para que lo gestione.
+            if ($solicitud->medio_acreditacion === MedioAcreditacion::Jac) {
+                $userId = PresidenteJac::where('sector_id', $solicitud->sector_id)
+                    ->where('estado', 'activo')
+                    ->value('user_id');
+
+                if ($userId) {
+                    $this->notificaciones->notificarUsuarios([$userId], $mensaje, $solicitud);
+                } else {
+                    $this->notificaciones->notificarRoles(['secretaria'], $mensaje, $solicitud);
+                }
+
+                return;
+            }
+
             $roles = match ($solicitud->medio_acreditacion) {
                 MedioAcreditacion::Sisben => ['funcionario_sisben'],
-                MedioAcreditacion::Jac => ['presidente_jac'],
                 default => ['secretaria'],
             };
 
-            $this->notificaciones->notificarRoles(
-                $roles,
-                "Nueva solicitud {$solicitud->radicado} de {$solicitud->nombre_completo} requiere su gestión.",
-                $solicitud,
-            );
+            $this->notificaciones->notificarRoles($roles, $mensaje, $solicitud);
         } catch (\Throwable $e) {
             report($e);
         }

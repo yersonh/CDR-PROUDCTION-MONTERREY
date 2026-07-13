@@ -6,6 +6,7 @@ use App\Enums\EstadoSolicitud;
 use App\Enums\MedioAcreditacion;
 use App\Enums\TipoCertificado;
 use App\Http\Controllers\Controller;
+use App\Models\Sector;
 use App\Services\ClienteCore;
 use Illuminate\Http\JsonResponse;
 
@@ -34,6 +35,10 @@ class CatalogoController extends Controller
             'dependencias' => collect($this->core->dependencias())
                 ->map(fn ($d) => ['id' => $d['id'], 'nombre' => $d['nombre']])
                 ->sortBy('nombre')
+                ->values(),
+            'sectores' => Sector::where('activo', true)
+                ->orderBy('nombre')
+                ->get(['id', 'nombre', 'tipo', 'zona'])
                 ->values(),
         ]);
     }

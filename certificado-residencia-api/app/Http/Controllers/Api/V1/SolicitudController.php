@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\SolicitudResource;
 use App\Models\ExpedienteDocumento;
 use App\Models\Solicitud;
+use App\Models\User;
 use App\Services\SolicitudService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -30,8 +31,12 @@ class SolicitudController extends Controller
 
         // Alcance según permisos
         if (! $user->can('solicitudes.ver_todas')) {
-            abort_unless($user->can('solicitudes.ver_propias'), Response::HTTP_FORBIDDEN);
-            $query->where('ciudadano_id', $user->id);
+            if ($user->can('solicitudes.ver_sector')) {
+                $query->where('sector_id', $this->sectorDelPresidente($user));
+            } else {
+                abort_unless($user->can('solicitudes.ver_propias'), Response::HTTP_FORBIDDEN);
+                $query->where('ciudadano_id', $user->id);
+            }
         }
 
         // Filtros
@@ -63,11 +68,7 @@ class SolicitudController extends Controller
     {
         $user = $request->user();
 
-        $esPropia = $solicitud->ciudadano_id === $user->id;
-        abort_unless(
-            $user->can('solicitudes.ver_todas') || ($user->can('solicitudes.ver_propias') && $esPropia),
-            Response::HTTP_FORBIDDEN,
-        );
+        $this->autorizarAccesoSolicitud($user, $solicitud);
 
         $solicitud->load([
             'expediente.documentos',
@@ -90,15 +91,38 @@ class SolicitudController extends Controller
     {
         $user = $request->user();
 
-        $esPropia = $solicitud->ciudadano_id === $user->id;
-        abort_unless(
-            $user->can('solicitudes.ver_todas') || ($user->can('solicitudes.ver_propias') && $esPropia),
-            Response::HTTP_FORBIDDEN,
-        );
+        $this->autorizarAccesoSolicitud($user, $solicitud);
 
         abort_unless($documento->expediente->solicitud_id === $solicitud->id, Response::HTTP_NOT_FOUND);
         abort_unless(Storage::disk($documento->disk)->exists($documento->path), Response::HTTP_NOT_FOUND);
 
         return Storage::disk($documento->disk)->response($documento->path, $documento->nombre_original);
+    }
+
+    /**
+     * Mismo criterio de alcance que index(): dueño del expediente, alguien
+     * con solicitudes.ver_todas, o el Presidente JAC del sector exacto de
+     * la solicitud (solicitudes.ver_sector).
+     */
+    private function autorizarAccesoSolicitud(User $user, Solicitud $solicitud): void
+    {
+        if ($user->can('solicitudes.ver_todas')) {
+            return;
+        }
+
+        if ($user->can('solicitudes.ver_sector')) {
+            abort_unless($solicitud->sector_id === $this->sectorDelPresidente($user), Response::HTTP_FORBIDDEN);
+            return;
+        }
+
+        abort_unless(
+            $user->can('solicitudes.ver_propias') && $solicitud->ciudadano_id === $user->id,
+            Response::HTTP_FORBIDDEN,
+        );
+    }
+
+    private function sectorDelPresidente(User $user): ?int
+    {
+        return $user->presidenteJac()->where('estado', 'activo')->value('sector_id');
     }
 }

@@ -20,7 +20,7 @@ const STEPS = ['Datos del ciudadano', 'Certificado y soporte', 'Confirmación']
 
 const DEFAULT_VALUES: SolicitudFormValues = {
   nombre_completo: '', tipo_documento: '', numero_identificacion: '', direccion: '',
-  correo: '', celular: '', barrio_vereda_sector: '', motivo: '',
+  correo: '', celular: '', sector_id: '', motivo: '',
   tipo_certificado: '', medio_acreditacion: '', justificacion_especial: '',
 }
 

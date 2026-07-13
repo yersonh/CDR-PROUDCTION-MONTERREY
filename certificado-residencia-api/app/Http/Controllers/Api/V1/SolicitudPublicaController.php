@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Solicitud\PreviewSolicitudPublicaRequest;
 use App\Http\Requests\Solicitud\StoreSolicitudPublicaRequest;
+use App\Models\Sector;
 use App\Services\SolicitudPublicaService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response as HttpResponse;
@@ -25,6 +26,11 @@ class SolicitudPublicaController extends Controller
         $datos = collect($request->validated())
             ->except(['sitio_web', 'soporte', 'documento_identidad', 'documento_firmado'])
             ->all();
+
+        // barrio_vereda_sector se conserva como copia legible del sector
+        // elegido (PDF, reportes, pantallas existentes ya lo consumen como
+        // texto); sector_id es el vínculo estructurado nuevo.
+        $datos['barrio_vereda_sector'] = Sector::findOrFail($datos['sector_id'])->nombre;
 
         $solicitud = $this->solicitudesPublicas->crear(
             $datos,
@@ -48,7 +54,10 @@ class SolicitudPublicaController extends Controller
      */
     public function preview(PreviewSolicitudPublicaRequest $request): HttpResponse
     {
-        $pdf = $this->solicitudesPublicas->renderPreview($request->validated());
+        $datos = $request->validated();
+        $datos['barrio_vereda_sector'] = Sector::findOrFail($datos['sector_id'])->nombre;
+
+        $pdf = $this->solicitudesPublicas->renderPreview($datos);
 
         return response($pdf, Response::HTTP_OK, ['Content-Type' => 'application/pdf']);
     }

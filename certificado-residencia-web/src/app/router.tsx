@@ -17,6 +17,8 @@ import { PerfilPage } from '@/features/perfil/PerfilPage'
 import { UsuariosPage } from '@/features/admin/UsuariosPage'
 import { DependenciasPage } from '@/features/admin/DependenciasPage'
 import { RolesPage } from '@/features/admin/RolesPage'
+import { SectoresPage } from '@/features/admin/SectoresPage'
+import { PresidentesJacPage } from '@/features/admin/PresidentesJacPage'
 
 export const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
@@ -41,6 +43,8 @@ export const router = createBrowserRouter([
           { path: '/admin/usuarios', element: <UsuariosPage /> },
           { path: '/admin/dependencias', element: <DependenciasPage /> },
           { path: '/admin/roles', element: <RolesPage /> },
+          { path: '/admin/sectores', element: <SectoresPage /> },
+          { path: '/admin/presidentes-jac', element: <PresidentesJacPage /> },
         ],
       },
     ],

@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Jobs\EnviarSolicitudPublicaAVur;
+use App\Models\Sector;
 use App\Models\SolicitudPublica;
 use App\Services\ClienteVur;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -17,10 +18,13 @@ class SolicitudPublicaTest extends TestCase
 {
     use RefreshDatabase;
 
+    private Sector $sector;
+
     protected function setUp(): void
     {
         parent::setUp();
         Storage::fake('local');
+        $this->sector = Sector::create(['nombre' => 'Centro', 'tipo' => 'barrio', 'zona' => 'urbana']);
     }
 
     private function payload(array $overrides = []): array
@@ -32,6 +36,7 @@ class SolicitudPublicaTest extends TestCase
             'direccion' => 'Calle 5 # 6-7',
             'correo' => 'ana@example.com',
             'celular' => '3001112233',
+            'sector_id' => $this->sector->id,
             'barrio_vereda_sector' => 'Centro',
             'tipo_certificado' => 'general',
             'medio_acreditacion' => 'sisben',

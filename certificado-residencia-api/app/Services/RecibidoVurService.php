@@ -101,6 +101,7 @@ class RecibidoVurService
                 correo: $origen->correo,
                 celular: $origen->celular,
                 barrioVeredaSector: $origen->barrio_vereda_sector,
+                sectorId: $origen->sector_id,
                 motivo: $origen->motivo,
                 tipoCertificado: $origen->tipo_certificado,
                 medioAcreditacion: $origen->medio_acreditacion,

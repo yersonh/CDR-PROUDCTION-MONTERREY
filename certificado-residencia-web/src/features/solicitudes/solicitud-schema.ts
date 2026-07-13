@@ -12,7 +12,7 @@ export const solicitudSchema = z
       .min(7, 'Ingrese un celular válido')
       .max(10, 'El celular no puede tener más de 10 dígitos')
       .regex(/^\d+$/, 'El celular solo debe contener números'),
-    barrio_vereda_sector: z.string().min(2, 'Ingrese el barrio, vereda o sector').max(255),
+    sector_id: z.string().min(1, 'Seleccione el barrio, vereda o sector'),
     motivo: z.string().max(1000).optional(),
     tipo_certificado: z.string().min(1, 'Seleccione el tipo de certificado'),
     medio_acreditacion: z.string().min(1, 'Seleccione el medio de acreditación'),
@@ -43,6 +43,6 @@ export type SolicitudFormValues = z.infer<typeof solicitudSchema>
 
 /** Campos validados en cada paso del wizard. */
 export const STEP_FIELDS: (keyof SolicitudFormValues)[][] = [
-  ['nombre_completo', 'tipo_documento', 'numero_identificacion', 'direccion', 'correo', 'celular', 'barrio_vereda_sector', 'motivo'],
+  ['nombre_completo', 'tipo_documento', 'numero_identificacion', 'direccion', 'correo', 'celular', 'sector_id', 'motivo'],
   ['tipo_certificado', 'medio_acreditacion', 'justificacion_especial'],
 ]

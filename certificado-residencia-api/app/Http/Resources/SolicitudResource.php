@@ -41,6 +41,7 @@ class SolicitudResource extends JsonResource
                 'celular' => $this->celular,
                 'barrio_vereda_sector' => $this->barrio_vereda_sector,
             ],
+            'sector' => $this->sector_id ? ['id' => $this->sector_id, 'nombre' => $this->sector?->nombre] : null,
             'motivo' => $this->motivo,
             'justificacion_especial' => $this->justificacion_especial,
             'fecha_radicacion' => $this->fecha_radicacion,

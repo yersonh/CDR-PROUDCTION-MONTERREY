@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\DTOs\CreateSolicitudData;
 use App\Enums\MedioAcreditacion;
 use App\Enums\TipoCertificado;
+use App\Models\PresidenteJac;
+use App\Models\Sector;
 use App\Models\Solicitud;
 use App\Models\User;
 use App\Services\SolicitudService;
@@ -35,7 +37,7 @@ class NotificacionesTest extends TestCase
         return $user;
     }
 
-    private function radicar(string $medio, string $createdByRol = 'secretaria'): Solicitud
+    private function radicar(string $medio, string $createdByRol = 'secretaria', ?int $sectorId = null): Solicitud
     {
         $data = new CreateSolicitudData(
             nombreCompleto: 'Test',
@@ -51,9 +53,30 @@ class NotificacionesTest extends TestCase
             justificacionEspecial: $medio === 'especial' ? 'motivo' : null,
             soporte: null,
             createdBy: $this->usuarioCon($createdByRol)->id,
+            sectorId: $sectorId,
         );
 
         return app(SolicitudService::class)->radicar($data);
+    }
+
+    /** Presidente JAC "real": con su Sector y registro PresidenteJac vinculados (no solo el rol). */
+    private function presidenteJacCon(): array
+    {
+        $sector = Sector::create(['nombre' => 'Sector Test '.uniqid(), 'tipo' => 'barrio', 'zona' => 'urbana']);
+        $user = $this->usuarioCon('presidente_jac');
+        PresidenteJac::create([
+            'sector_id' => $sector->id,
+            'nombre_completo' => $user->name,
+            'tipo_documento' => 'CC',
+            'numero_identificacion' => (string) random_int(10000000, 99999999),
+            'direccion' => 'x',
+            'celular' => '3000000000',
+            'fecha_inicio_periodo' => now()->toDateString(),
+            'estado' => 'activo',
+            'user_id' => $user->id,
+        ]);
+
+        return [$user, $sector];
     }
 
     public function test_solicitud_sisben_notifica_al_funcionario_sisben(): void
@@ -70,10 +93,10 @@ class NotificacionesTest extends TestCase
 
     public function test_solicitud_jac_notifica_al_presidente_jac_no_al_sisben(): void
     {
-        $jac = $this->usuarioCon('presidente_jac');
+        [$jac, $sector] = $this->presidenteJacCon();
         $sisben = $this->usuarioCon('funcionario_sisben');
 
-        $this->radicar('jac');
+        $this->radicar('jac', sectorId: $sector->id);
 
         $this->assertDatabaseHas('notificaciones', ['user_id' => $jac->id]);
         $this->assertDatabaseMissing('notificaciones', ['user_id' => $sisben->id]);
@@ -107,10 +130,10 @@ class NotificacionesTest extends TestCase
     public function test_marcar_leida_baja_el_contador_y_no_permite_marcar_ajenas(): void
     {
         $sisben = $this->usuarioCon('funcionario_sisben');
-        $otro = $this->usuarioCon('presidente_jac');
+        [$otro, $sector] = $this->presidenteJacCon();
 
         $this->radicar('sisben');
-        $this->radicar('jac');
+        $this->radicar('jac', sectorId: $sector->id);
 
         Sanctum::actingAs($sisben);
         $notificacionPropia = $sisben->notificaciones()->first();

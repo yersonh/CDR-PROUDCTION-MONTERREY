@@ -37,4 +37,30 @@ class NotificacionService
             'updated_at' => $ahora,
         ])->all());
     }
+
+    /**
+     * Crea una notificación para usuarios puntuales (p. ej. el Presidente
+     * JAC del sector exacto de una solicitud, en vez de todos los que
+     * tengan ese rol).
+     *
+     * @param  int[]  $userIds
+     */
+    public function notificarUsuarios(array $userIds, string $mensaje, ?Solicitud $solicitud = null, string $tipo = 'solicitud.nueva'): void
+    {
+        if (empty($userIds)) {
+            return;
+        }
+
+        $ahora = now();
+
+        Notificacion::insert(array_map(fn (int $id) => [
+            'user_id' => $id,
+            'solicitud_id' => $solicitud?->id,
+            'tipo' => $tipo,
+            'mensaje' => $mensaje,
+            'leida_at' => null,
+            'created_at' => $ahora,
+            'updated_at' => $ahora,
+        ], $userIds));
+    }
 }

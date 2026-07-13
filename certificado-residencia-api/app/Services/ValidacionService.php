@@ -54,6 +54,19 @@ class ValidacionService
         ?string $observacion,
         User $actor,
     ): Validacion {
+        // Cada Presidente JAC solo puede certificar solicitudes de su propio
+        // sector (login individual por sector, ver PresidenteJac) — a menos
+        // que tenga solicitudes.ver_todas (Super Admin operando en su nombre).
+        if ($tipo === 'jac' && ! $actor->can('solicitudes.ver_todas')) {
+            $sectorActor = $actor->presidenteJac()->where('estado', 'activo')->value('sector_id');
+
+            if ($sectorActor === null || $sectorActor !== $solicitud->sector_id) {
+                throw ValidationException::withMessages([
+                    'tipo' => 'No tiene autorización para certificar solicitudes de este sector.',
+                ]);
+            }
+        }
+
         // SISBEN y JAC son un concepto único del especialista: una sola
         // Respuesta de Oficio / certificación por solicitud, no una por
         // cada intento. Electoral sí admite volver a validar (p. ej. tras

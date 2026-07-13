@@ -13,6 +13,7 @@ export interface Catalogos {
   estados: EstadoOption[]
   tipos_documento: string[]
   dependencias: { id: number; nombre: string }[]
+  sectores: { id: number; nombre: string; tipo: 'barrio' | 'vereda'; zona: 'urbana' | 'rural' }[]
 }
 
 export interface Documento {
@@ -86,6 +87,7 @@ export interface Solicitud {
     celular: string
     barrio_vereda_sector: string
   }
+  sector: { id: number; nombre: string } | null
   motivo: string | null
   justificacion_especial: string | null
   fecha_radicacion: string

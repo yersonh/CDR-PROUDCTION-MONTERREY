@@ -21,7 +21,7 @@ class Solicitud extends Model
     protected $fillable = [
         'radicado', 'radicado_vur', 'ciudadano_id', 'tipo_certificado', 'medio_acreditacion',
         'nombre_completo', 'tipo_documento', 'numero_identificacion', 'direccion',
-        'correo', 'celular', 'barrio_vereda_sector', 'motivo', 'estado',
+        'correo', 'celular', 'barrio_vereda_sector', 'sector_id', 'motivo', 'estado',
         'justificacion_especial', 'dependencia_id', 'fecha_radicacion',
         'fecha_limite_sla', 'observaciones', 'created_by',
     ];
@@ -66,6 +66,11 @@ class Solicitud extends Model
     public function seguimientos(): HasMany
     {
         return $this->hasMany(SeguimientoEstado::class)->latest();
+    }
+
+    public function sector(): BelongsTo
+    {
+        return $this->belongsTo(Sector::class);
     }
 
     // -----------------------------------------------------------------
