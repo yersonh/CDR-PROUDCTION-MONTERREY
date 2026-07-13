@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class UserSeeder extends Seeder
 {
@@ -12,11 +13,9 @@ class UserSeeder extends Seeder
     public const USERS = [
         ['name' => 'Super Administrador', 'email' => 'admin@monterrey-casanare.gov.co', 'role' => 'super_admin'],
         ['name' => 'Alcalde Municipal', 'email' => 'alcalde@monterrey-casanare.gov.co', 'role' => 'alcalde'],
-        ['name' => 'Recepción Ventanilla', 'email' => 'recepcion@monterrey-casanare.gov.co', 'role' => 'recepcionista'],
-        ['name' => 'Operador Validador', 'email' => 'operador@monterrey-casanare.gov.co', 'role' => 'operador'],
+        ['name' => 'Secretaría', 'email' => 'secretaria@monterrey-casanare.gov.co', 'role' => 'secretaria'],
         ['name' => 'Funcionario SISBEN', 'email' => 'sisben@monterrey-casanare.gov.co', 'role' => 'funcionario_sisben'],
         ['name' => 'Presidente JAC', 'email' => 'jac@monterrey-casanare.gov.co', 'role' => 'presidente_jac'],
-        ['name' => 'Ciudadano Demo', 'email' => 'ciudadano@example.com', 'role' => 'ciudadano'],
     ];
 
     public function run(): void
@@ -40,5 +39,34 @@ class UserSeeder extends Seeder
 
             $user->syncRoles([$data['role']]);
         }
+
+        // Cuenta de servicio usada por la integración con VUR: autentica sus
+        // llamadas a /recibidos-vur (token Sanctum "vur-integration") y
+        // actúa como "actor" en las Solicitud que CDR crea automáticamente
+        // al recibir un radicado de VUR (ver RecibidoVurService). Sin rol —
+        // solo el permiso puntual que necesita, no todo lo que trae un rol.
+        $servicioVur = User::firstOrCreate(
+            ['email' => 'servicio-vur@sistema.local'],
+            [
+                'name' => 'Servicio VUR',
+                'password' => Hash::make(Str::random(40)),
+                'activo' => true,
+                'email_verified_at' => now(),
+            ],
+        );
+        $servicioVur->syncPermissions(['recibidos-vur.crear']);
+
+        // Cuenta de servicio "actor" para las validaciones electorales que
+        // registra la IA (ver ValidarCertificadoElectoralConIA) — sin rol ni
+        // permisos, el job la usa directamente por servicio, no por HTTP.
+        User::firstOrCreate(
+            ['email' => 'ia-electoral@sistema.local'],
+            [
+                'name' => 'Validación IA — Certificado Electoral',
+                'password' => Hash::make(Str::random(40)),
+                'activo' => true,
+                'email_verified_at' => now(),
+            ],
+        );
     }
 }

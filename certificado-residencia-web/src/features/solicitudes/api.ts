@@ -9,6 +9,11 @@ export interface SolicitudFilters {
   page?: number
 }
 
+// Refresco silencioso en segundo plano (sin recargar la página ni perder
+// scroll/filtros) para que las solicitudes que llegan de VUR aparezcan
+// solas en la bandeja, igual que el contador de la campanita.
+const POLL_INTERVAL_MS = 20_000
+
 export function useSolicitudes(filters: SolicitudFilters = {}) {
   return useQuery({
     queryKey: ['solicitudes', filters],
@@ -23,6 +28,8 @@ export function useSolicitudes(filters: SolicitudFilters = {}) {
       })
       return data
     },
+    refetchInterval: POLL_INTERVAL_MS,
+    refetchIntervalInBackground: true,
   })
 }
 

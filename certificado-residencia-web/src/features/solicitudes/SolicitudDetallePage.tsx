@@ -7,6 +7,10 @@ import { useSolicitud, verDocumentoExpediente } from './api'
 import { GestionSolicitud } from './GestionSolicitud'
 import type { Documento } from './types'
 
+// Concepto del especialista (SISBEN/JAC): no es un anexo aportado por el
+// ciudadano, es la respuesta oficial que decide si la solicitud cumple.
+const TIPOS_RESPUESTA_ESPECIALISTA = ['respuesta_oficio_sisben', 'certificacion_jac']
+
 const COLOR_DOT: Record<string, string> = {
   blue: 'bg-blue-500', indigo: 'bg-indigo-500', amber: 'bg-amber-500',
   cyan: 'bg-cyan-500', violet: 'bg-violet-500', green: 'bg-green-500', red: 'bg-red-500',
@@ -65,6 +69,7 @@ export function SolicitudDetallePage() {
               <Info label="Celular" value={s.ciudadano.celular} />
               <Info label="Dirección" value={s.ciudadano.direccion} icon={<MapPin className="h-3.5 w-3.5" />} />
               <Info label="Barrio / vereda / sector" value={s.ciudadano.barrio_vereda_sector} />
+              <Info label="Tipo de certificado" value={s.tipo_certificado.label} />
               <Info label="Medio de acreditación" value={s.medio_acreditacion.label} />
               <Info label="Motivo" value={s.motivo ?? '—'} />
               {s.justificacion_especial && (
@@ -87,9 +92,16 @@ export function SolicitudDetallePage() {
                     documentos={s.expediente.documentos.filter((d) => d.tipo === 'solicitud_firmada')}
                   />
                   <DocumentosGrupo
+                    titulo="Respuesta del especialista"
+                    solicitudId={s.id}
+                    documentos={s.expediente.documentos.filter((d) => TIPOS_RESPUESTA_ESPECIALISTA.includes(d.tipo))}
+                  />
+                  <DocumentosGrupo
                     titulo="Anexos"
                     solicitudId={s.id}
-                    documentos={s.expediente.documentos.filter((d) => d.tipo !== 'solicitud_firmada')}
+                    documentos={s.expediente.documentos.filter(
+                      (d) => d.tipo !== 'solicitud_firmada' && !TIPOS_RESPUESTA_ESPECIALISTA.includes(d.tipo),
+                    )}
                   />
                 </>
               ) : (

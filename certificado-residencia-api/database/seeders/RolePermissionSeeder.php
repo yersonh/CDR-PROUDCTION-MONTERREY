@@ -43,9 +43,10 @@ class RolePermissionSeeder extends Seeder
         'certificados.ver',
         'certificados.revocar',
         'expedientes.ver',
-        // Dashboard / auditoría
+        // Dashboard / auditoría / reportes
         'dashboard.ver',
         'auditoria.ver',
+        'reportes.ver',
         // Administración
         'admin.usuarios',
         'admin.roles',

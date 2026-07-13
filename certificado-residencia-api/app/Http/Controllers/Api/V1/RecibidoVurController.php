@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Exceptions\RecibidoVurDuplicadoException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\RecibidoVur\StoreRecibidoVurRequest;
 use App\Models\RecibidoVur;
 use App\Services\RecibidoVurService;
-use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -19,21 +19,27 @@ class RecibidoVurController extends Controller
 
     /**
      * Recibe una solicitud de Carta de Residencia enviada directamente
-     * (peer-to-peer) desde VUR. Idempotente: si radicado_vur ya fue
-     * recibido antes (reintento del Job en VUR), responde 409 en vez de
-     * crear un duplicado.
+     * (peer-to-peer) desde VUR. Idempotente: si ya existe un recibido para
+     * el mismo envío (por referencia_cdr o radicado_vur, ver
+     * RecibidoVurService), responde 409 en vez de crear un duplicado.
      */
     public function store(StoreRecibidoVurRequest $request): JsonResponse
     {
         try {
             $recibido = $this->recibidos->crear($request->validated(), $request->file('pdf'));
-        } catch (UniqueConstraintViolationException) {
+        } catch (RecibidoVurDuplicadoException $e) {
             return response()->json([
-                'message' => 'Ya existe un recibido con ese radicado_vur.',
+                'message' => 'Ya existe un recibido para este envío.',
+                'data' => $e->existente,
             ], Response::HTTP_CONFLICT);
         }
 
-        return response()->json(['data' => $recibido], Response::HTTP_CREATED);
+        // Auto-crea la Solicitud para sisben/jac (ver RecibidoVurService); no
+        // bloquea la respuesta si falla — el recibido queda pendiente para
+        // manejo manual y el error queda logueado.
+        $this->recibidos->procesarAutomaticamente($recibido);
+
+        return response()->json(['data' => $recibido->refresh()], Response::HTTP_CREATED);
     }
 
     /**

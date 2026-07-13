@@ -40,7 +40,11 @@ export function SemaforoSla({
   if (!semaforo) return <span className="text-institutional-muted">—</span>
   const s = SEMAFORO[semaforo]
   return (
-    <span className="inline-flex items-center gap-1.5 text-xs font-medium text-institutional-text">
+    // Fondo propio (no solo texto suelto): así se lee igual sobre el fondo
+    // fotográfico oscuro del header de la solicitud que sobre una tarjeta
+    // blanca en la tabla — antes dependía del color de fondo ambiente y en
+    // el header quedaba con poco contraste.
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-white/90 px-2.5 py-0.5 text-xs font-medium text-institutional-text shadow-sm">
       <span className={cn('h-2.5 w-2.5 rounded-full', s.cls)} aria-hidden />
       {dias !== null ? `${dias} días háb.` : s.label}
     </span>

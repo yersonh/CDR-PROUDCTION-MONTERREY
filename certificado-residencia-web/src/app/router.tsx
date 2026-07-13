@@ -12,6 +12,7 @@ import { FirmaPage } from '@/features/firma/FirmaPage'
 import { VerificarPage } from '@/features/consulta/VerificarPage'
 import { SolicitudPublicaPage } from '@/features/solicitud-publica/SolicitudPublicaPage'
 import { AuditoriaPage } from '@/features/auditoria/AuditoriaPage'
+import { ReportesPage } from '@/features/reportes/ReportesPage'
 import { PerfilPage } from '@/features/perfil/PerfilPage'
 import { UsuariosPage } from '@/features/admin/UsuariosPage'
 import { DependenciasPage } from '@/features/admin/DependenciasPage'
@@ -35,6 +36,7 @@ export const router = createBrowserRouter([
           { path: '/solicitudes/:id', element: <SolicitudDetallePage /> },
           { path: '/firma', element: <FirmaPage /> },
           { path: '/auditoria', element: <AuditoriaPage /> },
+          { path: '/reportes', element: <ReportesPage /> },
           { path: '/perfil', element: <PerfilPage /> },
           { path: '/admin/usuarios', element: <UsuariosPage /> },
           { path: '/admin/dependencias', element: <DependenciasPage /> },

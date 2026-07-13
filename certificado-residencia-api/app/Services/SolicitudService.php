@@ -5,6 +5,7 @@ namespace App\Services;
 use App\DTOs\CreateSolicitudData;
 use App\Enums\EstadoSolicitud;
 use App\Enums\MedioAcreditacion;
+use App\Jobs\NotificarEstadoRecibidoAVur;
 use App\Models\Expediente;
 use App\Models\RecibidoVur;
 use App\Models\Solicitud;
@@ -21,6 +22,7 @@ class SolicitudService
         private readonly RadicadoGenerator $radicados,
         private readonly AuditService $audit,
         private readonly DocumentoService $documentos,
+        private readonly NotificacionService $notificaciones,
     ) {}
 
     /**
@@ -38,7 +40,9 @@ class SolicitudService
             return $solicitud;
         }
 
-        DB::transaction(function () use ($solicitud, $anterior, $nuevo, $nota, $actor) {
+        $recibido = null;
+
+        DB::transaction(function () use ($solicitud, $anterior, $nuevo, $nota, $actor, &$recibido) {
             $solicitud->update(['estado' => $nuevo]);
 
             $solicitud->seguimientos()->create([
@@ -56,7 +60,31 @@ class SolicitudService
                 despues: ['estado' => $nuevo->value],
                 actor: $actor,
             );
+
+            if ($nuevo->esTerminal()) {
+                // Llegó a estado terminal — el recibido pasa de en_tramite a
+                // procesado (ciclo pendiente → en_tramite → procesado).
+                $recibido = RecibidoVur::where('solicitud_id', $solicitud->id)->first();
+                $recibido?->update(['estado' => 'procesado']);
+            } elseif ($anterior === EstadoSolicitud::Radicada && $nuevo === EstadoSolicitud::EnValidacion) {
+                // Primera acción real sobre el trámite (alguien registró el
+                // primer soporte) — este es el momento en que le avisamos a
+                // VUR que pasó a "en trámite", NO cuando CDR crea la
+                // solicitud automáticamente al recibir el radicado. Avisar
+                // en ese momento sería falso: diría "en trámite" sin que
+                // nadie hubiera hecho nada todavía.
+                $recibido = RecibidoVur::where('solicitud_id', $solicitud->id)->first();
+            }
         });
+
+        if ($recibido && $recibido->radicado_vur) {
+            $estadoVur = match (true) {
+                $nuevo === EstadoSolicitud::Certificada => 'RESPONDIDO',
+                $nuevo->esTerminal() => 'CERRADO',
+                default => 'EN_TRAMITE',
+            };
+            NotificarEstadoRecibidoAVur::dispatch($recibido->radicado_vur, $estadoVur);
+        }
 
         return $solicitud->refresh();
     }
@@ -110,10 +138,13 @@ class SolicitudService
                 'actor_id' => $data->createdBy,
             ]);
 
-            // Vincula el recibido de VUR de origen, si aplica (bandeja de entrada externa)
+            // Vincula el recibido de VUR de origen, si aplica (bandeja de
+            // entrada externa). "en_tramite" (no "procesado" todavía) — el
+            // recibido solo pasa a procesado cuando la solicitud llegue a un
+            // estado terminal, ver cambiarEstado().
             if ($data->recibidoVurId) {
                 RecibidoVur::whereKey($data->recibidoVurId)->update([
-                    'estado' => 'procesado',
+                    'estado' => 'en_tramite',
                     'solicitud_id' => $solicitud->id,
                     'procesado_at' => $ahora,
                 ]);
@@ -125,6 +156,14 @@ class SolicitudService
         // Notificación al ciudadano (fuera de la transacción)
         $this->notificarRadicacion($solicitud);
 
+        // Aviso interno a quien debe gestionar el trámite (campanita), tanto
+        // si la solicitud vino del formulario público como del auto-enrutamiento de VUR.
+        $this->notificarNuevaSolicitud($solicitud);
+
+        // OJO: no se avisa "EN_TRAMITE" a VUR aquí — el recibido queda
+        // en_tramite del lado de CDR (arriba), pero avisarle a VUR en este
+        // punto sería prematuro (nadie ha hecho nada todavía). Ese aviso
+        // sale en cambiarEstado() cuando ocurre la primera acción real.
         return $solicitud->load(['expediente.documentos', 'seguimientos']);
     }
 
@@ -143,6 +182,30 @@ class SolicitudService
                 ->notify(new SolicitudRadicadaNotification($solicitud));
         } catch (\Throwable $e) {
             report($e); // No bloquea la radicación si el correo falla
+        }
+    }
+
+    /**
+     * SISBEN y JAC van directo al especialista de su medio; el resto
+     * (electoral, especial) lo maneja Secretaría desde "radicada". No debe
+     * bloquear la radicación si falla — es solo un aviso interno.
+     */
+    private function notificarNuevaSolicitud(Solicitud $solicitud): void
+    {
+        try {
+            $roles = match ($solicitud->medio_acreditacion) {
+                MedioAcreditacion::Sisben => ['funcionario_sisben'],
+                MedioAcreditacion::Jac => ['presidente_jac'],
+                default => ['secretaria'],
+            };
+
+            $this->notificaciones->notificarRoles(
+                $roles,
+                "Nueva solicitud {$solicitud->radicado} de {$solicitud->nombre_completo} requiere su gestión.",
+                $solicitud,
+            );
+        } catch (\Throwable $e) {
+            report($e);
         }
     }
 }

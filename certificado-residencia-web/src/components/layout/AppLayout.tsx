@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import {
+  BarChart3,
   Building2,
   FileText,
   History,
@@ -18,6 +19,7 @@ import { cn } from '@/lib/utils'
 import { useAuth } from '@/features/auth/useAuth'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { NexGovIAInfoModal } from '@/components/nexgovia-info-modal'
+import { NotificationBell } from './NotificationBell'
 import { UserMenu } from './UserMenu'
 import escudo from '@/assets/logo-alcaldia.png'
 import fondoCasa from '@/assets/fondo-casa.png'
@@ -38,6 +40,7 @@ const NAV: NavItem[] = [
   { to: '/admin/dependencias', label: 'Dependencias', icon: Building2, permiso: 'admin.dependencias' },
   { to: '/admin/roles', label: 'Roles', icon: ShieldCheck, permiso: 'admin.roles' },
   { to: '/auditoria', label: 'Auditoría', icon: History, permiso: 'auditoria.ver' },
+  { to: '/reportes', label: 'Reportes', icon: BarChart3, permiso: 'reportes.ver' },
   { to: '/perfil', label: 'Mi perfil', icon: UserCircle },
 ]
 
@@ -95,7 +98,10 @@ export function AppLayout() {
             <p className="hidden text-xs text-white/70 sm:block">Certificado de Residencia Digital</p>
           </div>
         </div>
-        <UserMenu onLogoutClick={() => setConfirmLogoutOpen(true)} />
+        <div className="flex items-center gap-1">
+          <NotificationBell />
+          <UserMenu onLogoutClick={() => setConfirmLogoutOpen(true)} />
+        </div>
       </header>
 
       <div className="flex flex-1">

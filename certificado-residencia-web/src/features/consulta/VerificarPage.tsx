@@ -35,8 +35,8 @@ export function VerificarPage() {
       <div className="mx-auto max-w-xl">
         {/* Encabezado institucional */}
         <div className="mb-6 flex flex-col items-center text-center text-white">
-          <div className="mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-white/95 p-1.5">
-            <img src={escudo} alt="Escudo Alcaldía de Monterrey" className="h-full w-full object-contain" />
+          <div className="mb-3 flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-white/95 p-1.5 ring-2 ring-gold-light ring-offset-2 ring-offset-primary-700">
+            <img src={escudo} alt="Escudo Alcaldía de Monterrey" className="h-full w-full rounded-full object-cover" />
           </div>
           <h1 className="text-xl font-bold">Verificación de autenticidad</h1>
           <p className="text-sm text-white/70">Certificado de Residencia Digital · Alcaldía de Monterrey, Casanare</p>

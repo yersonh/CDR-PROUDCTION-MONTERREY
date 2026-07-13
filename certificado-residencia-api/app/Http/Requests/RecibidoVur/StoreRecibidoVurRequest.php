@@ -19,6 +19,11 @@ class StoreRecibidoVurRequest extends FormRequest
     {
         return [
             'radicado_vur' => ['required', 'string', 'max:30'],
+            // Id de la SolicitudPublica que originó el envío a VUR (viaja de
+            // vuelta cuando VUR la envía aquí ya radicada). Ausente cuando el
+            // recibido lo origina VUR directamente, sin pasar por el
+            // formulario público de CDR.
+            'referencia_cdr' => ['nullable', 'integer'],
             'nombre_completo' => ['required', 'string', 'max:255'],
             'tipo_documento' => ['nullable', 'string', Rule::in(['CC', 'TI', 'CE', 'PA', 'PEP', 'NIT'])],
             'numero_identificacion' => ['nullable', 'string', 'max:40'],

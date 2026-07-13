@@ -9,8 +9,10 @@ use App\Http\Controllers\Api\V1\DashboardController;
 use App\Http\Controllers\Api\V1\Admin\DependenciaController;
 use App\Http\Controllers\Api\V1\Admin\RolController;
 use App\Http\Controllers\Api\V1\Admin\UsuarioController;
+use App\Http\Controllers\Api\V1\NotificacionController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\RecibidoVurController;
+use App\Http\Controllers\Api\V1\ReportesController;
 use App\Http\Controllers\Api\V1\SolicitudController;
 use App\Http\Controllers\Api\V1\SolicitudPublicaController;
 use App\Http\Controllers\Api\V1\ValidacionController;
@@ -90,9 +92,21 @@ Route::prefix('v1')->group(function () {
         Route::get('dashboard/indicadores', [DashboardController::class, 'indicadores'])
             ->middleware('permission:dashboard.ver');
 
+        // Reportes gerenciales (Super Admin): SLA, tiempos, productividad, export
+        Route::get('reportes', [ReportesController::class, 'indicadores'])
+            ->middleware('permission:reportes.ver');
+        Route::get('reportes/radicados/export', [ReportesController::class, 'exportarRadicados'])
+            ->middleware('permission:reportes.ver');
+
         // Auditoría
         Route::get('auditoria', [AuditoriaController::class, 'index'])
             ->middleware('permission:auditoria.ver');
+
+        // Notificaciones (campanita) — cada usuario ve/gestiona solo las suyas.
+        Route::get('notificaciones/no-leidas', [NotificacionController::class, 'noLeidas']);
+        Route::get('notificaciones', [NotificacionController::class, 'index']);
+        Route::patch('notificaciones/{notificacion}/leer', [NotificacionController::class, 'marcarLeida']);
+        Route::patch('notificaciones/leer-todas', [NotificacionController::class, 'marcarTodasLeidas']);
 
         // Perfil
         Route::post('perfil/firma', [ProfileController::class, 'subirFirma']);

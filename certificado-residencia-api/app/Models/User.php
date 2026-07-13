@@ -45,4 +45,10 @@ class User extends Authenticatable
     {
         return $this->hasMany(Solicitud::class, 'ciudadano_id');
     }
+
+    /** Notificaciones dirigidas a este usuario (bandeja/campanita). */
+    public function notificaciones(): HasMany
+    {
+        return $this->hasMany(Notificacion::class);
+    }
 }

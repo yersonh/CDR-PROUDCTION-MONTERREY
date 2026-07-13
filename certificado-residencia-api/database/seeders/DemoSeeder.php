@@ -29,11 +29,10 @@ class DemoSeeder extends Seeder
             return;
         }
 
-        $ciudadano = User::role('ciudadano')->first();
-        $operador = User::role('operador')->first();
+        $secretaria = User::role('secretaria')->first();
         $alcalde = User::role('alcalde')->first();
 
-        if (! $ciudadano || ! $operador || ! $alcalde) {
+        if (! $secretaria || ! $alcalde) {
             return;
         }
 
@@ -68,15 +67,15 @@ class DemoSeeder extends Seeder
                 medioAcreditacion: $medio,
                 justificacionEspecial: $medio === MedioAcreditacion::Especial ? 'Caso especial de demostración' : null,
                 soporte: $soporte,
-                ciudadanoId: $ciudadano->id,
-                createdBy: $ciudadano->id,
+                ciudadanoId: null,
+                createdBy: $secretaria->id,
             ));
 
             if (in_array($estadoFinal, ['preaprobada', 'certificada', 'pendiente_soporte'], true)) {
-                $validaciones->registrarSoporte($solicitud, $medio->value, null, null, ResultadoValidacion::Cumple, 'Validado (demo)', $operador);
+                $validaciones->registrarSoporte($solicitud, $medio->value, null, null, ResultadoValidacion::Cumple, 'Validado (demo)', $secretaria);
 
                 $resultado = $estadoFinal === 'pendiente_soporte' ? ResultadoValidacion::Subsanar : ResultadoValidacion::Cumple;
-                $validaciones->prevalidar($solicitud, $resultado, $estadoFinal === 'pendiente_soporte' ? 'Soporte ilegible (demo)' : null, $operador);
+                $validaciones->prevalidar($solicitud, $resultado, $estadoFinal === 'pendiente_soporte' ? 'Soporte ilegible (demo)' : null, $secretaria);
 
                 if ($estadoFinal === 'certificada') {
                     $certificados->firmar($solicitud->refresh(), $alcalde);

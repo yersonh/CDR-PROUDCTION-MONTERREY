@@ -96,7 +96,12 @@ const SOPORTE_LABEL: Record<string, string> = {
 export function CertificadoSoporteStep({
   register, errors, catalogos, medio, soporte, soporteError, onSoporteChange, soporteInmediato = false,
 }: CertificadoStepProps) {
-  const requiereSoporteAhora = medio === 'electoral' || (soporteInmediato && (medio === 'sisben' || medio === 'jac'))
+  // JAC queda fuera de "inmediato" a propósito: el ciudadano normalmente no
+  // tiene ese documento a la mano (lo expide el Presidente JAC), así que por
+  // ahora el formulario público solo muestra un aviso, igual que SISBEN en
+  // el flujo interno. Se completa más adelante con la captura de datos del
+  // Presidente JAC.
+  const requiereSoporteAhora = medio === 'electoral' || (soporteInmediato && medio === 'sisben')
 
   return (
     <div className="space-y-4">
@@ -128,10 +133,16 @@ export function CertificadoSoporteStep({
         </Field>
       )}
 
-      {!soporteInmediato && (medio === 'sisben' || medio === 'jac') && (
+      {medio === 'jac' && (
         <div className="rounded-lg border border-primary-100 bg-primary-50 px-4 py-3 text-sm text-primary-700">
-          El soporte de <strong>{medio === 'sisben' ? 'SISBEN' : 'la JAC'}</strong> será cargado por el
-          funcionario autorizado una vez radicada la solicitud.
+          La certificación de la <strong>Junta de Acción Comunal</strong> la expide el Presidente JAC de su
+          sector — no necesita adjuntarla aquí. Se tramitará directamente con él una vez radicada la solicitud.
+        </div>
+      )}
+
+      {!soporteInmediato && medio === 'sisben' && (
+        <div className="rounded-lg border border-primary-100 bg-primary-50 px-4 py-3 text-sm text-primary-700">
+          El soporte de <strong>SISBEN</strong> será cargado por el funcionario autorizado una vez radicada la solicitud.
         </div>
       )}
     </div>

@@ -25,14 +25,20 @@ export function GestionSolicitud({ solicitud }: { solicitud: Solicitud }) {
   const terminal = estado === 'certificada' || estado === 'rechazada'
   const puedeSubsanar = hasRole('ciudadano') && estado === 'pendiente_soporte'
 
+  const tieneValidacionDe = (tipo: string) => (solicitud.validaciones ?? []).some((v) => v.tipo === tipo)
+
   const puedeElectoral = hasPermission('soportes.validar_electoral') && medio === 'electoral'
-  const puedeSisben = hasPermission('soportes.cargar_sisben') && medio === 'sisben'
-  const puedeJac = hasPermission('soportes.cargar_jac') && medio === 'jac'
-  // Para SISBEN/JAC la prevalidación de Secretaría oficializa el concepto
-  // del especialista — no debe verse mientras la solicitud siga "radicada"
-  // (o sea, antes de que el especialista haya cargado su certificación).
-  // Electoral/especial sí se validan directamente en ese estado.
-  const requiereEspecialistaPrevio = medio === 'sisben' || medio === 'jac'
+  // SISBEN y JAC solo cargan su respuesta una vez — una vez registrada, el
+  // formulario debe desaparecer (la decisión ya quedó en manos de Secretaría).
+  const puedeSisben = hasPermission('soportes.cargar_sisben') && medio === 'sisben' && !tieneValidacionDe('sisben')
+  const puedeJac = hasPermission('soportes.cargar_jac') && medio === 'jac' && !tieneValidacionDe('jac')
+  // Para SISBEN/JAC/electoral la prevalidación de Secretaría oficializa el
+  // concepto de quien validó primero (especialista o, en electoral, la IA
+  // vía ValidarCertificadoElectoralConIA) — no debe verse mientras la
+  // solicitud siga "radicada", o Secretaría podría prevalidar antes de que
+  // ese primer concepto exista. Solo "especial" se valida directamente en
+  // ese estado (no tiene un paso previo de especialista/IA).
+  const requiereEspecialistaPrevio = medio === 'sisben' || medio === 'jac' || medio === 'electoral'
   const estadosPrevalidables = requiereEspecialistaPrevio
     ? ['en_validacion', 'pendiente_soporte']
     : ['radicada', 'en_validacion', 'pendiente_soporte']
@@ -59,7 +65,7 @@ export function GestionSolicitud({ solicitud }: { solicitud: Solicitud }) {
         {hayAcciones && (
           <div className="space-y-5">
             {puedeElectoral && <ElectoralForm solicitud={solicitud} />}
-            {puedeSisben && <SoporteForm solicitud={solicitud} tipo="sisben" titulo="Cargar certificación SISBEN" />}
+            {puedeSisben && <SoporteForm solicitud={solicitud} tipo="sisben" titulo="Cargar Respuesta de Oficio SISBEN" />}
             {puedeJac && <JacForm solicitud={solicitud} />}
             {puedePrevalidar && <PrevalidarForm solicitud={solicitud} />}
             {puedeFirmar && <FirmaForm solicitud={solicitud} />}

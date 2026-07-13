@@ -44,4 +44,14 @@ return [
         'token' => env('CORE_API_TOKEN'),
     ],
 
+    'vur' => [
+        'url'   => env('VUR_API_URL'),
+        'token' => env('VUR_API_TOKEN'),
+    ],
+
+    'gemini' => [
+        'key'   => env('GEMINI_API_KEY'),
+        'model' => env('GEMINI_MODEL', 'gemini-2.5-flash'),
+    ],
+
 ];
