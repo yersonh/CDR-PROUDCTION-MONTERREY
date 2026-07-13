@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { Briefcase, CheckCircle2, PenTool, Upload, UserCircle } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { Briefcase, CheckCircle2, PenTool, Upload, UserCircle, X } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { api, getApiErrorMessage } from '@/lib/api'
@@ -28,41 +28,46 @@ export function PerfilPage() {
 function FotoPerfil({ tieneFoto }: { tieneFoto: boolean }) {
   const { refreshUser } = useAuth()
   const fotoActual = useFotoPerfil(tieneFoto)
+  const inputRef = useRef<HTMLInputElement>(null)
   const [file, setFile] = useState<File | null>(null)
   const [previewLocal, setPreviewLocal] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const [estado, setEstado] = useState<'idle' | 'ok' | 'error'>('idle')
-  const [msg, setMsg] = useState<string>()
+  const [msg, setMsg] = useState<{ tipo: 'ok' | 'error'; texto: string }>()
 
-  // Previsualiza el archivo elegido de inmediato, antes de subirlo — libera
-  // la URL anterior cada vez que cambia o al desmontar.
+  // Libera la URL de la vista previa cada vez que cambia o al desmontar.
   useEffect(() => () => {
     if (previewLocal) URL.revokeObjectURL(previewLocal)
   }, [previewLocal])
 
   const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0] ?? null
+    if (!f) return
     setFile(f)
-    setPreviewLocal(f ? URL.createObjectURL(f) : null)
+    setPreviewLocal(URL.createObjectURL(f))
+  }
+
+  const cancelar = () => {
+    setFile(null)
+    setPreviewLocal(null)
+    if (inputRef.current) inputRef.current.value = ''
   }
 
   const subir = async () => {
     if (!file) return
-    setLoading(true); setMsg(undefined)
+    setLoading(true)
     try {
       const fd = new FormData()
       fd.append('foto', file)
       const { data } = await api.post('/perfil/foto', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
-      setEstado('ok'); setMsg(data.message); setFile(null); setPreviewLocal(null)
+      setMsg({ tipo: 'ok', texto: data.message })
+      cancelar()
       await refreshUser()
     } catch (e) {
-      setEstado('error'); setMsg(getApiErrorMessage(e, 'No fue posible cargar la foto.'))
+      setMsg({ tipo: 'error', texto: getApiErrorMessage(e, 'No fue posible cargar la foto.') })
     } finally {
       setLoading(false)
     }
   }
-
-  const foto = previewLocal ?? fotoActual
 
   return (
     <Card>
@@ -72,30 +77,68 @@ function FotoPerfil({ tieneFoto }: { tieneFoto: boolean }) {
       <CardContent>
         <div className="flex items-center gap-4">
           <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border border-institutional-border bg-institutional-bg">
-            {foto ? (
-              <img src={foto} alt="Foto de perfil" className="h-full w-full object-cover" />
+            {fotoActual ? (
+              <img src={fotoActual} alt="Foto de perfil" className="h-full w-full object-cover" />
             ) : (
               <UserCircle className="h-10 w-10 text-institutional-muted" />
             )}
           </div>
           <div className="flex-1 space-y-3">
-            {previewLocal && !msg && (
-              <p className="text-xs text-institutional-muted">Vista previa — aún no se ha guardado.</p>
-            )}
             {msg && (
-              <div className={`rounded-lg border px-3 py-2 text-sm ${estado === 'error' ? 'border-danger/40 bg-red-50 text-danger' : 'border-success/40 bg-green-50 text-success'}`}>
-                {msg}
+              <div className={`rounded-lg border px-3 py-2 text-sm ${msg.tipo === 'error' ? 'border-danger/40 bg-red-50 text-danger' : 'border-success/40 bg-green-50 text-success'}`}>
+                {msg.texto}
               </div>
             )}
-            <input type="file" accept=".png,.jpg,.jpeg" onChange={onFileChange}
-              className="block w-full text-sm text-institutional-muted file:mr-3 file:rounded-lg file:border-0 file:bg-primary file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-primary-700" />
-            <Button variant="primary" onClick={subir} disabled={!file} loading={loading}>
-              <Upload className="h-4 w-4" /> Guardar foto
+            <input ref={inputRef} type="file" accept=".png,.jpg,.jpeg" className="hidden" onChange={onFileChange} />
+            <Button variant="outline" onClick={() => inputRef.current?.click()}>
+              <Upload className="h-4 w-4" /> Cambiar foto
             </Button>
           </div>
         </div>
       </CardContent>
+
+      {previewLocal && (
+        <FotoPreviewModal previewUrl={previewLocal} loading={loading} onCancelar={cancelar} onGuardar={subir} />
+      )}
     </Card>
+  )
+}
+
+function FotoPreviewModal({ previewUrl, loading, onCancelar, onGuardar }: {
+  previewUrl: string
+  loading: boolean
+  onCancelar: () => void
+  onGuardar: () => void
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
+      <div className="absolute inset-0 bg-black/60" onClick={onCancelar} aria-hidden />
+      <div className="relative z-10 w-full max-w-sm animate-fade-up rounded-2xl border border-white/10 bg-primary p-6 text-center shadow-2xl">
+        <button
+          type="button"
+          onClick={onCancelar}
+          className="absolute right-4 top-4 rounded-md p-1 text-white/60 hover:bg-white/10 hover:text-white"
+          aria-label="Cerrar"
+        >
+          <X className="h-5 w-5" />
+        </button>
+        <h2 className="text-xl font-bold text-white">Actualizar foto de perfil</h2>
+        <p className="mt-1 text-sm text-white/60">Así se verá tu nueva foto</p>
+        <img
+          src={previewUrl}
+          alt="Vista previa de la foto de perfil"
+          className="mx-auto mt-6 h-40 w-40 rounded-full object-cover ring-4 ring-gold"
+        />
+        <div className="mt-6 flex justify-center gap-3">
+          <Button variant="ghost" className="text-white hover:bg-white/10" onClick={onCancelar} disabled={loading}>
+            Cancelar
+          </Button>
+          <Button variant="gold" onClick={onGuardar} loading={loading}>
+            Guardar foto
+          </Button>
+        </div>
+      </div>
+    </div>
   )
 }
 
