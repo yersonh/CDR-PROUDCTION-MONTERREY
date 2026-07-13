@@ -24,23 +24,12 @@ class DemoSeeder extends Seeder
 {
     public function run(): void
     {
-        // Idempotente: si ya existe alguna solicitud demo (por su número de
-        // identificación fijo), no vuelve a crearlas. Necesario porque este
-        // seeder se ejecuta en cada despliegue (ver docker/entrypoint.sh).
-        if (Solicitud::where('numero_identificacion', '43111222')->exists()) {
-            return;
-        }
-
-        $secretaria = User::role('secretaria')->first();
-        $alcalde = User::role('alcalde')->first();
-
-        if (! $secretaria || ! $alcalde) {
-            return;
-        }
-
         // El usuario demo "Presidente JAC" (ver UserSeeder) necesita estar
         // atado a un sector para poder certificar algo — cada presidente
-        // ahora solo ve/certifica lo de su propio sector.
+        // ahora solo ve/certifica lo de su propio sector. Va ANTES del
+        // guard de idempotencia de abajo: en despliegues que ya tenían
+        // datos demo previos a que existiera PresidenteJac, ese guard
+        // devolvería antes de llegar aquí y este vínculo nunca se crearía.
         $barrioCentro = Sector::where('nombre', 'Barrio Centro')->first();
         $jac = User::role('presidente_jac')->first();
 
@@ -57,6 +46,20 @@ class DemoSeeder extends Seeder
                 'estado' => 'activo',
                 'user_id' => $jac->id,
             ]);
+        }
+
+        // Idempotente: si ya existe alguna solicitud demo (por su número de
+        // identificación fijo), no vuelve a crearlas. Necesario porque este
+        // seeder se ejecuta en cada despliegue (ver docker/entrypoint.sh).
+        if (Solicitud::where('numero_identificacion', '43111222')->exists()) {
+            return;
+        }
+
+        $secretaria = User::role('secretaria')->first();
+        $alcalde = User::role('alcalde')->first();
+
+        if (! $secretaria || ! $alcalde) {
+            return;
         }
 
         $solicitudes = app(SolicitudService::class);

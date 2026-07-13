@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -38,7 +39,9 @@ export function ConfirmDialog({
 
   if (!open) return null
 
-  return (
+  // Portal a document.body: evita que "fixed" quede atrapado por el
+  // transform residual de animate-fade-up en la página que lo invoca.
+  return createPortal(
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="confirm-dialog-title">
       <div className="absolute inset-0 bg-black/40" onClick={onCancel} aria-hidden />
       <div className="relative z-10 w-full max-w-sm animate-fade-up rounded-2xl bg-white p-6 text-center shadow-2xl">
@@ -69,6 +72,7 @@ export function ConfirmDialog({
           </Button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }

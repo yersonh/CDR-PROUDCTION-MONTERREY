@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Briefcase, CheckCircle2, PenTool, Upload, UserCircle, X } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -110,7 +111,9 @@ function FotoPreviewModal({ previewUrl, loading, onCancelar, onGuardar }: {
   onCancelar: () => void
   onGuardar: () => void
 }) {
-  return (
+  // Portal a document.body: evita que "fixed" quede atrapado por el
+  // transform residual de animate-fade-up en la página que lo invoca.
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
       <div className="absolute inset-0 bg-black/60" onClick={onCancelar} aria-hidden />
       <div className="relative z-10 w-full max-w-sm animate-fade-up rounded-2xl border border-white/10 bg-primary p-6 text-center shadow-2xl">
@@ -138,7 +141,8 @@ function FotoPreviewModal({ previewUrl, loading, onCancelar, onGuardar }: {
           </Button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
 

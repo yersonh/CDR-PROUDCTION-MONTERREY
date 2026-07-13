@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 
 export function Modal({
@@ -21,7 +22,11 @@ export function Modal({
 
   if (!open) return null
 
-  return (
+  // Portal a document.body: si se renderizara inline, "fixed" quedaría
+  // posicionado respecto al primer ancestro con transform (p. ej. cualquier
+  // página con animate-fade-up, cuyo transform: translateY(0) persiste tras
+  // la animación por animation-fill-mode: both) en vez del viewport.
+  return createPortal(
     <div className="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} aria-hidden />
       <div className="relative z-10 flex min-h-full items-center justify-center p-4">
@@ -35,6 +40,7 @@ export function Modal({
           <div className="p-5">{children}</div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }

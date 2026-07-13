@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { Globe, Shield, Zap, X } from 'lucide-react'
 import logoEmpresa from '@/assets/logoEmpresa.png'
 
@@ -12,7 +13,9 @@ export function NexGovIAInfoModal({ open, onClose }: { open: boolean; onClose: (
 
   if (!open) return null
 
-  return (
+  // Portal a document.body: evita que "fixed" quede atrapado por el
+  // transform residual de animate-fade-up en la página que lo invoca.
+  return createPortal(
     <div
       className="fixed inset-0 z-[100] flex items-center justify-center p-3 backdrop-blur-sm sm:p-4"
       role="dialog"
@@ -109,6 +112,7 @@ export function NexGovIAInfoModal({ open, onClose }: { open: boolean; onClose: (
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
