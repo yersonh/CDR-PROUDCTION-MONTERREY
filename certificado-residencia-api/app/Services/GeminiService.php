@@ -36,24 +36,35 @@ class GeminiService
         }
 
         $contenido = base64_encode(file_get_contents($rutaAbsoluta));
+        $hoy = now()->translatedFormat('d \d\e F \d\e Y');
 
-        $prompt = <<<'PROMPT'
+        // Sin la fecha de hoy explícita, el modelo no tiene forma de saber
+        // qué elección es "la más reciente" ni de distinguir una fecha
+        // pasada de una futura — ya nos pasó que calificó una jornada
+        // anterior a hoy como "elección futura" por razonar a ciegas.
+        $prompt = <<<PROMPT
             Eres un validador documental para la Alcaldía de Monterrey, Casanare, Colombia.
+            La fecha de hoy es {$hoy}.
+
             Analiza el documento adjunto (imagen o PDF) y determina si es un CERTIFICADO
             ELECTORAL (certificado de votación / certificado de sufragante) colombiano,
             expedido por la Registraduría Nacional del Estado Civil, auténtico y vigente,
-            correspondiente a las elecciones más recientes, y aplicable a un ciudadano del
-            municipio de Monterrey, Casanare.
+            correspondiente a las elecciones más recientes ANTERIORES a la fecha de hoy, y
+            aplicable a un ciudadano del municipio de Monterrey, Casanare.
 
             Verifica: (1) que el documento sea legible y tenga el formato de un certificado
-            electoral oficial, (2) que la fecha de la jornada electoral corresponda a las
-            elecciones vigentes más recientes (no un certificado vencido de una elección
-            antigua), (3) que no muestre señales de edición, manipulación, o que sea en
+            electoral oficial, (2) que la fecha de la jornada electoral sea anterior a hoy y
+            corresponda a la elección vigente más reciente (ni un certificado vencido de una
+            elección demasiado antigua, ni una fecha posterior a hoy que no pudo haber ocurrido
+            todavía), (3) que no muestre señales de edición, manipulación, o que sea en
             realidad un documento distinto (cédula, recibo, captura de pantalla no oficial, etc.).
 
             Responde ÚNICAMENTE con un JSON con esta forma exacta, sin texto adicional ni
-            bloques de código:
-            {"valido": true o false, "motivo": "explicación breve en español, máximo 300 caracteres"}
+            bloques de código. El campo "motivo" es una explicación breve en español (máximo
+            300 caracteres) dirigida a un funcionario de la Alcaldía — no menciones el nombre
+            de ningún modelo o proveedor de IA, refiérete a ti mismo simplemente como "la
+            validación automática":
+            {"valido": true o false, "motivo": "explicación breve en español"}
             PROMPT;
 
         $response = Http::timeout(60)->post(

@@ -63,7 +63,7 @@ Flujo de 10 pasos del trámite:
 1. **Solicitud en línea** — formulario wizard de 3 pasos.
 2. **Radicación automática** — radicado `R-AAAA-######`, expediente `EXP-AAAA-######`, SLA de 15 días hábiles (excluye festivos de Colombia).
 3. **Notificación al ciudadano** — correo con radicado y seguimiento.
-4. **Validación de soportes** — Electoral / SISBEN / JAC (con campos y QR) / Especial.
+4. **Validación de soportes** — Electoral / SISBEN / JAC (con campos y QR).
 5. **Prevalidación** — cumple / requiere subsanación / rechaza.
 6. **Bandeja de firma del Alcalde** — firma individual y masiva.
 7. **Generación del certificado** — PDF oficial con firma electrónica, QR, código y hash SHA-256.

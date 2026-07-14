@@ -51,7 +51,6 @@ class SubsanacionPublicaTest extends TestCase
             motivo: null,
             tipoCertificado: TipoCertificado::General,
             medioAcreditacion: MedioAcreditacion::from($overrides['medio_acreditacion'] ?? 'sisben'),
-            justificacionEspecial: $overrides['justificacion_especial'] ?? null,
             soporte: $overrides['soporte'] ?? UploadedFile::fake()->create('s.pdf', 10, 'application/pdf'),
             createdBy: $this->usuarioCon('secretaria')->id,
         );

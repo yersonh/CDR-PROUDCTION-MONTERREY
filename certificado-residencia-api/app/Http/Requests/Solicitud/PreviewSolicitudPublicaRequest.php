@@ -42,10 +42,6 @@ class PreviewSolicitudPublicaRequest extends FormRequest
             'motivo' => ['nullable', 'string', 'max:1000'],
             'tipo_certificado' => ['required', Rule::enum(TipoCertificado::class)],
             'medio_acreditacion' => ['required', Rule::enum(MedioAcreditacion::class)],
-            'justificacion_especial' => [
-                'nullable', 'string', 'max:1500',
-                Rule::requiredIf(fn () => $this->input('medio_acreditacion') === MedioAcreditacion::Especial->value),
-            ],
         ];
     }
 

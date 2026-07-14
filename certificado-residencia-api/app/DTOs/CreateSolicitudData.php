@@ -22,7 +22,6 @@ readonly class CreateSolicitudData
         public ?string $motivo,
         public TipoCertificado $tipoCertificado,
         public MedioAcreditacion $medioAcreditacion,
-        public ?string $justificacionEspecial = null,
         public ?UploadedFile $soporte = null,
         public ?int $ciudadanoId = null,
         public ?int $createdBy = null,

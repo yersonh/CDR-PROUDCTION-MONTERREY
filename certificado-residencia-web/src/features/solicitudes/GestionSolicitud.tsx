@@ -39,12 +39,8 @@ export function GestionSolicitud({ solicitud }: { solicitud: Solicitud }) {
   // concepto de quien validó primero (especialista o, en electoral, la IA
   // vía ValidarCertificadoElectoralConIA) — no debe verse mientras la
   // solicitud siga "radicada", o Secretaría podría prevalidar antes de que
-  // ese primer concepto exista. Solo "especial" se valida directamente en
-  // ese estado (no tiene un paso previo de especialista/IA).
-  const requiereEspecialistaPrevio = medio === 'sisben' || medio === 'jac' || medio === 'electoral'
-  const estadosPrevalidables = requiereEspecialistaPrevio
-    ? ['en_validacion', 'pendiente_soporte']
-    : ['radicada', 'en_validacion', 'pendiente_soporte']
+  // ese primer concepto exista.
+  const estadosPrevalidables = ['en_validacion', 'pendiente_soporte']
   const puedePrevalidar = hasPermission('validacion.prevalidar') && estadosPrevalidables.includes(estado)
   const puedeFirmar = hasPermission('firma.firmar') && estado === 'preaprobada'
 
@@ -302,16 +298,13 @@ function SubsanarForm({ solicitud }: { solicitud: Solicitud }) {
   const subsanar = useSubsanar(solicitud.id)
   const medio = solicitud.medio_acreditacion.value
   const [file, setFile] = useState<File | null>(null)
-  const [justificacion, setJustificacion] = useState('')
   const [error, setError] = useState<string>()
 
   const submit = () => {
     setError(undefined)
     if (medio === 'electoral' && !file) { setError('Debe adjuntar nuevamente el certificado electoral'); return }
-    if (medio === 'especial' && !justificacion.trim()) { setError('Debe actualizar la justificación'); return }
     const fd = new FormData()
     if (file) fd.append('soporte', file)
-    if (justificacion) fd.append('justificacion', justificacion)
     subsanar.mutate(fd)
   }
 
@@ -321,14 +314,7 @@ function SubsanarForm({ solicitud }: { solicitud: Solicitud }) {
       <p className="text-sm text-institutional-muted">
         Su solicitud requiere subsanación. Aporte la corrección solicitada para continuar el trámite.
       </p>
-      {(medio === 'electoral' || medio === 'sisben' || medio === 'jac') && (
-        <FileUpload file={file} onChange={(f) => { setFile(f); setError(undefined) }} error={error} />
-      )}
-      {medio === 'especial' && (
-        <Field label="Justificación actualizada" htmlFor="subs-just" required error={error}>
-          <Textarea id="subs-just" rows={3} value={justificacion} onChange={(e) => setJustificacion(e.target.value)} />
-        </Field>
-      )}
+      <FileUpload file={file} onChange={(f) => { setFile(f); setError(undefined) }} error={error} />
       <Button variant="success" onClick={submit} loading={subsanar.isPending}>Enviar subsanación</Button>
     </FormBox>
   )

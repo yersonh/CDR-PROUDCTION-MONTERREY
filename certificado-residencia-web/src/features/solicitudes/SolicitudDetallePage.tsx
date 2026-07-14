@@ -72,9 +72,6 @@ export function SolicitudDetallePage() {
               <Info label="Tipo de certificado" value={s.tipo_certificado.label} />
               <Info label="Medio de acreditación" value={s.medio_acreditacion.label} />
               <Info label="Motivo" value={s.motivo ?? '—'} />
-              {s.justificacion_especial && (
-                <Info label="Justificación especial" value={s.justificacion_especial} className="sm:col-span-2" />
-              )}
             </CardContent>
           </Card>
 

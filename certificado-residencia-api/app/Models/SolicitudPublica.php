@@ -13,7 +13,7 @@ class SolicitudPublica extends Model
     protected $fillable = [
         'nombre_completo', 'tipo_documento', 'numero_identificacion',
         'direccion', 'correo', 'celular', 'barrio_vereda_sector', 'sector_id', 'motivo',
-        'tipo_certificado', 'medio_acreditacion', 'justificacion_especial',
+        'tipo_certificado', 'medio_acreditacion',
         'ruta_soporte', 'ruta_documento_identidad', 'ruta_pdf', 'ruta_pdf_firmado', 'estado', 'intentos', 'ultimo_error',
         'radicado_vur', 'enviado_at',
     ];

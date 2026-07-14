@@ -38,7 +38,6 @@ class ValidacionService
         'electoral' => 'soporte_electoral',
         'sisben' => 'respuesta_oficio_sisben',
         'jac' => 'certificacion_jac',
-        'especial' => 'soporte_especial',
     ];
 
     /**
@@ -221,7 +220,6 @@ class ValidacionService
     public function subsanar(
         Solicitud $solicitud,
         ?UploadedFile $soporte,
-        ?string $justificacion,
         ?User $actor,
     ): Solicitud {
         if ($solicitud->estado !== EstadoSolicitud::PendienteSoporte) {
@@ -232,7 +230,7 @@ class ValidacionService
 
         $tipo = $solicitud->medio_acreditacion->value;
 
-        DB::transaction(function () use ($solicitud, $soporte, $justificacion, $tipo, $actor) {
+        DB::transaction(function () use ($solicitud, $soporte, $tipo, $actor) {
             $documentoId = null;
 
             if ($soporte) {
@@ -241,10 +239,6 @@ class ValidacionService
                 // no la Respuesta de Oficio del especialista — por eso aquí
                 // NO se pasa por TIPO_DOC, para versionar el documento correcto.
                 $documentoId = $this->almacenarSoporte($solicitud, 'soporte_'.$tipo, $soporte, $actor);
-            }
-
-            if ($justificacion !== null) {
-                $solicitud->update(['justificacion_especial' => $justificacion]);
             }
 
             $solicitud->validaciones()->create([

@@ -2,7 +2,6 @@ import type { ChangeEvent } from 'react'
 import type { UseFormRegister, FieldErrors } from 'react-hook-form'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
-import { Textarea } from '@/components/ui/textarea'
 import { Field } from '@/components/ui/field'
 import { FileUpload } from '@/components/ui/file-upload'
 import type { SolicitudFormValues } from './solicitud-schema'
@@ -123,13 +122,6 @@ export function CertificadoSoporteStep({
       {requiereSoporteAhora && (
         <Field label={SOPORTE_LABEL[medio ?? ''] ?? 'Soporte de acreditación'} htmlFor="soporte" required>
           <FileUpload file={soporte} onChange={onSoporteChange} error={soporteError} />
-        </Field>
-      )}
-
-      {medio === 'especial' && (
-        <Field label="Justificación administrativa" htmlFor="justificacion_especial" required
-          hint="Explique por qué requiere un estudio especial" error={errors.justificacion_especial?.message}>
-          <Textarea id="justificacion_especial" rows={4} aria-invalid={!!errors.justificacion_especial} {...register('justificacion_especial')} />
         </Field>
       )}
 

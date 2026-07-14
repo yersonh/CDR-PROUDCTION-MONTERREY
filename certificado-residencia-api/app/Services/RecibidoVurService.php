@@ -105,7 +105,6 @@ class RecibidoVurService
                 motivo: $origen->motivo,
                 tipoCertificado: $origen->tipo_certificado,
                 medioAcreditacion: $origen->medio_acreditacion,
-                justificacionEspecial: $origen->justificacion_especial,
                 soporte: $soporte,
                 ciudadanoId: null,
                 createdBy: $sistema->id,

@@ -44,7 +44,7 @@ export function useSolicitud(id: number | string | undefined) {
   })
 }
 
-/** Registrar validación/carga de soporte (electoral, SISBEN, JAC, especial). */
+/** Registrar validación/carga de soporte (electoral, SISBEN, JAC). */
 export function useRegistrarValidacion(solicitudId: number) {
   const queryClient = useQueryClient()
 

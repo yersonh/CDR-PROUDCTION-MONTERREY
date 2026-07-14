@@ -148,13 +148,6 @@ class SolicitudPublicaTest extends TestCase
             ->assertCreated();
     }
 
-    public function test_especial_exige_justificacion(): void
-    {
-        $this->postJson('/api/v1/public/solicitudes', $this->payloadCompleto(['medio_acreditacion' => 'especial']))
-            ->assertStatus(422)
-            ->assertJsonValidationErrors('justificacion_especial');
-    }
-
     public function test_honeypot_rechaza_bots(): void
     {
         $this->postJson('/api/v1/public/solicitudes', $this->payloadCompleto(['sitio_web' => 'http://spam.example']))

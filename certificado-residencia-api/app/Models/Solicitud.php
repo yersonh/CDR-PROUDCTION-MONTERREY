@@ -22,7 +22,7 @@ class Solicitud extends Model
         'radicado', 'radicado_vur', 'ciudadano_id', 'tipo_certificado', 'medio_acreditacion',
         'nombre_completo', 'tipo_documento', 'numero_identificacion', 'direccion',
         'correo', 'celular', 'barrio_vereda_sector', 'sector_id', 'motivo', 'estado',
-        'justificacion_especial', 'dependencia_id', 'fecha_radicacion',
+        'dependencia_id', 'fecha_radicacion',
         'fecha_limite_sla', 'observaciones', 'created_by',
     ];
 

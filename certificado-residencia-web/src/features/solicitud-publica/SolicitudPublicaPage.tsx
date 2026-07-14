@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { ArrowLeft, ArrowRight, CheckCircle2, Download, FileWarning, Send } from 'lucide-react'
@@ -21,17 +21,11 @@ const STEPS = ['Datos del ciudadano', 'Certificado y soporte', 'Confirmación']
 const DEFAULT_VALUES: SolicitudFormValues = {
   nombre_completo: '', tipo_documento: '', numero_identificacion: '', direccion: '',
   correo: '', celular: '', barrio_vereda_sector: '', sector_id: '', motivo: '',
-  tipo_certificado: '', medio_acreditacion: '', justificacion_especial: '',
+  tipo_certificado: '', medio_acreditacion: '',
 }
 
 export function SolicitudPublicaPage() {
-  const { data: catalogosBase } = usePublicCatalogos()
-  // "Caso Especial" requiere estudio administrativo manual — no se ofrece en
-  // el canal de autoservicio, solo en el wizard interno que usa el personal.
-  const catalogos = useMemo(() => catalogosBase && {
-    ...catalogosBase,
-    medios_acreditacion: catalogosBase.medios_acreditacion.filter((m) => m.value !== 'especial'),
-  }, [catalogosBase])
+  const { data: catalogos } = usePublicCatalogos()
   const crear = useCreateSolicitudPublica()
   const preview = usePreviewSolicitudPublica()
   const [step, setStep] = useState(0)

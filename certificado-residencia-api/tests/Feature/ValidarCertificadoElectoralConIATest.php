@@ -47,7 +47,6 @@ class ValidarCertificadoElectoralConIATest extends TestCase
             motivo: null,
             tipoCertificado: TipoCertificado::General,
             medioAcreditacion: MedioAcreditacion::Electoral,
-            justificacionEspecial: null,
             soporte: UploadedFile::fake()->create('certificado_electoral.pdf', 20, 'application/pdf'),
             createdBy: $secretaria->id,
         );
@@ -80,7 +79,8 @@ class ValidarCertificadoElectoralConIATest extends TestCase
         $validacion = $solicitud->fresh()->validaciones()->where('tipo', 'electoral')->first();
         $this->assertNotNull($validacion);
         $this->assertSame('cumple', $validacion->resultado->value);
-        $this->assertStringContainsString('Gemini', $validacion->observacion);
+        $this->assertStringContainsString('IA', $validacion->observacion);
+        $this->assertStringNotContainsString('Gemini', $validacion->observacion);
         $this->assertSame('en_validacion', $solicitud->fresh()->estado->value);
     }
 
@@ -129,6 +129,28 @@ class ValidarCertificadoElectoralConIATest extends TestCase
         Http::assertNothingSent();
     }
 
+    public function test_secretaria_no_puede_revalidar_electoral_por_api_tras_la_ia(): void
+    {
+        $solicitud = $this->radicarElectoral();
+        $this->fakeGemini(false, 'No corresponde a la elección vigente');
+
+        (new ValidarCertificadoElectoralConIA($solicitud->id))->handle(app(\App\Services\GeminiService::class), app(\App\Services\ValidacionService::class));
+
+        $secretaria = User::factory()->create(['password' => Hash::make('password'), 'activo' => true]);
+        $secretaria->assignRole('secretaria');
+        \Laravel\Sanctum\Sanctum::actingAs($secretaria);
+
+        // Secretaría no está de acuerdo con el rechazo de la IA — su único
+        // mecanismo de corrección es la prevalidación, no reenviar este
+        // formulario para apilar una segunda validación "electoral".
+        $this->postJson("/api/v1/solicitudes/{$solicitud->id}/validaciones", [
+            'tipo' => 'electoral',
+            'resultado' => 'cumple',
+        ])->assertStatus(422)->assertJsonValidationErrors('tipo');
+
+        $this->assertSame(1, $solicitud->fresh()->validaciones()->where('tipo', 'electoral')->count());
+    }
+
     public function test_sin_documento_soporte_no_lanza_y_deja_para_validacion_manual(): void
     {
         $secretaria = User::factory()->create(['password' => Hash::make('password'), 'activo' => true]);
@@ -145,7 +167,6 @@ class ValidarCertificadoElectoralConIATest extends TestCase
             motivo: null,
             tipoCertificado: TipoCertificado::General,
             medioAcreditacion: MedioAcreditacion::Electoral,
-            justificacionEspecial: null,
             soporte: null,
             createdBy: $secretaria->id,
         );

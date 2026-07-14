@@ -3,7 +3,6 @@ import { useLocation, useParams } from 'react-router-dom'
 import { AlertTriangle, CheckCircle2, ShieldX } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Textarea } from '@/components/ui/textarea'
 import { FileUpload } from '@/components/ui/file-upload'
 import { getApiErrorMessage } from '@/lib/api'
 import { useEnviarSubsanacionPublica, useSubsanacionPublicaInfo } from './useSubsanacionPublica'
@@ -16,21 +15,17 @@ export function SubsanacionPublicaPage() {
   const enviar = useEnviarSubsanacionPublica(id, location.search)
 
   const [soporte, setSoporte] = useState<File | null>(null)
-  const [justificacion, setJustificacion] = useState('')
   const [errorLocal, setErrorLocal] = useState<string | null>(null)
 
   const requiereSoporte = data && ['electoral', 'sisben', 'jac'].includes(data.medio_acreditacion)
-  const requiereJustificacion = data?.medio_acreditacion === 'especial'
   const yaNoAplica = data && data.estado !== 'pendiente_soporte'
 
   const submit = () => {
     setErrorLocal(null)
     if (requiereSoporte && !soporte) { setErrorLocal('Debe adjuntar el documento solicitado.'); return }
-    if (requiereJustificacion && !justificacion.trim()) { setErrorLocal('Debe escribir la justificación.'); return }
 
     const fd = new FormData()
     if (soporte) fd.append('soporte', soporte)
-    if (justificacion.trim()) fd.append('justificacion', justificacion.trim())
     enviar.mutate(fd)
   }
 
@@ -93,13 +88,6 @@ export function SubsanacionPublicaPage() {
                   <div>
                     <p className="mb-1.5 text-sm font-medium text-institutional-text">Adjunte el documento corregido</p>
                     <FileUpload file={soporte} onChange={setSoporte} />
-                  </div>
-                )}
-
-                {requiereJustificacion && (
-                  <div>
-                    <p className="mb-1.5 text-sm font-medium text-institutional-text">Justificación</p>
-                    <Textarea value={justificacion} onChange={(e) => setJustificacion(e.target.value)} rows={4} />
                   </div>
                 )}
 

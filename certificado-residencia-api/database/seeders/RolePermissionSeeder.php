@@ -39,7 +39,6 @@ class RolePermissionSeeder extends Seeder
         // Firma
         'firma.ver_bandeja',
         'firma.firmar',
-        'casos_especiales.gestionar',
         // Certificados y expedientes
         'certificados.ver',
         'certificados.revocar',
@@ -60,7 +59,7 @@ class RolePermissionSeeder extends Seeder
     public const ROLE_PERMISSIONS = [
         'alcalde' => [
             'solicitudes.ver_todas', 'firma.ver_bandeja', 'firma.firmar',
-            'casos_especiales.gestionar', 'certificados.ver', 'certificados.revocar',
+            'certificados.ver', 'certificados.revocar',
             'expedientes.ver', 'dashboard.ver',
         ],
         // Secretaría fusiona lo que antes eran Recepcionista (radica,

@@ -40,7 +40,6 @@ class SubsanacionPublicaController extends Controller
         $solicitud = $this->validaciones->subsanar(
             solicitud: $solicitud,
             soporte: $request->file('soporte'),
-            justificacion: $request->validated('justificacion'),
             actor: null,
         );
 

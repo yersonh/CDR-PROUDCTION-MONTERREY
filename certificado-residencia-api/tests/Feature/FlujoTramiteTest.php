@@ -54,7 +54,6 @@ class FlujoTramiteTest extends TestCase
             motivo: null,
             tipoCertificado: TipoCertificado::General,
             medioAcreditacion: MedioAcreditacion::from($overrides['medio_acreditacion'] ?? 'electoral'),
-            justificacionEspecial: $overrides['justificacion_especial'] ?? null,
             soporte: $overrides['soporte'] ?? null,
             createdBy: $this->usuarioCon('secretaria')->id,
         );
@@ -131,9 +130,7 @@ class FlujoTramiteTest extends TestCase
 
     public function test_funcionario_sisben_no_puede_prevalidar(): void
     {
-        $id = $this->radicar([
-            'medio_acreditacion' => 'especial', 'justificacion_especial' => 'motivo',
-        ])->id;
+        $id = $this->radicar(['medio_acreditacion' => 'electoral'])->id;
 
         Sanctum::actingAs($this->usuarioCon('funcionario_sisben'));
         $this->postJson("/api/v1/solicitudes/{$id}/prevalidacion", ['resultado' => 'cumple'])

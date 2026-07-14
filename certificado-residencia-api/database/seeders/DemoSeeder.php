@@ -70,15 +70,13 @@ class DemoSeeder extends Seeder
             ['Laura Giraldo', '43111222', 'Barrio El Prado', MedioAcreditacion::Electoral, 'radicada'],
             ['Carlos Mesa', '43222333', 'Vereda La Aurora', MedioAcreditacion::Sisben, 'radicada'],
             ['Diana Rojas', '43333444', 'Barrio Centro', MedioAcreditacion::Electoral, 'preaprobada'],
-            ['Andrés Cano', '43444555', 'Barrio El Prado', MedioAcreditacion::Especial, 'certificada'],
+            ['Andrés Cano', '43444555', 'Barrio El Prado', MedioAcreditacion::Electoral, 'certificada'],
             ['Paola Nieto', '43555666', 'Vereda San Luis', MedioAcreditacion::Electoral, 'pendiente_soporte'],
             ['Jorge Vega', '43666777', 'Barrio Centro', MedioAcreditacion::Jac, 'radicada'],
         ];
 
         foreach ($muestras as [$nombre, $doc, $sector, $medio, $estadoFinal]) {
-            $soporte = $medio === MedioAcreditacion::Especial
-                ? null
-                : UploadedFile::fake()->create('soporte.pdf', 40, 'application/pdf');
+            $soporte = UploadedFile::fake()->create('soporte.pdf', 40, 'application/pdf');
 
             $solicitud = $solicitudes->radicar(new CreateSolicitudData(
                 nombreCompleto: $nombre,
@@ -92,7 +90,6 @@ class DemoSeeder extends Seeder
                 motivo: 'Trámite de demostración',
                 tipoCertificado: TipoCertificado::General,
                 medioAcreditacion: $medio,
-                justificacionEspecial: $medio === MedioAcreditacion::Especial ? 'Caso especial de demostración' : null,
                 soporte: $soporte,
                 ciudadanoId: null,
                 createdBy: $secretaria->id,

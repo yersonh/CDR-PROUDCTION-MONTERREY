@@ -29,10 +29,6 @@ class SubsanacionPublicaRequest extends FormRequest
                 'nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:20480',
                 Rule::requiredIf(fn () => in_array($medio, ['electoral', 'sisben', 'jac'], true)),
             ],
-            'justificacion' => [
-                'nullable', 'string', 'max:1500',
-                Rule::requiredIf(fn () => $medio === 'especial'),
-            ],
         ];
     }
 
@@ -40,7 +36,6 @@ class SubsanacionPublicaRequest extends FormRequest
     {
         return [
             'soporte.required' => 'Debe adjuntar nuevamente el soporte solicitado.',
-            'justificacion.required' => 'Debe actualizar la justificación del caso especial.',
         ];
     }
 }

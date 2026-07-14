@@ -63,7 +63,7 @@ Every module maps to one step:
    `App\Support\ColombiaHolidays` + `App\Support\SlaCalculator`).
 3. Citizen is notified by email with the radicado for tracking.
 4. **Validación de soportes** — supporting docs validated per `MedioAcreditacion` (Electoral /
-   SISBEN / JAC-with-QR / Especial).
+   SISBEN / JAC-with-QR).
 5. **Prevalidación** — reviewer marks: cumple / requiere subsanación / rechaza.
 6. **Firma** — Alcalde's signing inbox; individual or bulk signature.
 7. **Certificado** generation — official PDF with electronic signature, QR, code, SHA-256 hash.

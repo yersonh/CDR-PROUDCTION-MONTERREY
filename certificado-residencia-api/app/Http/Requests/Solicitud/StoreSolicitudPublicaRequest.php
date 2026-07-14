@@ -47,19 +47,13 @@ class StoreSolicitudPublicaRequest extends FormRequest
             'tipo_certificado' => ['required', Rule::enum(TipoCertificado::class)],
             'medio_acreditacion' => ['required', Rule::enum(MedioAcreditacion::class)],
 
-            'justificacion_especial' => [
-                'nullable', 'string', 'max:1500',
-                Rule::requiredIf(fn () => $this->input('medio_acreditacion') === MedioAcreditacion::Especial->value),
-            ],
-
             // A diferencia del wizard interno (donde el funcionario puede
             // cargar el soporte de SISBEN después), en el formulario público
             // no hay nadie más que lo suba — se exige de una vez para
             // electoral y SISBEN. JAC queda fuera a propósito: el ciudadano
             // normalmente no tiene ese documento (lo expide el Presidente
             // JAC), así que por ahora no se pide aquí — se completa después
-            // con la captura de datos del Presidente JAC. "Especial" tampoco
-            // lo requiere, porque usa la justificación escrita en su lugar.
+            // con la captura de datos del Presidente JAC.
             'soporte' => [
                 'nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:20480',
                 Rule::requiredIf(fn () => in_array($this->input('medio_acreditacion'), [
@@ -89,7 +83,6 @@ class StoreSolicitudPublicaRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'justificacion_especial.required' => 'La justificación es obligatoria para un caso especial.',
             'soporte.required' => 'Debe adjuntar el soporte de acreditación.',
             'soporte.mimes' => 'El soporte debe ser un archivo PDF, JPG o PNG.',
             'soporte.max' => 'El soporte no puede superar los 20 MB.',

@@ -20,17 +20,8 @@ export const solicitudSchema = z
     motivo: z.string().max(1000).optional(),
     tipo_certificado: z.string().min(1, 'Seleccione el tipo de certificado'),
     medio_acreditacion: z.string().min(1, 'Seleccione el medio de acreditación'),
-    justificacion_especial: z.string().max(1500).optional(),
   })
   .superRefine((data, ctx) => {
-    if (data.medio_acreditacion === 'especial' && !data.justificacion_especial?.trim()) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['justificacion_especial'],
-        message: 'La justificación es obligatoria para un caso especial',
-      })
-    }
-
     if (data.medio_acreditacion === 'jac' && !data.sector_id) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -56,5 +47,5 @@ export type SolicitudFormValues = z.infer<typeof solicitudSchema>
 /** Campos validados en cada paso del wizard. */
 export const STEP_FIELDS: (keyof SolicitudFormValues)[][] = [
   ['nombre_completo', 'tipo_documento', 'numero_identificacion', 'direccion', 'correo', 'celular', 'barrio_vereda_sector', 'motivo'],
-  ['tipo_certificado', 'medio_acreditacion', 'justificacion_especial', 'sector_id'],
+  ['tipo_certificado', 'medio_acreditacion', 'sector_id'],
 ]

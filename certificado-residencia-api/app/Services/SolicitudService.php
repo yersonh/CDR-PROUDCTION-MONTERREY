@@ -114,7 +114,6 @@ class SolicitudService
                 'sector_id' => $data->sectorId,
                 'motivo' => $data->motivo,
                 'estado' => EstadoSolicitud::Radicada,
-                'justificacion_especial' => $data->justificacionEspecial,
                 'fecha_radicacion' => $ahora,
                 'fecha_limite_sla' => SlaCalculator::fechaLimiteTramite($ahora),
                 'created_by' => $data->createdBy,
@@ -173,9 +172,9 @@ class SolicitudService
     }
 
     /**
-     * SISBEN y JAC van directo al especialista de su medio; el resto
-     * (electoral, especial) lo maneja Secretaría desde "radicada". No debe
-     * bloquear la radicación si falla — es solo un aviso interno.
+     * SISBEN y JAC van directo al especialista de su medio; electoral lo
+     * maneja Secretaría desde "radicada". No debe bloquear la radicación si
+     * falla — es solo un aviso interno.
      */
     private function notificarNuevaSolicitud(Solicitud $solicitud): void
     {

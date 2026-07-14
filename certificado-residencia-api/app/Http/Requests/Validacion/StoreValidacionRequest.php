@@ -13,7 +13,6 @@ class StoreValidacionRequest extends FormRequest
         'electoral' => 'soportes.validar_electoral',
         'sisben' => 'soportes.cargar_sisben',
         'jac' => 'soportes.cargar_jac',
-        'especial' => 'casos_especiales.gestionar',
     ];
 
     public function authorize(): bool
@@ -31,7 +30,7 @@ class StoreValidacionRequest extends FormRequest
         $esJac = $this->input('tipo') === 'jac';
 
         return [
-            'tipo' => ['required', Rule::in(['electoral', 'sisben', 'jac', 'especial'])],
+            'tipo' => ['required', Rule::in(['electoral', 'sisben', 'jac'])],
             'resultado' => ['nullable', Rule::enum(ResultadoValidacion::class)],
             'observacion' => ['nullable', 'string', 'max:1500'],
 

@@ -75,7 +75,7 @@ class ValidarCertificadoElectoralConIA implements ShouldQueue
         $resultadoIA = $gemini->validarCertificadoElectoral($rutaAbsoluta, (string) $mime);
 
         $resultado = $resultadoIA['valido'] ? ResultadoValidacion::Cumple : ResultadoValidacion::Rechaza;
-        $observacion = 'Validado automáticamente por IA (Gemini): '.$resultadoIA['motivo'];
+        $observacion = 'Validado automáticamente por IA: '.$resultadoIA['motivo'];
 
         $sistema = User::where('email', 'ia-electoral@sistema.local')->firstOrFail();
 

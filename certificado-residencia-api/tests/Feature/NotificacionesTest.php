@@ -50,7 +50,6 @@ class NotificacionesTest extends TestCase
             motivo: null,
             tipoCertificado: TipoCertificado::General,
             medioAcreditacion: MedioAcreditacion::from($medio),
-            justificacionEspecial: $medio === 'especial' ? 'motivo' : null,
             soporte: null,
             createdBy: $this->usuarioCon($createdByRol)->id,
             sectorId: $sectorId,

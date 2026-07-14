@@ -4,7 +4,7 @@ import { api } from '@/lib/api'
 export interface SubsanacionPublicaInfo {
   radicado: string
   nombre_completo: string
-  medio_acreditacion: 'electoral' | 'sisben' | 'jac' | 'especial'
+  medio_acreditacion: 'electoral' | 'sisben' | 'jac'
   estado: string
   observacion: string | null
 }

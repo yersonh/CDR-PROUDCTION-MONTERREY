@@ -90,7 +90,6 @@ export interface Solicitud {
   }
   sector: { id: number; nombre: string } | null
   motivo: string | null
-  justificacion_especial: string | null
   fecha_radicacion: string
   sla: {
     fecha_limite: string | null

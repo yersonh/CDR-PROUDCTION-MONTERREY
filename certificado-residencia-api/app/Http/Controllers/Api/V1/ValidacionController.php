@@ -19,7 +19,7 @@ class ValidacionController extends Controller
     public function __construct(private readonly ValidacionService $validaciones) {}
 
     /**
-     * Registrar la validación/carga de un soporte (electoral, SISBEN, JAC o especial).
+     * Registrar la validación/carga de un soporte (electoral, SISBEN o JAC).
      */
     public function store(StoreValidacionRequest $request, Solicitud $solicitud): JsonResponse
     {
@@ -49,7 +49,6 @@ class ValidacionController extends Controller
         $solicitud = $this->validaciones->subsanar(
             solicitud: $solicitud,
             soporte: $request->file('soporte'),
-            justificacion: $request->validated('justificacion'),
             actor: $request->user(),
         );
 

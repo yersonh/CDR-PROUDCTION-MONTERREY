@@ -21,7 +21,6 @@ const PERMISO_LABEL: Record<string, string> = {
   'validacion.prevalidar': 'Prevalidar solicitudes',
   'firma.ver_bandeja': 'Ver bandeja de firma',
   'firma.firmar': 'Firmar certificados',
-  'casos_especiales.gestionar': 'Gestionar casos especiales',
   'certificados.ver': 'Ver certificados',
   'certificados.revocar': 'Revocar certificados',
   'expedientes.ver': 'Ver expedientes',

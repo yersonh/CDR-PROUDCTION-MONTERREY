@@ -43,7 +43,6 @@ class SolicitudResource extends JsonResource
             ],
             'sector' => $this->sector_id ? ['id' => $this->sector_id, 'nombre' => $this->sector?->nombre] : null,
             'motivo' => $this->motivo,
-            'justificacion_especial' => $this->justificacion_especial,
             'fecha_radicacion' => $this->fecha_radicacion,
             'sla' => [
                 'fecha_limite' => $this->fecha_limite_sla,

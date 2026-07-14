@@ -51,10 +51,6 @@
             2015, artículo 2.3.2.3.1), por medio de: <strong>{{ $s->medio_acreditacion->label() }}</strong>.
         </p>
 
-        @if ($s->justificacion_especial)
-            <p>{{ $s->justificacion_especial }}</p>
-        @endif
-
         <p>Agradezco la gestión que se sirvan prestar a la presente.</p>
     </div>
 
