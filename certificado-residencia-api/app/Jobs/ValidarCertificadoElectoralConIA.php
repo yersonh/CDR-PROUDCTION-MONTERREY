@@ -60,10 +60,19 @@ class ValidarCertificadoElectoralConIA implements ShouldQueue
             return;
         }
 
-        $resultadoIA = $gemini->validarCertificadoElectoral(
-            Storage::disk('local')->path($documento->path),
-            (string) $documento->mime,
-        );
+        $rutaAbsoluta = Storage::disk('local')->path($documento->path);
+
+        // Documentos guardados antes de que RecibidoVurService detectara el
+        // mime real (o cualquier otro dato viejo/genérico) quedaron con
+        // "application/octet-stream" — Gemini lo rechaza de plano (HTTP 400
+        // "Unsupported MIME type"). Si el mime guardado es ese genérico, se
+        // vuelve a detectar directamente del archivo en disco.
+        $mime = $documento->mime;
+        if (! $mime || $mime === 'application/octet-stream') {
+            $mime = mime_content_type($rutaAbsoluta) ?: $mime;
+        }
+
+        $resultadoIA = $gemini->validarCertificadoElectoral($rutaAbsoluta, (string) $mime);
 
         $resultado = $resultadoIA['valido'] ? ResultadoValidacion::Cumple : ResultadoValidacion::Rechaza;
         $observacion = 'Validado automáticamente por IA (Gemini): '.$resultadoIA['motivo'];

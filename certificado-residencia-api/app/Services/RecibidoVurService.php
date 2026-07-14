@@ -148,11 +148,22 @@ class RecibidoVurService
         }
     }
 
-    /** Envuelve un archivo ya guardado en el disco local como UploadedFile, para reusar servicios pensados para uploads reales sin duplicar el archivo físico. */
+    /**
+     * Envuelve un archivo ya guardado en el disco local como UploadedFile,
+     * para reusar servicios pensados para uploads reales sin duplicar el
+     * archivo físico.
+     *
+     * OJO: sin pasar un mime explícito, Symfony cae en
+     * "application/octet-stream" — DocumentoService lo guarda tal cual, y
+     * Gemini rechaza ese mime de plano (ver ValidarCertificadoElectoralConIA)
+     * con HTTP 400 "Unsupported MIME type". Por eso se detecta el mime real
+     * del archivo en disco en vez de dejarlo en null.
+     */
     private function comoUploadedFile(string $rutaRelativa): UploadedFile
     {
         $rutaAbsoluta = Storage::disk('local')->path($rutaRelativa);
+        $mime = mime_content_type($rutaAbsoluta) ?: 'application/octet-stream';
 
-        return new UploadedFile($rutaAbsoluta, basename($rutaRelativa), null, null, true);
+        return new UploadedFile($rutaAbsoluta, basename($rutaRelativa), $mime, null, true);
     }
 }
