@@ -21,7 +21,7 @@
         .footer .direccion { text-align: left; line-height: 1.5; margin-bottom: 6px; }
         .footer .pagina { text-align: center; }
 
-        .meta-row { width: 100%; font-size: 9px; color: #000; margin-bottom: 14px; text-align: right; }
+        .meta-row { width: 100%; font-size: 9px; color: #000; margin-bottom: 14px; text-align: left; }
 
         .titulo { text-align: center; font-size: 13px; font-weight: bold; margin: 0 0 12px; text-transform: uppercase; }
 
