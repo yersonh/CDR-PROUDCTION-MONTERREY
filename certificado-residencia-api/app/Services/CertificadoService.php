@@ -25,6 +25,26 @@ class CertificadoService
         7 => 'julio', 8 => 'agosto', 9 => 'septiembre', 10 => 'octubre', 11 => 'noviembre', 12 => 'diciembre',
     ];
 
+    /** Día del mes en letras, como se estila en la redacción de actos administrativos ("primero", no "uno"). */
+    private const DIAS_EN_LETRAS = [
+        1 => 'primero', 2 => 'dos', 3 => 'tres', 4 => 'cuatro', 5 => 'cinco', 6 => 'seis', 7 => 'siete',
+        8 => 'ocho', 9 => 'nueve', 10 => 'diez', 11 => 'once', 12 => 'doce', 13 => 'trece', 14 => 'catorce',
+        15 => 'quince', 16 => 'dieciséis', 17 => 'diecisiete', 18 => 'dieciocho', 19 => 'diecinueve',
+        20 => 'veinte', 21 => 'veintiuno', 22 => 'veintidós', 23 => 'veintitrés', 24 => 'veinticuatro',
+        25 => 'veinticinco', 26 => 'veintiséis', 27 => 'veintisiete', 28 => 'veintiocho', 29 => 'veintinueve',
+        30 => 'treinta', 31 => 'treinta y uno',
+    ];
+
+    private const CANTIDAD_MESES_EN_LETRAS = [
+        1 => 'uno', 2 => 'dos', 3 => 'tres', 4 => 'cuatro', 5 => 'cinco', 6 => 'seis',
+        7 => 'siete', 8 => 'ocho', 9 => 'nueve', 10 => 'diez', 11 => 'once', 12 => 'doce',
+    ];
+
+    private const TIPOS_DOCUMENTO = [
+        'CC' => 'cédula de ciudadanía', 'TI' => 'tarjeta de identidad', 'CE' => 'cédula de extranjería',
+        'PA' => 'pasaporte', 'PEP' => 'permiso especial de permanencia', 'NIT' => 'NIT',
+    ];
+
     public function __construct(
         private readonly RadicadoGenerator $consecutivos,
         private readonly QrService $qr,
@@ -145,12 +165,23 @@ class CertificadoService
             ? 'data:image/png;base64,'.base64_encode(file_get_contents($escudoPath))
             : '';
 
-        // Imagen de firma del Alcalde, si la tiene cargada
+        // Imagen de firma del Alcalde, si la tiene cargada. Se reduce a un
+        // tamaño fijo en servidor (no solo con CSS): DomPDF calcula el alto
+        // de las filas de tabla a partir del tamaño intrínseco de la imagen
+        // ANTES de aplicar max-height, así que una firma subida a resolución
+        // real (p. ej. 1887×906) hace que la tabla "no quepa" en el espacio
+        // restante de la página y empuje todo el bloque de firma a una
+        // segunda hoja en blanco, aunque visualmente sobre espacio.
         $firmaImg = '';
         $firmaPath = $certificado->firmadoPor?->firma_path;
         if ($firmaPath && Storage::disk('local')->exists($firmaPath)) {
-            $firmaImg = 'data:image/png;base64,'.base64_encode(Storage::disk('local')->get($firmaPath));
+            $firmaImg = $this->miniaturaBase64(Storage::disk('local')->get($firmaPath), 220, 90);
         }
+
+        // No se usa diffInMonths() entre las fechas reales: al no tener todos
+        // los meses la misma duración, da valores como 2.9 en vez de 3 y
+        // redondea mal. Se deriva directamente de la constante de vigencia.
+        $mesesVigencia = (int) round(self::VIGENCIA_DIAS / 30);
 
         return Pdf::loadView('certificados.certificado', [
             'certificado' => $certificado,
@@ -160,7 +191,48 @@ class CertificadoService
             'firma_img' => $firmaImg,
             'verificacion_url' => $verificacionUrl,
             'meses' => self::MESES,
+            'dia_letras' => self::DIAS_EN_LETRAS[(int) $certificado->fecha_expedicion->format('j')] ?? $certificado->fecha_expedicion->format('d'),
+            'meses_vigencia' => $mesesVigencia,
+            'meses_vigencia_letras' => self::CANTIDAD_MESES_EN_LETRAS[$mesesVigencia] ?? (string) $mesesVigencia,
+            'tipo_documento_label' => self::TIPOS_DOCUMENTO[$s->tipo_documento] ?? ($s->tipo_documento ?? 'documento de identidad'),
         ])->setPaper('letter')->output();
+    }
+
+    /**
+     * Redimensiona una imagen (manteniendo proporción, sin recortar) a un
+     * tamaño máximo en píxeles y la devuelve como data URI PNG. Si GD no
+     * está disponible o la imagen no se puede leer, devuelve el binario
+     * original tal cual (degrada con gracia, no bloquea la generación).
+     */
+    private function miniaturaBase64(string $binario, int $maxAncho, int $maxAlto): string
+    {
+        if (! function_exists('imagecreatefromstring')) {
+            return 'data:image/png;base64,'.base64_encode($binario);
+        }
+
+        $origen = @imagecreatefromstring($binario);
+        if (! $origen) {
+            return 'data:image/png;base64,'.base64_encode($binario);
+        }
+
+        $anchoOrigen = imagesx($origen);
+        $altoOrigen = imagesy($origen);
+        $escala = min($maxAncho / $anchoOrigen, $maxAlto / $altoOrigen, 1);
+        $ancho = max(1, (int) round($anchoOrigen * $escala));
+        $alto = max(1, (int) round($altoOrigen * $escala));
+
+        $miniatura = imagecreatetruecolor($ancho, $alto);
+        imagealphablending($miniatura, false);
+        imagesavealpha($miniatura, true);
+        imagecopyresampled($miniatura, $origen, 0, 0, 0, 0, $ancho, $alto, $anchoOrigen, $altoOrigen);
+        imagedestroy($origen);
+
+        ob_start();
+        imagepng($miniatura);
+        $contenido = ob_get_clean();
+        imagedestroy($miniatura);
+
+        return 'data:image/png;base64,'.base64_encode($contenido);
     }
 
     private function codigoVerificacionUnico(): string
