@@ -40,10 +40,12 @@ class UserSeeder extends Seeder
 
             $user->syncRoles([$data['role']]);
 
-            // Firmar certificados exige tener una firma electrónica cargada
-            // (ver CertificadoService::firmar) — el Alcalde demo necesita una
-            // para poder usarse en pruebas/demo sin pasar primero por Mi perfil.
-            if ($data['role'] === 'alcalde' && ! $user->firma_path) {
+            // Firmar certificados (Alcalde) y prevalidar con concepto "Cumple"
+            // (Secretaría) exigen tener una firma electrónica cargada (ver
+            // CertificadoService::firmar y ValidacionService::prevalidar) —
+            // estas cuentas demo necesitan una para usarse en pruebas sin
+            // pasar primero por Mi perfil.
+            if (in_array($data['role'], ['alcalde', 'secretaria'], true) && ! $user->firma_path) {
                 $rutaFirma = 'firmas/user_'.$user->id.'.png';
                 Storage::disk('local')->put(
                     $rutaFirma,

@@ -88,8 +88,11 @@ class FlujoTramiteTest extends TestCase
             'soporte' => UploadedFile::fake()->create('e.pdf', 30, 'application/pdf'),
         ])->id;
 
-        // 2. Secretaría valida y prevalida
+        // 2. Secretaría valida y prevalida (prevalidar "cumple" exige tener firma electrónica cargada)
         $secretaria = $this->usuarioCon('secretaria');
+        $secretaria->forceFill(['firma_path' => 'firmas/user_'.$secretaria->id.'.png'])->save();
+        Storage::disk('local')->put($secretaria->firma_path, 'contenido-firma-de-prueba');
+
         Sanctum::actingAs($secretaria);
         $this->postJson("/api/v1/solicitudes/{$id}/validaciones", ['tipo' => 'electoral', 'resultado' => 'cumple'])
             ->assertCreated();

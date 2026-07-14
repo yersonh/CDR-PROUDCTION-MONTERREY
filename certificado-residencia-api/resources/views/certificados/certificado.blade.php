@@ -3,41 +3,45 @@
 <head>
     <meta charset="utf-8">
     <style>
-        @page { margin: 135px 60px 70px 60px; }
-        body { font-family: 'DejaVu Serif', serif; color: #000; font-size: 12px; line-height: 1.5; }
+        @page { margin: 145px 60px 115px 60px; }
+        body { font-family: 'DejaVu Serif', serif; color: #000; font-size: 11.5px; line-height: 1.42; }
+        p { margin: 0 0 9px; }
 
-        .header { position: fixed; top: -120px; left: 0; right: 0; text-align: center; }
+        .header { position: fixed; top: -128px; left: 0; right: 0; text-align: center; }
         .header .escudo { height: 55px; }
         .header .entidad { font-size: 15px; font-weight: bold; color: #000; margin-top: 4px; letter-spacing: 0.5px; }
         .header .nit { font-size: 10px; color: #000; margin-top: 2px; }
         .header hr { border: none; border-top: 1.5px solid #000; margin: 6px 0 0; }
 
-        .footer { position: fixed; bottom: -60px; left: 0; right: 0; font-size: 9px; color: #000; text-align: center; }
-        .footer hr { border: none; border-top: 1px solid #000; margin-bottom: 4px; }
+        .footer { position: fixed; bottom: -100px; left: 0; right: 0; font-size: 9px; color: #000; text-align: center; }
+        .footer hr { border: none; border-top: 1px solid #000; margin-bottom: 5px; }
+        .footer .direccion { margin-bottom: 3px; }
 
-        .meta-row { width: 100%; font-size: 9px; color: #000; margin-bottom: 18px; text-align: right; }
+        .meta-row { width: 100%; font-size: 9px; color: #000; margin-bottom: 14px; text-align: right; }
 
-        .titulo { text-align: center; font-size: 13px; font-weight: bold; margin: 0 0 16px; text-transform: uppercase; }
+        .titulo { text-align: center; font-size: 13px; font-weight: bold; margin: 0 0 12px; text-transform: uppercase; }
 
         .cuerpo { text-align: justify; }
         .cuerpo strong { font-weight: bold; }
-        .certifica { text-align: center; font-weight: bold; font-size: 13px; margin: 16px 0; }
+        .certifica { text-align: center; font-weight: bold; font-size: 13px; margin: 12px 0; }
+        .cierre p { text-align: center; margin: 0 0 7px; }
 
-        .requisitos { width: 100%; margin: 12px 0 16px; font-size: 12px; }
+        .requisitos { width: 100%; margin: 8px 0 12px; font-size: 11.5px; }
         .requisitos td { padding: 2px 0; }
         .requisitos td.req-label { width: 75%; }
         .requisitos td.req-valor { text-align: right; font-weight: bold; }
 
-        .firma-wrap { width: 100%; margin-top: 20px; }
+        .firma-wrap { width: 100%; margin-top: 16px; }
         .firma-box { display: inline-block; width: 55%; vertical-align: bottom; }
-        .firma-img { max-width: 160px; max-height: 65px; margin-bottom: 2px; }
-        .firma-line { border-top: 1px solid #000; padding-top: 4px; font-size: 11px; width: 75%; }
+        .firma-img { max-width: 150px; max-height: 55px; margin-bottom: 2px; }
+        .firma-line { border-top: 1px solid #000; padding-top: 3px; font-size: 10.5px; width: 75%; }
         .firma-nombre { font-weight: bold; text-transform: uppercase; }
         .firma-tag { font-size: 9px; color: #000; }
+        .proyecto-box { margin-top: 12px; }
         .qr-box { display: inline-block; width: 40%; text-align: right; vertical-align: bottom; }
-        .qr-box img { width: 95px; height: 95px; }
+        .qr-box img { width: 85px; height: 85px; }
 
-        .verif { margin-top: 22px; padding-top: 8px; border-top: 1px solid #000; font-size: 9px; color: #000; }
+        .verif { margin-top: 16px; padding-top: 6px; border-top: 1px solid #000; font-size: 9px; color: #000; }
         .verif .cod { font-weight: bold; letter-spacing: 1px; }
         .hash { word-break: break-all; font-family: 'DejaVu Sans Mono', monospace; font-size: 8px; }
     </style>
@@ -52,6 +56,7 @@
 
     <div class="footer">
         <hr>
+        <div class="direccion">Carrera 6 15-72 · Código Postal 855 010 · Pbx (8) 624 9890 · www.monterrey-casanare.gov.co</div>
         Documento generado electrónicamente conforme al Decreto 1158 de 2019 y los principios de Gobierno Digital.<br>
         Verifique su autenticidad en {{ $verificacion_url }}
     </div>
@@ -92,16 +97,18 @@
             </tr>
         </table>
 
-        <p>La presente certificación se expide a solicitud escrita del interesado(a).</p>
-        <p>
-            Dada en Monterrey - Casanare, hoy {{ $dia_letras }}
-            ({{ $certificado->fecha_expedicion->format('d') }}) de {{ $meses[(int) $certificado->fecha_expedicion->format('n')] }}
-            de {{ $certificado->fecha_expedicion->format('Y') }}.
-        </p>
-        <p>
-            Tendrá vigencia de {{ $meses_vigencia_letras }} ({{ $meses_vigencia }}) meses, contados a partir de la
-            expedición.
-        </p>
+        <div class="cierre">
+            <p>La presente certificación se expide a solicitud escrita del interesado(a).</p>
+            <p>
+                Dada en Monterrey - Casanare, hoy {{ $dia_letras }}
+                ({{ $certificado->fecha_expedicion->format('d') }}) de {{ $meses[(int) $certificado->fecha_expedicion->format('n')] }}
+                de {{ $certificado->fecha_expedicion->format('Y') }}.
+            </p>
+            <p>
+                Tendrá vigencia de {{ $meses_vigencia_letras }} ({{ $meses_vigencia }}) meses, contados a partir de la
+                expedición.
+            </p>
+        </div>
     </div>
 
     <div class="firma-wrap">
@@ -112,8 +119,20 @@
             <div class="firma-line">
                 <span class="firma-nombre">{{ $certificado->firmadoPor->name ?? 'Alcalde Municipal' }}</span><br>
                 Alcalde Municipal<br>
-                <span class="firma-tag">✓ Firmado electrónicamente</span>
+                <span class="firma-tag">Despacho del Alcalde</span>
             </div>
+
+            @if ($proyecto_nombre)
+                <div class="proyecto-box">
+                    @if (!empty($proyecto_img))
+                        <img src="{{ $proyecto_img }}" alt="Firma" class="firma-img"><br>
+                    @endif
+                    <div class="firma-line">
+                        {{ $proyecto_nombre }}<br>
+                        <span class="firma-tag">Proyectó · Secretaría Ejecutiva del Despacho del Alcalde</span>
+                    </div>
+                </div>
+            @endif
         </div>
         <div class="qr-box">
             <img src="{{ $qr }}" alt="QR de verificación">

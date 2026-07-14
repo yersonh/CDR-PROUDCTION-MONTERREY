@@ -247,6 +247,7 @@ function JacForm({ solicitud }: { solicitud: Solicitud }) {
  * aplica para esos dos medios (solo Cumple/Rechaza).
  */
 function PrevalidarForm({ solicitud }: { solicitud: Solicitud }) {
+  const { user } = useAuth()
   const prevalidar = usePrevalidar(solicitud.id)
   const medio = solicitud.medio_acreditacion.value
   const resultados = ['sisben', 'jac'].includes(medio)
@@ -255,6 +256,10 @@ function PrevalidarForm({ solicitud }: { solicitud: Solicitud }) {
   const [resultado, setResultado] = useState<'cumple' | 'subsanar' | 'rechaza'>('cumple')
   const [observacion, setObservacion] = useState('')
   const [error, setError] = useState<string>()
+
+  // Quien prevalida "cumple" queda como "Proyectó" en el certificado final
+  // — no puede enviarlo al Alcalde sin haber cargado antes su propia firma.
+  const requiereFirma = resultado === 'cumple' && !(user?.tiene_firma ?? false)
 
   const submit = () => {
     if (resultado !== 'cumple' && !observacion.trim()) {
@@ -277,7 +282,22 @@ function PrevalidarForm({ solicitud }: { solicitud: Solicitud }) {
         <Textarea id="pv-obs" rows={2} value={observacion} onChange={(e) => setObservacion(e.target.value)}
           placeholder={resultado === 'cumple' ? 'Opcional' : 'Motivo obligatorio'} />
       </Field>
-      <Button variant={resultado === 'rechaza' ? 'danger' : 'success'} onClick={submit} loading={prevalidar.isPending}>
+      {requiereFirma && (
+        <div className="flex items-start gap-2 rounded-lg border border-warning/40 bg-amber-50 px-4 py-3 text-sm text-institutional-text">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
+          <span>
+            No tiene firma electrónica registrada. Debe cargarla en{' '}
+            <Link to="/perfil" className="font-semibold text-primary hover:underline">Mi perfil</Link>{' '}
+            antes de emitir un concepto de "Cumple".
+          </span>
+        </div>
+      )}
+      <Button
+        variant={resultado === 'rechaza' ? 'danger' : 'success'}
+        onClick={submit}
+        loading={prevalidar.isPending}
+        disabled={requiereFirma}
+      >
         Emitir concepto
       </Button>
     </FormBox>

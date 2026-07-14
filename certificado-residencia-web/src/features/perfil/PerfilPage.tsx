@@ -10,7 +10,10 @@ import type { Funcionario } from '@/types/auth'
 
 export function PerfilPage() {
   const { user } = useAuth()
-  const esAlcalde = user?.roles.includes('alcalde') ?? false
+  // Alcalde firma el certificado; Secretaría "proyecta" (prevalida) y su
+  // firma también queda incrustada en el documento final — ver
+  // ValidacionService::prevalidar.
+  const necesitaFirma = user?.roles.some((r) => r === 'alcalde' || r === 'secretaria') ?? false
 
   return (
     <div className="mx-auto max-w-2xl animate-fade-up space-y-6">
@@ -21,7 +24,7 @@ export function PerfilPage() {
 
       <FotoPerfil tieneFoto={user?.tiene_foto ?? false} />
       <InfoFuncionario funcionario={user?.funcionario} />
-      {esAlcalde && <SubirFirma tieneFirma={user?.tiene_firma ?? false} />}
+      {necesitaFirma && <SubirFirma tieneFirma={user?.tiene_firma ?? false} />}
     </div>
   )
 }

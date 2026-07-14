@@ -163,6 +163,17 @@ class ValidacionService
             ]);
         }
 
+        // Quien prevalida "cumple" es quien firma como "Proyectó" en el
+        // certificado final (ver CertificadoService::renderPdf) — no debe
+        // poder enviarla al Alcalde sin haber cargado antes su propia firma.
+        if ($resultado === ResultadoValidacion::Cumple
+            && (! $actor->firma_path || ! Storage::disk('local')->exists($actor->firma_path))
+        ) {
+            throw ValidationException::withMessages([
+                'resultado' => 'No tiene firma electrónica registrada. Debe cargarla en Mi perfil antes de prevalidar una solicitud.',
+            ]);
+        }
+
         DB::transaction(function () use ($solicitud, $resultado, $observacion, $actor) {
             $solicitud->validaciones()->create([
                 'tipo' => 'prevalidacion',

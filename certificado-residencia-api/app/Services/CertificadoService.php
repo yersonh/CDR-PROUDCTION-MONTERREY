@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\EstadoCertificado;
 use App\Enums\EstadoSolicitud;
+use App\Enums\ResultadoValidacion;
 use App\Models\Certificado;
 use App\Models\Solicitud;
 use App\Models\User;
@@ -178,6 +179,22 @@ class CertificadoService
             $firmaImg = $this->miniaturaBase64(Storage::disk('local')->get($firmaPath), 220, 90);
         }
 
+        // Quien "proyectó" el certificado: la Secretaría que prevalidó con
+        // concepto "Cumple" (ver ValidacionService::prevalidar, que exige
+        // firma cargada antes de poder emitir ese concepto).
+        $prevalidacion = $s->validaciones()
+            ->where('tipo', 'prevalidacion')
+            ->where('resultado', ResultadoValidacion::Cumple->value)
+            ->with('validadoPor')
+            ->latest('validado_at')
+            ->first();
+
+        $proyectoImg = '';
+        $proyectoPath = $prevalidacion?->validadoPor?->firma_path;
+        if ($proyectoPath && Storage::disk('local')->exists($proyectoPath)) {
+            $proyectoImg = $this->miniaturaBase64(Storage::disk('local')->get($proyectoPath), 220, 90);
+        }
+
         // No se usa diffInMonths() entre las fechas reales: al no tener todos
         // los meses la misma duración, da valores como 2.9 en vez de 3 y
         // redondea mal. Se deriva directamente de la constante de vigencia.
@@ -189,6 +206,8 @@ class CertificadoService
             'qr' => $qr,
             'escudo' => $escudo,
             'firma_img' => $firmaImg,
+            'proyecto_img' => $proyectoImg,
+            'proyecto_nombre' => $prevalidacion?->validadoPor?->name,
             'verificacion_url' => $verificacionUrl,
             'meses' => self::MESES,
             'dia_letras' => self::DIAS_EN_LETRAS[(int) $certificado->fecha_expedicion->format('j')] ?? $certificado->fecha_expedicion->format('d'),
