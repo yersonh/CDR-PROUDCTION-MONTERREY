@@ -37,7 +37,7 @@ export function SolicitudDetallePage() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl animate-fade-up">
+    <div className="mx-auto max-w-7xl animate-fade-up">
       <Link to="/solicitudes" className="mb-3 inline-flex items-center gap-1 text-sm text-white/70 hover:text-gold-light">
         <ArrowLeft className="h-4 w-4" /> Volver
       </Link>
