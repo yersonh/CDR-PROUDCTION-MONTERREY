@@ -56,7 +56,7 @@ class ConceptoRegistradoNotification extends Notification
         if ($positivo) {
             $mensaje->line('Su trámite continúa su curso normal.');
         } else {
-            $mensaje->line('Puede consultar el detalle y los próximos pasos ingresando a su cuenta.');
+            $mensaje->line('Para más información sobre los próximos pasos, comuníquese con la Alcaldía indicando el número de radicado.');
         }
 
         return $mensaje->salutation('Alcaldía de Monterrey · Casanare');
