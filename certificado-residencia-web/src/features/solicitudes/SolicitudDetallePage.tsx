@@ -37,7 +37,7 @@ export function SolicitudDetallePage() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl animate-fade-up">
+    <div className="mx-auto max-w-6xl animate-fade-up">
       <Link to="/solicitudes" className="mb-3 inline-flex items-center gap-1 text-sm text-white/70 hover:text-gold-light">
         <ArrowLeft className="h-4 w-4" /> Volver
       </Link>
@@ -52,6 +52,13 @@ export function SolicitudDetallePage() {
           <EstadoBadge label={s.estado.label} color={s.estado.color} />
           <SemaforoSla semaforo={s.sla.semaforo} dias={s.sla.dias_habiles_restantes} />
         </div>
+      </div>
+
+      {/* Gestión del trámite: a todo el ancho, no en la columna angosta,
+          porque sus formularios (p. ej. certificación JAC) necesitan varios
+          campos en una sola fila sin que queden apretados. */}
+      <div className="mb-6">
+        <GestionSolicitud solicitud={s} />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
@@ -111,10 +118,8 @@ export function SolicitudDetallePage() {
           </Card>
         </div>
 
-        {/* Gestión + Línea de tiempo */}
+        {/* Línea de tiempo */}
         <div className="space-y-6">
-          <GestionSolicitud solicitud={s} />
-
           <Card className="h-fit">
             <CardHeader><CardTitle>Línea de tiempo</CardTitle></CardHeader>
             <CardContent>
