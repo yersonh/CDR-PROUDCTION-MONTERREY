@@ -121,6 +121,12 @@ class ClienteVur
      *   intake.
      * - Body: {"estado": "EN_TRAMITE" | "RESPONDIDO" | "CERRADO"} — ANULADO
      *   queda exclusivo del botón manual de su admin, no lo usamos.
+     * - Cuando el estado es RESPONDIDO, además se adjunta el PDF del
+     *   certificado firmado como `documento_respuesta` (multipart) — VUR lo
+     *   guarda como su propio documento SALIDA del radicado (la respuesta a
+     *   la entrada que él mismo nos envió), igual que ya hace su propio
+     *   `RadicadoService::adjuntarPdfSalida()` cuando un operador de VUR
+     *   adjunta la respuesta a mano.
      * - Responde 404 si el radicado no existe, 422 si ya está en estado
      *   terminal o el estado no es válido, 200 si aplica.
      * Cualquier fallo se trata como no bloqueante: se loguea y ya, igual que
@@ -128,13 +134,28 @@ class ClienteVur
      *
      * @return array{ok: bool, status: int, body: ?string}
      */
-    public function notificarEstado(string $radicadoVur, string $estadoVur): array
+    public function notificarEstado(string $radicadoVur, string $estadoVur, ?string $documentoRespuestaPath = null): array
     {
+        $handle = null;
+        $url = "{$this->baseUrl}/v1/solicitudes-carta-residencia/{$radicadoVur}/estado";
+
         try {
-            $response = $this->cliente()->patch(
-                "{$this->baseUrl}/v1/solicitudes-carta-residencia/{$radicadoVur}/estado",
-                ['estado' => $estadoVur],
-            );
+            if ($documentoRespuestaPath) {
+                // PHP solo puebla $_FILES para un archivo multipart en una
+                // petición PATCH real si corre en PHP 8.4+ (request_parse_body).
+                // VUR solo exige ^8.3 en su composer.json — no se puede asumir
+                // 8.4 del otro lado. Por eso esto va como POST con
+                // _method=PATCH (spoofing que Laravel reconoce siempre para
+                // peticiones POST reales, ver Request::enableHttpMethodParameterOverride),
+                // que sí garantiza el parseo nativo de $_FILES sin importar
+                // la versión de PHP de VUR.
+                $handle = fopen($documentoRespuestaPath, 'r');
+                $response = $this->cliente()->asMultipart()
+                    ->attach('documento_respuesta', $handle, basename($documentoRespuestaPath))
+                    ->post($url, ['estado' => $estadoVur, '_method' => 'PATCH']);
+            } else {
+                $response = $this->cliente()->patch($url, ['estado' => $estadoVur]);
+            }
         } catch (Throwable $e) {
             Log::error('Error de conexión al notificar cambio de estado a VUR', [
                 'radicado_vur' => $radicadoVur,
@@ -143,6 +164,10 @@ class ClienteVur
             ]);
 
             return ['ok' => false, 'status' => 0, 'body' => $e->getMessage()];
+        } finally {
+            if (is_resource($handle)) {
+                fclose($handle);
+            }
         }
 
         if ($response->failed()) {

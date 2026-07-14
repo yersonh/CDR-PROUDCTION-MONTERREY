@@ -246,6 +246,49 @@ class RecibidoVurTest extends TestCase
             && $request['estado'] === 'EN_TRAMITE');
     }
 
+    public function test_certificacion_envia_el_pdf_como_respuesta_a_vur(): void
+    {
+        $origen = $this->crearSolicitudPublica('sisben');
+
+        $this->postJson('/api/v1/recibidos-vur', $this->payload([
+            'referencia_cdr' => $origen->id,
+            'radicado_vur' => '2026-000307',
+        ]))->assertCreated();
+
+        $recibido = RecibidoVur::where('referencia_cdr', $origen->id)->firstOrFail();
+        $solicitud = Solicitud::findOrFail($recibido->solicitud_id);
+
+        $pdfPath = 'expedientes/EXP-TEST/certificado_CR-2026-00000099.pdf';
+        Storage::disk('local')->put($pdfPath, 'contenido-certificado-de-prueba');
+        $solicitud->certificado()->create([
+            'consecutivo' => 'CR-2026-00000099',
+            'codigo_verificacion' => 'ABC123XYZ',
+            'pdf_path' => $pdfPath,
+        ]);
+
+        // El body multipart hay que leerlo DENTRO del fake, mientras el
+        // stream del archivo sigue vivo — ClienteVur cierra el handle apenas
+        // termina el PATCH (necesario en producción para no dejar recursos
+        // abiertos), así que inspeccionarlo después con assertSent() ya lo
+        // encontraría cerrado (ver mismo patrón en SolicitudPublicaTest).
+        $bodyEnviado = null;
+        Http::fake(function ($request) use (&$bodyEnviado) {
+            if (str_contains((string) $request->url(), '/2026-000307/estado')) {
+                $bodyEnviado = (string) $request->body();
+            }
+
+            return Http::response(['message' => 'ok'], 200);
+        });
+
+        app(SolicitudService::class)->cambiarEstado($solicitud, EstadoSolicitud::Certificada, 'Firmado (prueba)');
+
+        $this->assertNotNull($bodyEnviado);
+        $this->assertStringContainsString('name="documento_respuesta"; filename="certificado_CR-2026-00000099.pdf"', $bodyEnviado);
+        $this->assertStringContainsString('contenido-certificado-de-prueba', $bodyEnviado);
+        $this->assertStringContainsString('name="estado"', $bodyEnviado);
+        $this->assertStringContainsString('RESPONDIDO', $bodyEnviado);
+    }
+
     public function test_prevalidacion_permite_subsanar_para_sisben_o_jac(): void
     {
         $origen = $this->crearSolicitudPublica('sisben');

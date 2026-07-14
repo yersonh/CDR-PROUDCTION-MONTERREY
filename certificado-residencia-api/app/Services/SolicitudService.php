@@ -82,7 +82,18 @@ class SolicitudService
                 $nuevo->esTerminal() => 'CERRADO',
                 default => 'EN_TRAMITE',
             };
-            NotificarEstadoRecibidoAVur::dispatch($recibido->radicado_vur, $estadoVur);
+
+            // Al responder, VUR necesita el PDF del certificado firmado, no
+            // solo el estado — es la respuesta a la entrada que él mismo
+            // radicó (ver ClienteVur::notificarEstado).
+            $documentoRespuestaPath = $estadoVur === 'RESPONDIDO'
+                ? $solicitud->certificado?->pdf_path
+                : null;
+            $documentoRespuestaPath = $documentoRespuestaPath
+                ? Storage::disk('local')->path($documentoRespuestaPath)
+                : null;
+
+            NotificarEstadoRecibidoAVur::dispatch($recibido->radicado_vur, $estadoVur, $documentoRespuestaPath);
         }
 
         return $solicitud->refresh();

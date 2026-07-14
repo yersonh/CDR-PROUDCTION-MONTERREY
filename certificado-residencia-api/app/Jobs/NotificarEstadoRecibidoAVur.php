@@ -11,11 +11,13 @@ use Throwable;
 
 /**
  * Avisa a VUR que un radicado avanzó de estado (EN_TRAMITE / RESPONDIDO /
- * CERRADO). Es puramente informativo para VUR — si falla (incluido mientras
- * su endpoint no exista todavía, ver ClienteVur::notificarEstado), no debe
- * afectar en nada el flujo de CDR. Reintentos limitados, sin marcar ningún
- * estado local en caso de fallo definitivo — solo se deja constancia en el
- * log.
+ * CERRADO). Cuando el nuevo estado es RESPONDIDO, adjunta el PDF del
+ * certificado firmado (ver SolicitudService::cambiarEstado) para que VUR lo
+ * guarde como la respuesta a la entrada que él mismo radicó. Es puramente
+ * informativo para VUR — si falla (incluido mientras su endpoint no exista
+ * todavía, ver ClienteVur::notificarEstado), no debe afectar en nada el
+ * flujo de CDR. Reintentos limitados, sin marcar ningún estado local en
+ * caso de fallo definitivo — solo se deja constancia en el log.
  */
 class NotificarEstadoRecibidoAVur implements ShouldQueue
 {
@@ -28,11 +30,12 @@ class NotificarEstadoRecibidoAVur implements ShouldQueue
     public function __construct(
         private readonly string $radicadoVur,
         private readonly string $estadoVur,
+        private readonly ?string $documentoRespuestaPath = null,
     ) {}
 
     public function handle(ClienteVur $vur): void
     {
-        $resultado = $vur->notificarEstado($this->radicadoVur, $this->estadoVur);
+        $resultado = $vur->notificarEstado($this->radicadoVur, $this->estadoVur, $this->documentoRespuestaPath);
 
         if (! $resultado['ok']) {
             throw new RuntimeException(
