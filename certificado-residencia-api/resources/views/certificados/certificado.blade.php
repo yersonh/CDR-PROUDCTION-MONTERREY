@@ -7,9 +7,12 @@
         body { font-family: 'DejaVu Serif', serif; color: #000; font-size: 11.5px; line-height: 1.42; }
         p { margin: 0 0 9px; }
 
-        .header { position: fixed; top: -128px; left: 0; right: 0; text-align: center; }
-        .header .escudo { height: 55px; }
-        .header .entidad { font-size: 15px; font-weight: bold; color: #000; margin-top: 4px; letter-spacing: 0.5px; }
+        .header { position: fixed; top: -128px; left: 0; right: 0; }
+        .header .lockup { width: 100%; }
+        .header .escudo-cell { width: 60px; text-align: center; vertical-align: middle; }
+        .header .escudo { height: 50px; }
+        .header .texto-cell { text-align: left; vertical-align: middle; padding-left: 12px; }
+        .header .entidad { font-size: 15px; font-weight: bold; color: #000; letter-spacing: 0.5px; }
         .header .nit { font-size: 10px; color: #000; margin-top: 2px; }
         .header hr { border: none; border-top: 1.5px solid #000; margin: 6px 0 0; }
 
@@ -46,9 +49,15 @@
 </head>
 <body>
     <div class="header">
-        <img src="{{ $escudo }}" class="escudo" alt="Escudo">
-        <div class="entidad">ALCALDÍA DE MONTERREY CASANARE</div>
-        <div class="nit">NIT. 891857 824-3</div>
+        <table class="lockup">
+            <tr>
+                <td class="escudo-cell"><img src="{{ $escudo }}" class="escudo" alt="Escudo"></td>
+                <td class="texto-cell">
+                    <div class="entidad">ALCALDÍA DE<br>MONTERREY CASANARE</div>
+                    <div class="nit">NIT. 891857 824-3</div>
+                </td>
+            </tr>
+        </table>
         <hr>
     </div>
 
@@ -130,8 +139,8 @@
                         <img src="{{ $proyecto_img }}" alt="Firma" class="firma-img"><br>
                     @endif
                     <div class="firma-line">
-                        {{ $proyecto_nombre }}<br>
-                        <span class="firma-tag">Proyectó · Secretaría Ejecutiva del Despacho del Alcalde</span>
+                        <span class="firma-nombre">{{ mb_strtoupper($proyecto_nombre, 'UTF-8') }}</span><br>
+                        <span class="firma-tag">Secretaría Ejecutiva del Despacho del Alcalde</span>
                     </div>
                 </div>
             @endif
