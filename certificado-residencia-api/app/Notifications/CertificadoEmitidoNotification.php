@@ -6,6 +6,7 @@ use App\Models\Certificado;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Support\Facades\Storage;
 
 class CertificadoEmitidoNotification extends Notification
 {
@@ -27,7 +28,7 @@ class CertificadoEmitidoNotification extends Notification
         $s = $c->solicitud;
         $url = rtrim(config('app.frontend_url', ''), '/')."/verificar?codigo={$c->codigo_verificacion}";
 
-        return (new MailMessage)
+        $mensaje = (new MailMessage)
             ->subject("Certificado de Residencia expedido · {$c->consecutivo}")
             ->greeting("Hola {$s->nombre_completo},")
             ->line('Su Certificado de Residencia ha sido firmado y expedido oficialmente.')
@@ -37,5 +38,14 @@ class CertificadoEmitidoNotification extends Notification
             ->action('Verificar y descargar', $url)
             ->line('Puede verificar la autenticidad en cualquier momento con el código o el QR del documento.')
             ->salutation('Alcaldía de Monterrey · Casanare');
+
+        if ($c->pdf_path && Storage::disk('local')->exists($c->pdf_path)) {
+            $mensaje->attach(Storage::disk('local')->path($c->pdf_path), [
+                'as' => "Certificado-Residencia-{$c->consecutivo}.pdf",
+                'mime' => 'application/pdf',
+            ]);
+        }
+
+        return $mensaje;
     }
 }

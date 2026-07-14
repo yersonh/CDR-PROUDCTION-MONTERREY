@@ -8,8 +8,10 @@ use App\Enums\ResultadoValidacion;
 use App\Models\Solicitud;
 use App\Models\User;
 use App\Models\Validacion;
+use App\Notifications\ConceptoRegistradoNotification;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
@@ -140,6 +142,13 @@ class ValidacionService
             }
         }
 
+        // SISBEN y JAC son el concepto del especialista sobre la solicitud
+        // (positivo o negativo) — se le avisa al ciudadano en cuanto queda
+        // registrado, sin esperar a la prevalidación de Secretaría.
+        if (in_array($tipo, ['sisben', 'jac'], true) && $resultado !== null) {
+            $this->notificarConcepto($solicitud, $tipo, $resultado, $observacion);
+        }
+
         return $validacion->load('documento', 'validadoPor');
     }
 
@@ -198,12 +207,16 @@ class ValidacionService
             ResultadoValidacion::Rechaza => EstadoSolicitud::Rechazada,
         };
 
-        return $this->solicitudes->cambiarEstado(
+        $solicitud = $this->solicitudes->cambiarEstado(
             $solicitud,
             $nuevoEstado,
             "Prevalidación: {$resultado->label()}".($observacion ? " — {$observacion}" : ''),
             $actor,
         );
+
+        $this->notificarConcepto($solicitud, 'secretaria', $resultado, $observacion);
+
+        return $solicitud;
     }
 
     /**
@@ -261,6 +274,20 @@ class ValidacionService
             'Subsanación recibida; regresa a validación.',
             $actor,
         );
+    }
+
+    /**
+     * Avisa al ciudadano por correo el concepto registrado (SISBEN, JAC o
+     * Secretaría), positivo o negativo. No debe bloquear el flujo si falla.
+     */
+    private function notificarConcepto(Solicitud $solicitud, string $origen, ResultadoValidacion $resultado, ?string $observacion): void
+    {
+        try {
+            Notification::route('mail', $solicitud->correo)
+                ->notify(new ConceptoRegistradoNotification($solicitud, $origen, $resultado, $observacion));
+        } catch (\Throwable $e) {
+            report($e);
+        }
     }
 
     /**

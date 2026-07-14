@@ -10,11 +10,9 @@ use App\Models\Expediente;
 use App\Models\PresidenteJac;
 use App\Models\RecibidoVur;
 use App\Models\Solicitud;
-use App\Notifications\SolicitudRadicadaNotification;
 use App\Models\User;
 use App\Support\SlaCalculator;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 
 class SolicitudService
@@ -155,9 +153,6 @@ class SolicitudService
             return $solicitud;
         });
 
-        // Notificación al ciudadano (fuera de la transacción)
-        $this->notificarRadicacion($solicitud);
-
         // Aviso interno a quien debe gestionar el trámite (campanita), tanto
         // si la solicitud vino del formulario público como del auto-enrutamiento de VUR.
         $this->notificarNuevaSolicitud($solicitud);
@@ -175,16 +170,6 @@ class SolicitudService
         $actor = $data->createdBy ? User::find($data->createdBy) : null;
 
         $this->documentos->guardarSubido($expediente, $tipo, $data->soporte, $actor ?? User::findOrFail($data->ciudadanoId));
-    }
-
-    private function notificarRadicacion(Solicitud $solicitud): void
-    {
-        try {
-            Notification::route('mail', $solicitud->correo)
-                ->notify(new SolicitudRadicadaNotification($solicitud));
-        } catch (\Throwable $e) {
-            report($e); // No bloquea la radicación si el correo falla
-        }
     }
 
     /**
