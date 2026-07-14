@@ -35,14 +35,17 @@ export function GestionSolicitud({ solicitud }: { solicitud: Solicitud }) {
   const puedeElectoral = hasPermission('soportes.validar_electoral') && medio === 'electoral' && !tieneValidacionDe('electoral')
   const puedeSisben = hasPermission('soportes.cargar_sisben') && medio === 'sisben' && !tieneValidacionDe('sisben')
   const puedeJac = hasPermission('soportes.cargar_jac') && medio === 'jac' && !tieneValidacionDe('jac')
-  // Para SISBEN/JAC/electoral la prevalidación de Secretaría oficializa el
-  // concepto de quien validó primero (especialista o, en electoral, la IA
-  // vía ValidarCertificadoElectoralConIA) — no debe verse mientras la
-  // solicitud siga "radicada", o Secretaría podría prevalidar antes de que
-  // ese primer concepto exista.
-  const estadosPrevalidables = ['en_validacion', 'pendiente_soporte']
-  const puedePrevalidar = hasPermission('validacion.prevalidar') && estadosPrevalidables.includes(estado)
+  // La prevalidación de Secretaría oficializa el concepto de quien validó
+  // primero (especialista o, en electoral, la IA vía
+  // ValidarCertificadoElectoralConIA) — solo puede verse en "en_validacion".
+  // Una vez emitido un concepto, ya se prevalidó (no se repite): si fue
+  // "cumple"/"rechaza" la solicitud pasa a un estado que no vuelve a
+  // "en_validacion", y si fue "requiere subsanación" queda en
+  // "pendiente_soporte" esperando al ciudadano — no debe poder prevalidarse
+  // de nuevo hasta que él responda y la solicitud regrese a "en_validacion".
+  const puedePrevalidar = hasPermission('validacion.prevalidar') && estado === 'en_validacion'
   const puedeFirmar = hasPermission('firma.firmar') && estado === 'preaprobada'
+  const esperandoSubsanacion = hasPermission('validacion.prevalidar') && estado === 'pendiente_soporte' && !puedeSubsanar
 
   const hayAcciones = puedeElectoral || puedeSisben || puedeJac || puedePrevalidar || puedeFirmar || puedeSubsanar
   const tieneValidaciones = (solicitud.validaciones?.length ?? 0) > 0
@@ -60,6 +63,13 @@ export function GestionSolicitud({ solicitud }: { solicitud: Solicitud }) {
         {cert && <CertificadoBox solicitud={solicitud} />}
 
         {tieneValidaciones && <ValidacionesList solicitud={solicitud} />}
+
+        {esperandoSubsanacion && (
+          <div className="flex items-start gap-2 rounded-lg border border-primary-100 bg-primary-50 px-4 py-3 text-sm text-primary-700">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>Se solicitó subsanación al ciudadano. La solicitud vuelve a validación automáticamente cuando responda.</span>
+          </div>
+        )}
 
         {hayAcciones && (
           <div className="space-y-5">
