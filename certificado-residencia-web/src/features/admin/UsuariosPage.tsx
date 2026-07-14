@@ -9,11 +9,22 @@ import { Modal } from '@/components/ui/modal'
 import { RowActionButton } from '@/components/ui/row-action-button'
 import { getApiErrorMessage } from '@/lib/api'
 import type { User } from '@/types/auth'
-import { useUsuarios, useGuardarUsuario, useToggleUsuario, useRoles, useDependencias } from './api'
+import { useUsuarios, useGuardarUsuario, useToggleUsuario, useRoles } from './api'
 
 const ROL_LABEL: Record<string, string> = {
   super_admin: 'Super Administrador', alcalde: 'Alcalde', secretaria: 'Secretaría',
   funcionario_sisben: 'Funcionario SISBEN', presidente_jac: 'Presidente JAC',
+}
+
+// Alcalde/Secretaría/Super Admin son cargos del Despacho del Alcalde; SISBEN
+// y JAC son funcionarios externos que no pertenecen a ninguna dependencia
+// (ver UsuarioController::resolverDependencia, misma regla en el backend).
+const ROLES_DESPACHO_ALCALDE = ['super_admin', 'alcalde', 'secretaria']
+const ROLES_SIN_DEPENDENCIA = ['funcionario_sisben', 'presidente_jac']
+
+function dependenciaLabel(u: User): string {
+  if (u.roles.some((r) => ROLES_SIN_DEPENDENCIA.includes(r))) return 'No aplica'
+  return u.dependencia?.nombre ?? '—'
 }
 
 export function UsuariosPage() {
@@ -60,7 +71,7 @@ export function UsuariosPage() {
                     <td className="px-5 py-3 font-medium text-institutional-text">{u.name}</td>
                     <td className="px-5 py-3 text-institutional-muted">{u.email}</td>
                     <td className="px-5 py-3">{u.roles.map((r) => ROL_LABEL[r] ?? r).join(', ')}</td>
-                    <td className="px-5 py-3 text-institutional-muted">{u.dependencia?.nombre ?? '—'}</td>
+                    <td className="px-5 py-3 text-institutional-muted">{dependenciaLabel(u)}</td>
                     <td className="px-5 py-3">
                       <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${u.activo ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                         {u.activo ? 'Activo' : 'Inactivo'}
@@ -93,11 +104,10 @@ export function UsuariosPage() {
 function UsuarioModal({ usuario, onClose }: { usuario: User | null; onClose: () => void }) {
   const esNuevo = usuario === null
   const { data: roles } = useRoles()
-  const { data: dependencias } = useDependencias()
   const guardar = useGuardarUsuario()
   const [f, setF] = useState({
     name: usuario?.name ?? '', email: usuario?.email ?? '', celular: usuario?.celular ?? '',
-    rol: usuario?.roles[0] ?? '', dependencia_id: usuario?.dependencia?.id ? String(usuario.dependencia.id) : '',
+    rol: usuario?.roles[0] ?? '',
   })
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setF((p) => ({ ...p, [k]: e.target.value }))
 
@@ -105,7 +115,6 @@ function UsuarioModal({ usuario, onClose }: { usuario: User | null; onClose: () 
     e.preventDefault()
     const payload: Record<string, unknown> = {
       name: f.name, email: f.email, celular: f.celular || null, rol: f.rol,
-      dependencia_id: f.dependencia_id ? Number(f.dependencia_id) : null,
     }
     guardar.mutate({ id: usuario?.id, payload }, { onSuccess: onClose })
   }
@@ -127,14 +136,14 @@ function UsuarioModal({ usuario, onClose }: { usuario: User | null; onClose: () 
               {roles?.map((r) => <option key={r.name} value={r.name}>{ROL_LABEL[r.name] ?? r.name}</option>)}
             </Select>
           </Field>
-          <Field label="Dependencia" htmlFor="u-dep">
-            <Select id="u-dep" value={f.dependencia_id} onChange={set('dependencia_id')}>
-              <option value="">Ninguna</option>
-              {dependencias?.map((d) => <option key={d.id} value={d.id}>{d.nombre}</option>)}
-            </Select>
-          </Field>
           <Field label="Celular" htmlFor="u-cel"><Input id="u-cel" value={f.celular} onChange={set('celular')} /></Field>
         </div>
+        {f.rol && (
+          <p className="text-xs text-institutional-muted">
+            {ROLES_DESPACHO_ALCALDE.includes(f.rol) && 'Dependencia: Despacho del Alcalde (fija para este rol).'}
+            {ROLES_SIN_DEPENDENCIA.includes(f.rol) && 'Este rol es un funcionario externo, sin dependencia.'}
+          </p>
+        )}
         {esNuevo && (
           <p className="text-xs text-institutional-muted">
             Se generará una contraseña temporal y se enviará por correo al usuario, con 24 horas para cambiarla.

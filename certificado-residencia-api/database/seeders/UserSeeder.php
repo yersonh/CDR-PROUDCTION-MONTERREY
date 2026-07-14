@@ -31,7 +31,7 @@ class UserSeeder extends Seeder
                     'password' => Hash::make('Yerson-43'),
                     'activo' => true,
                     'email_verified_at' => now(),
-                    'dependencia_id' => in_array($data['role'], ['alcalde', 'super_admin'], true)
+                    'dependencia_id' => in_array($data['role'], ['alcalde', 'secretaria', 'super_admin'], true)
                         ? ($despacho['id'] ?? null)
                         : null,
                 ],

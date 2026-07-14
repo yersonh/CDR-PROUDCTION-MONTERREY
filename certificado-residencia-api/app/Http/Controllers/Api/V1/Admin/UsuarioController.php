@@ -8,6 +8,7 @@ use App\Http\Requests\Admin\UpdateUsuarioRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
 use App\Notifications\CredencialesTemporalesNotification;
+use App\Services\ClienteCore;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -16,6 +17,15 @@ use Illuminate\Support\Str;
 
 class UsuarioController extends Controller
 {
+    /**
+     * Roles cuyo cargo vive físicamente en el Despacho del Alcalde — su
+     * dependencia no es una decisión del admin, siempre es esa. El resto
+     * de roles (SISBEN, JAC) son funcionarios externos sin dependencia.
+     */
+    private const ROLES_DESPACHO_ALCALDE = ['super_admin', 'alcalde', 'secretaria'];
+
+    public function __construct(private readonly ClienteCore $core) {}
+
     public function index(Request $request): JsonResponse
     {
         $query = User::query()->with(['roles'])->latest('id');
@@ -46,7 +56,7 @@ class UsuarioController extends Controller
             'tipo_documento' => $data['tipo_documento'] ?? null,
             'numero_documento' => $data['numero_documento'] ?? null,
             'celular' => $data['celular'] ?? null,
-            'dependencia_id' => $data['dependencia_id'] ?? null,
+            'dependencia_id' => $this->resolverDependencia($data['rol']),
             'activo' => true,
             'email_verified_at' => now(),
             'must_change_password' => true,
@@ -68,10 +78,13 @@ class UsuarioController extends Controller
         $data = $request->validated();
 
         $usuario->fill(collect($data)->except(['rol'])->all());
-        $usuario->save();
 
         if (! empty($data['rol'])) {
+            $usuario->dependencia_id = $this->resolverDependencia($data['rol']);
+            $usuario->save();
             $usuario->syncRoles([$data['rol']]);
+        } else {
+            $usuario->save();
         }
 
         return (new UserResource($usuario->load(['roles'])))
@@ -88,6 +101,22 @@ class UsuarioController extends Controller
             'message' => $usuario->activo ? 'Usuario activado.' : 'Usuario desactivado.',
             'activo' => $usuario->activo,
         ]);
+    }
+
+    /** Alcalde/Secretaría/Super Admin → siempre Despacho del Alcalde; SISBEN/JAC → sin dependencia (externos). */
+    private function resolverDependencia(string $rol): ?int
+    {
+        if (! in_array($rol, self::ROLES_DESPACHO_ALCALDE, true)) {
+            return null;
+        }
+
+        try {
+            return collect($this->core->dependencias())->firstWhere('nombre', 'Despacho del Alcalde')['id'] ?? null;
+        } catch (\Throwable $e) {
+            report($e);
+
+            return null;
+        }
     }
 
     /** No bloquea la creación del usuario si el correo falla — queda registrado para diagnóstico. */

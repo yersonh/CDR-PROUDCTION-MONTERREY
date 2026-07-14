@@ -25,7 +25,6 @@ class UpdateUsuarioRequest extends FormRequest
             'tipo_documento' => ['nullable', 'string', 'max:10'],
             'numero_documento' => ['nullable', 'string', 'max:40', Rule::unique('users', 'numero_documento')->ignore($id)],
             'celular' => ['nullable', 'string', 'max:30'],
-            'dependencia_id' => ['nullable', 'exists:dependencias,id'],
             'activo' => ['sometimes', 'boolean'],
             'rol' => ['sometimes', Rule::exists('roles', 'name')],
         ];

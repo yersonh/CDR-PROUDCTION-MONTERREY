@@ -13,6 +13,10 @@ class StoreUsuarioRequest extends FormRequest
     }
 
     /**
+     * dependencia_id no se pide aquí: la deriva UsuarioController según el
+     * rol (Alcalde/Secretaría/Super Admin → Despacho del Alcalde; el resto
+     * son funcionarios externos sin dependencia).
+     *
      * @return array<string, mixed>
      */
     public function rules(): array
@@ -23,7 +27,6 @@ class StoreUsuarioRequest extends FormRequest
             'tipo_documento' => ['nullable', 'string', 'max:10'],
             'numero_documento' => ['nullable', 'string', 'max:40', 'unique:users,numero_documento'],
             'celular' => ['nullable', 'string', 'max:30'],
-            'dependencia_id' => ['nullable', 'exists:dependencias,id'],
             'rol' => ['required', Rule::exists('roles', 'name')],
         ];
     }
