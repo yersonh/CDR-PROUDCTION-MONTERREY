@@ -42,6 +42,12 @@ class CertificadoService
             throw new RuntimeException("La solicitud {$solicitud->radicado} no está en estado Preaprobada.");
         }
 
+        if (! $alcalde->firma_path || ! Storage::disk('local')->exists($alcalde->firma_path)) {
+            throw new RuntimeException(
+                'No tiene firma electrónica registrada. Debe cargarla en Mi perfil antes de firmar certificados.',
+            );
+        }
+
         // Paso a "En firma"
         $this->solicitudes->cambiarEstado($solicitud, EstadoSolicitud::EnFirma, 'Firma iniciada por el Alcalde.', $alcalde);
 

@@ -96,8 +96,12 @@ class FlujoTramiteTest extends TestCase
         $this->postJson("/api/v1/solicitudes/{$id}/prevalidacion", ['resultado' => 'cumple'])
             ->assertOk()->assertJsonPath('data.estado.value', 'preaprobada');
 
-        // 3. Alcalde firma
-        Sanctum::actingAs($this->usuarioCon('alcalde'));
+        // 3. Alcalde firma (requiere tener su firma electrónica cargada)
+        $alcalde = $this->usuarioCon('alcalde');
+        $alcalde->forceFill(['firma_path' => 'firmas/user_'.$alcalde->id.'.png'])->save();
+        Storage::disk('local')->put($alcalde->firma_path, 'contenido-firma-de-prueba');
+
+        Sanctum::actingAs($alcalde);
         $this->postJson('/api/v1/certificados/firmar', ['solicitud_ids' => [$id]])
             ->assertOk()->assertJsonPath('firmadas.0', fn ($c) => str_starts_with($c, 'CR-'));
 

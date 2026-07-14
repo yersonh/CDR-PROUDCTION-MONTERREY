@@ -1,12 +1,15 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { CheckCircle2, PenLine, Stamp } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, PenLine, Stamp } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { SemaforoSla } from '@/components/ui/estado-badge'
+import { useAuth } from '@/features/auth/useAuth'
 import { useSolicitudes, useFirmar } from '@/features/solicitudes/api'
 
 export function FirmaPage() {
+  const { user } = useAuth()
+  const tieneFirma = user?.tiene_firma ?? false
   const { data, isLoading } = useSolicitudes({ estado: 'preaprobada' })
   const firmar = useFirmar()
   const [sel, setSel] = useState<Set<number>>(new Set())
@@ -48,18 +51,36 @@ export function FirmaPage() {
           <p className="text-white/70">Solicitudes preaprobadas listas para firma digital.</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => firmarSeleccionadas(false)} disabled={sel.size === 0 || firmar.isPending}>
+          <Button variant="outline" onClick={() => firmarSeleccionadas(false)} disabled={!tieneFirma || sel.size === 0 || firmar.isPending}>
             <PenLine className="h-4 w-4" /> Firmar seleccionadas ({sel.size})
           </Button>
-          <Button variant="success" onClick={() => firmarSeleccionadas(true)} loading={firmar.isPending} disabled={solicitudes.length === 0}>
+          <Button variant="success" onClick={() => firmarSeleccionadas(true)} loading={firmar.isPending} disabled={!tieneFirma || solicitudes.length === 0}>
             <Stamp className="h-4 w-4" /> Firmar todas
           </Button>
         </div>
       </div>
 
+      {!tieneFirma && (
+        <div className="mb-4 flex items-start gap-2 rounded-lg border border-warning/40 bg-amber-50 px-4 py-3 text-sm text-institutional-text">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
+          <span>
+            No tiene firma electrónica registrada. Debe cargarla en{' '}
+            <Link to="/perfil" className="font-semibold text-primary hover:underline">Mi perfil</Link>{' '}
+            antes de poder firmar certificados.
+          </span>
+        </div>
+      )}
+
       {resumen && (
         <div className="mb-4 flex items-center gap-2 rounded-lg border border-success/40 bg-green-50 px-4 py-3 text-sm text-success">
           <CheckCircle2 className="h-4 w-4" /> {resumen}
+        </div>
+      )}
+      {firmar.data && Object.keys(firmar.data.errores).length > 0 && (
+        <div className="mb-4 space-y-1 rounded-lg border border-danger/40 bg-red-50 px-4 py-3 text-sm text-danger">
+          {Object.entries(firmar.data.errores).map(([radicado, mensaje]) => (
+            <p key={radicado}><strong>{radicado}:</strong> {mensaje}</p>
+          ))}
         </div>
       )}
       {firmar.isError && (

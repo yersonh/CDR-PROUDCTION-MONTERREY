@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class UserSeeder extends Seeder
@@ -38,6 +39,18 @@ class UserSeeder extends Seeder
             );
 
             $user->syncRoles([$data['role']]);
+
+            // Firmar certificados exige tener una firma electrónica cargada
+            // (ver CertificadoService::firmar) — el Alcalde demo necesita una
+            // para poder usarse en pruebas/demo sin pasar primero por Mi perfil.
+            if ($data['role'] === 'alcalde' && ! $user->firma_path) {
+                $rutaFirma = 'firmas/user_'.$user->id.'.png';
+                Storage::disk('local')->put(
+                    $rutaFirma,
+                    base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII='),
+                );
+                $user->forceFill(['firma_path' => $rutaFirma])->save();
+            }
         }
 
         // Cuenta de servicio usada por la integración con VUR: autentica sus

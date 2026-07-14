@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { CheckCircle2, ClipboardCheck, Download, Gavel, ShieldCheck, Stamp, Upload } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { AlertTriangle, CheckCircle2, ClipboardCheck, Download, Gavel, ShieldCheck, Stamp, Upload } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -322,10 +323,32 @@ function SubsanarForm({ solicitud }: { solicitud: Solicitud }) {
 
 /** Firma y expedición del certificado (Alcalde). */
 function FirmaForm({ solicitud }: { solicitud: Solicitud }) {
+  const { user } = useAuth()
   const firmar = useFirmar()
+  const tieneFirma = user?.tiene_firma ?? false
+  const errorLote = firmar.data?.errores[solicitud.radicado]
+
+  if (!tieneFirma) {
+    return (
+      <FormBox titulo="Firma del Alcalde" icon={Stamp} destacado>
+        <div className="flex items-start gap-2 rounded-lg border border-warning/40 bg-amber-50 px-4 py-3 text-sm text-institutional-text">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
+          <span>
+            No tiene firma electrónica registrada. Debe cargarla en{' '}
+            <Link to="/perfil" className="font-semibold text-primary hover:underline">Mi perfil</Link>{' '}
+            antes de poder firmar certificados.
+          </span>
+        </div>
+      </FormBox>
+    )
+  }
+
   return (
     <FormBox titulo="Firma del Alcalde" icon={Stamp} destacado>
       {firmar.isError && <FormError error={firmar.error} />}
+      {errorLote && (
+        <div className="rounded-lg border border-danger/40 bg-red-50 px-4 py-2.5 text-sm text-danger">{errorLote}</div>
+      )}
       <p className="text-sm text-institutional-muted">
         Al firmar se generará el certificado oficial con firma electrónica, código QR y hash de integridad,
         y se entregará automáticamente al ciudadano.
