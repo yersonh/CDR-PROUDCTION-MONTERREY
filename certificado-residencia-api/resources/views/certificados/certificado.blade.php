@@ -36,14 +36,23 @@
         .requisitos td.req-valor { text-align: right; font-weight: bold; }
 
         .firma-wrap { width: 100%; margin-top: 16px; }
-        .firma-box { display: inline-block; width: 55%; vertical-align: bottom; }
-        .firma-img { max-width: 150px; max-height: 55px; margin-bottom: 2px; }
-        .firma-line { border-top: 1px solid #000; padding-top: 3px; font-size: 10.5px; width: 75%; }
+        .firma-col { width: 78%; vertical-align: top; }
+        .qr-col { width: 22%; text-align: right; vertical-align: top; }
+        .qr-col img { width: 85px; height: 85px; }
+
+        /* Firma del Alcalde: más grande, centrada — como en el documento físico. */
+        .alcalde-firma { text-align: center; }
+        .alcalde-firma .firma-img { max-width: 180px; max-height: 65px; }
+        .alcalde-firma .firma-line { display: inline-block; border-top: 1px solid #000; padding-top: 3px; margin-top: 2px; font-size: 11px; width: 230px; text-align: center; }
         .firma-nombre { font-weight: bold; text-transform: uppercase; }
         .firma-tag { font-size: 9px; color: #000; }
-        .proyecto-box { margin-top: 12px; }
-        .qr-box { display: inline-block; width: 40%; text-align: right; vertical-align: bottom; }
-        .qr-box img { width: 85px; height: 85px; }
+
+        /* Firma de la Secretaría: más pequeña, alineada a la izquierda, debajo. */
+        .secretaria-firma { text-align: left; margin-top: 16px; }
+        .secretaria-firma .firma-img { max-width: 120px; max-height: 40px; }
+        .secretaria-firma .firma-line { border-top: 1px solid #000; padding-top: 2px; margin-top: 1px; font-size: 9.5px; width: 230px; text-align: left; }
+        .secretaria-firma .firma-nombre { font-size: 10px; }
+        .secretaria-firma .firma-tag { font-size: 8.5px; }
 
     </style>
 </head>
@@ -123,31 +132,37 @@
     </div>
 
     <div class="firma-wrap">
-        <div class="firma-box">
-            @if (!empty($firma_img))
-                <img src="{{ $firma_img }}" alt="Firma" class="firma-img"><br>
-            @endif
-            <div class="firma-line">
-                <span class="firma-nombre">{{ $certificado->firmadoPor->name ?? 'Alcalde Municipal' }}</span><br>
-                Alcalde Municipal<br>
-                <span class="firma-tag">Despacho del Alcalde</span>
-            </div>
-
-            @if ($proyecto_nombre)
-                <div class="proyecto-box">
-                    @if (!empty($proyecto_img))
-                        <img src="{{ $proyecto_img }}" alt="Firma" class="firma-img"><br>
-                    @endif
-                    <div class="firma-line">
-                        <span class="firma-nombre">{{ mb_strtoupper($proyecto_nombre, 'UTF-8') }}</span><br>
-                        <span class="firma-tag">Secretaría Ejecutiva del Despacho del Alcalde</span>
+        <table style="width: 100%">
+            <tr>
+                <td class="firma-col">
+                    <div class="alcalde-firma">
+                        @if (!empty($firma_img))
+                            <img src="{{ $firma_img }}" alt="Firma" class="firma-img"><br>
+                        @endif
+                        <div class="firma-line">
+                            <span class="firma-nombre">{{ $certificado->firmadoPor->name ?? 'Alcalde Municipal' }}</span><br>
+                            Alcalde Municipal<br>
+                            <span class="firma-tag">Despacho del Alcalde</span>
+                        </div>
                     </div>
-                </div>
-            @endif
-        </div>
-        <div class="qr-box">
-            <img src="{{ $qr }}" alt="QR de verificación">
-        </div>
+
+                    @if ($proyecto_nombre)
+                        <div class="secretaria-firma">
+                            @if (!empty($proyecto_img))
+                                <img src="{{ $proyecto_img }}" alt="Firma" class="firma-img"><br>
+                            @endif
+                            <div class="firma-line">
+                                <span class="firma-nombre">{{ mb_strtoupper($proyecto_nombre, 'UTF-8') }}</span><br>
+                                <span class="firma-tag">Secretaría Ejecutiva del Despacho del Alcalde</span>
+                            </div>
+                        </div>
+                    @endif
+                </td>
+                <td class="qr-col">
+                    <img src="{{ $qr }}" alt="QR de verificación">
+                </td>
+            </tr>
+        </table>
     </div>
 </body>
 </html>
