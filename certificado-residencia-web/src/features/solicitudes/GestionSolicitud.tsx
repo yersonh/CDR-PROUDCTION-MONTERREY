@@ -226,13 +226,13 @@ function JacForm({ solicitud }: { solicitud: Solicitud }) {
     <FormBox titulo="Cargar certificación JAC" icon={Upload}>
       {registrar.isError && <FormError error={registrar.error} />}
       <FileUpload file={file} onChange={(x) => { setFile(x); setError(undefined) }} error={error} />
-      <div className="grid gap-3 sm:grid-cols-2">
-        <Field label="Código de verificación" htmlFor="jac-cod" required><Input id="jac-cod" value={f.codigo_verificacion} onChange={set('codigo_verificacion')} /></Field>
-        <Field label="Presidente JAC" htmlFor="jac-pre"><Input id="jac-pre" value={user?.name ?? ''} disabled /></Field>
-        <Field label="Fecha de expedición" htmlFor="jac-fe" required><Input id="jac-fe" type="date" value={f.fecha_expedicion} onChange={set('fecha_expedicion')} /></Field>
-        <Field label="Fecha de vencimiento" htmlFor="jac-fv" required><Input id="jac-fv" type="date" value={f.fecha_vencimiento} onChange={set('fecha_vencimiento')} /></Field>
-        <Field label="Sector / barrio / vereda" htmlFor="jac-sec"><Input id="jac-sec" value={solicitud.sector?.nombre ?? solicitud.ciudadano.barrio_vereda_sector} disabled /></Field>
-        <Field label="Código QR (URL)" htmlFor="jac-qr"><Input id="jac-qr" value={f.qr} onChange={set('qr')} placeholder="Opcional" /></Field>
+      <div className="flex gap-3 overflow-x-auto pb-1">
+        <Field label="Código de verificación" htmlFor="jac-cod" required className="w-40 shrink-0"><Input id="jac-cod" value={f.codigo_verificacion} onChange={set('codigo_verificacion')} /></Field>
+        <Field label="Presidente JAC" htmlFor="jac-pre" className="w-40 shrink-0"><Input id="jac-pre" value={user?.name ?? ''} disabled /></Field>
+        <Field label="Fecha de expedición" htmlFor="jac-fe" required className="w-40 shrink-0"><Input id="jac-fe" type="date" value={f.fecha_expedicion} onChange={set('fecha_expedicion')} /></Field>
+        <Field label="Fecha de vencimiento" htmlFor="jac-fv" required className="w-40 shrink-0"><Input id="jac-fv" type="date" value={f.fecha_vencimiento} onChange={set('fecha_vencimiento')} /></Field>
+        <Field label="Sector / barrio / vereda" htmlFor="jac-sec" className="w-40 shrink-0"><Input id="jac-sec" value={solicitud.sector?.nombre ?? solicitud.ciudadano.barrio_vereda_sector} disabled /></Field>
+        <Field label="Código QR (URL)" htmlFor="jac-qr" className="w-40 shrink-0"><Input id="jac-qr" value={f.qr} onChange={set('qr')} placeholder="Opcional" /></Field>
       </div>
       <Button variant="primary" onClick={submit} loading={registrar.isPending}>Cargar certificación JAC</Button>
     </FormBox>
