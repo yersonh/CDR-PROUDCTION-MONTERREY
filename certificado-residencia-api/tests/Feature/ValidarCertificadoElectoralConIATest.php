@@ -151,6 +151,64 @@ class ValidarCertificadoElectoralConIATest extends TestCase
         $this->assertSame(1, $solicitud->fresh()->validaciones()->where('tipo', 'electoral')->count());
     }
 
+    public function test_subsanacion_del_certificado_electoral_dispara_nueva_evaluacion_de_ia(): void
+    {
+        $secretaria = User::factory()->create(['password' => Hash::make('password'), 'activo' => true]);
+        $secretaria->assignRole('secretaria');
+        $secretaria->forceFill(['firma_path' => 'firmas/user_'.$secretaria->id.'.png'])->save();
+        Storage::disk('local')->put($secretaria->firma_path, 'contenido-firma-de-prueba');
+
+        $solicitud = $this->radicarElectoral();
+
+        // Http::fake() acumula reglas entre llamadas y usa la PRIMERA que
+        // matchee la URL (ver PendingRequest::buildStubHandler) — fakeGemini()
+        // llamado dos veces en el mismo test no "reemplaza" la respuesta, la
+        // segunda invocación nunca se alcanzaría. Por eso aquí se define de
+        // una vez la secuencia completa (rechazo, luego aprobación) en vez de
+        // usar el helper fakeGemini() dos veces.
+        Http::fake([
+            'generativelanguage.googleapis.com/*' => Http::sequence()
+                ->push(['candidates' => [['content' => ['parts' => [['text' => json_encode(['valido' => false, 'motivo' => 'Elección no vigente'])]]]]]], 200)
+                ->push(['candidates' => [['content' => ['parts' => [['text' => json_encode(['valido' => true, 'motivo' => 'Certificado electoral vigente y legible'])]]]]]], 200),
+        ]);
+
+        // Primera evaluación: la IA rechaza el certificado.
+        (new ValidarCertificadoElectoralConIA($solicitud->id))->handle(app(\App\Services\GeminiService::class), app(\App\Services\ValidacionService::class));
+        $this->assertSame('rechaza', $solicitud->fresh()->validaciones()->where('tipo', 'electoral')->latest('validado_at')->first()->resultado->value);
+
+        // Secretaría pide subsanación del certificado electoral.
+        \Laravel\Sanctum\Sanctum::actingAs($secretaria);
+        $this->postJson("/api/v1/solicitudes/{$solicitud->id}/prevalidacion", [
+            'resultado' => 'subsanar',
+            'observacion' => 'El certificado no corresponde a la elección vigente.',
+            'tipo_documento' => 'soporte_electoral',
+        ])->assertOk();
+
+        // El ciudadano corrige y vuelve a cargar el certificado electoral —
+        // esto debe disparar sola una nueva evaluación de la IA (cola sync en tests).
+        \App\Models\Notificacion::query()->delete();
+        app(\App\Services\ValidacionService::class)->subsanar(
+            $solicitud->fresh(),
+            UploadedFile::fake()->create('corregido.pdf', 20, 'application/pdf'),
+            null,
+        );
+
+        // 3 filas "electoral": el rechazo original de la IA, la constancia
+        // que deja subsanar() del propio ciudadano (sin resultado) y el
+        // nuevo veredicto de la IA tras la subsanación.
+        $veredictos = $solicitud->fresh()->validaciones()->where('tipo', 'electoral')->whereNotNull('resultado')->orderBy('id')->get();
+        $this->assertCount(2, $veredictos);
+        $this->assertSame('cumple', $veredictos->last()->resultado->value);
+        $this->assertStringContainsString('Tras la subsanación', $veredictos->last()->observacion);
+        $this->assertStringContainsString('aprobado', $veredictos->last()->observacion);
+
+        $this->assertDatabaseHas('notificaciones', [
+            'user_id' => $secretaria->id,
+            'solicitud_id' => $solicitud->id,
+            'mensaje' => "Tras la subsanación, la IA volvió a evaluar el certificado electoral de Carlos Mesa y lo aprobó — lista para prevalidación.",
+        ]);
+    }
+
     public function test_sin_documento_soporte_no_lanza_y_deja_para_validacion_manual(): void
     {
         $secretaria = User::factory()->create(['password' => Hash::make('password'), 'activo' => true]);

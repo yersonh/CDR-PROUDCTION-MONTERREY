@@ -263,4 +263,53 @@ class RecibidoVurTest extends TestCase
             'tipo_documento' => 'soporte_sisben',
         ])->assertOk()->assertJsonPath('data.estado.value', 'pendiente_soporte');
     }
+
+    public function test_subsanar_documento_identidad_no_dispara_ia_y_notifica_normal(): void
+    {
+        \Illuminate\Support\Facades\Notification::fake();
+
+        $secretaria = User::factory()->create(['activo' => true]);
+        $secretaria->assignRole('secretaria');
+
+        $origen = $this->crearSolicitudPublica('sisben');
+
+        $this->postJson('/api/v1/recibidos-vur', $this->payload([
+            'referencia_cdr' => $origen->id,
+            'radicado_vur' => '2026-000305',
+        ]))->assertCreated();
+
+        $recibido = RecibidoVur::where('referencia_cdr', $origen->id)->firstOrFail();
+        $solicitudId = $recibido->solicitud_id;
+
+        $this->postJson("/api/v1/solicitudes/{$solicitudId}/prevalidacion", [
+            'resultado' => 'subsanar',
+            'observacion' => 'La cédula no es legible.',
+            'tipo_documento' => 'documento_identidad',
+        ])->assertOk();
+
+        $solicitud = Solicitud::findOrFail($solicitudId);
+        app(\App\Services\ValidacionService::class)->subsanar(
+            $solicitud,
+            UploadedFile::fake()->create('cedula_legible.pdf', 10, 'application/pdf'),
+            null,
+        );
+
+        // No es el certificado electoral (es sisben) — no debe crear ninguna
+        // validación "electoral" ni llamar a Gemini (sí puede haber llamadas
+        // a VUR por el cambio de estado, esas no son el punto de esta prueba).
+        $this->assertSame(0, $solicitud->fresh()->validaciones()->where('tipo', 'electoral')->count());
+        Http::assertNotSent(fn ($request) => str_contains((string) $request->url(), 'generativelanguage.googleapis.com'));
+
+        $this->assertDatabaseHas('notificaciones', [
+            'user_id' => $secretaria->id,
+            'solicitud_id' => $solicitudId,
+            'mensaje' => "El ciudadano respondió la subsanación de la solicitud {$solicitud->radicado} y cargó: Documento de identidad.",
+        ]);
+
+        \Illuminate\Support\Facades\Notification::assertSentTo(
+            $secretaria,
+            \App\Notifications\SubsanacionRecibidaNotification::class,
+            fn ($n) => $n->tipoDocumentoLabel === 'Documento de identidad',
+        );
+    }
 }

@@ -15,7 +15,7 @@ class SubsanacionRecibidaNotification extends Notification
 {
     use Queueable;
 
-    public function __construct(public Solicitud $solicitud) {}
+    public function __construct(public Solicitud $solicitud, public string $tipoDocumentoLabel) {}
 
     /**
      * @return array<int, string>
@@ -33,7 +33,7 @@ class SubsanacionRecibidaNotification extends Notification
         return (new MailMessage)
             ->subject("Subsanación recibida · {$s->radicado}")
             ->greeting("Hola {$notifiable->name},")
-            ->line("El ciudadano {$s->nombre_completo} respondió la subsanación solicitada y volvió a cargar el soporte de la solicitud {$s->radicado}.")
+            ->line("El ciudadano {$s->nombre_completo} respondió la subsanación solicitada de la solicitud {$s->radicado} y cargó: {$this->tipoDocumentoLabel}.")
             ->action('Revisar solicitud', $url)
             ->salutation('Certificado de Residencia Digital');
     }

@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\EstadoSolicitud;
 use App\Enums\ResultadoValidacion;
+use App\Jobs\ValidarCertificadoElectoralConIA;
 use App\Models\Solicitud;
 use App\Models\User;
 use App\Models\Validacion;
@@ -56,6 +57,7 @@ class ValidacionService
         ?ResultadoValidacion $resultado,
         ?string $observacion,
         User $actor,
+        bool $permiteRevalidar = false,
     ): Validacion {
         // Cada Presidente JAC solo puede certificar solicitudes de su propio
         // sector (login individual por sector, ver PresidenteJac) — a menos
@@ -76,7 +78,10 @@ class ValidacionService
         // acuerdo con lo que registró la IA, su mecanismo de corrección es
         // la prevalidación ("Emitir concepto"), no volver a enviar este
         // formulario — por eso ya no se permite re-enviar "electoral" aquí.
-        if (in_array($tipo, ['sisben', 'jac', 'electoral'], true) && $solicitud->validaciones()->where('tipo', $tipo)->exists()) {
+        // Única excepción: ValidarCertificadoElectoralConIA re-evaluando tras
+        // una subsanación (el ciudadano cargó un certificado electoral nuevo),
+        // que pasa $permiteRevalidar = true a propósito.
+        if (in_array($tipo, ['sisben', 'jac', 'electoral'], true) && ! $permiteRevalidar && $solicitud->validaciones()->where('tipo', $tipo)->exists()) {
             throw ValidationException::withMessages([
                 'tipo' => "Ya se registró la validación de {$tipo} para esta solicitud.",
             ]);
@@ -135,11 +140,14 @@ class ValidacionService
                 };
                 $accion = $resultado === ResultadoValidacion::Rechaza ? 'rechazó' : 'aprobó';
 
-                $this->notificaciones->notificarRoles(
-                    ['secretaria'],
-                    "{$quien} {$accion} la solicitud {$solicitud->radicado} — lista para prevalidación.",
-                    $solicitud,
-                );
+                // Tras una subsanación, dejar claro que es una segunda
+                // evaluación del mismo certificado electoral (ya corregido),
+                // no confundirla con el primer intento.
+                $mensaje = $permiteRevalidar
+                    ? "Tras la subsanación, la IA volvió a evaluar el certificado electoral de {$solicitud->nombre_completo} y lo {$accion} — lista para prevalidación."
+                    : "{$quien} {$accion} la solicitud {$solicitud->radicado} — lista para prevalidación.";
+
+                $this->notificaciones->notificarRoles(['secretaria'], $mensaje, $solicitud);
             } catch (\Throwable $e) {
                 report($e);
             }
@@ -293,11 +301,19 @@ class ValidacionService
         );
 
         // Aviso a Secretaría (correo + campanita) de que el ciudadano ya
-        // respondió y volvió a subir lo pedido — solo cuando vino por el
-        // enlace público (autoservicio real); si un funcionario la registró
-        // manualmente desde el panel, no hace falta avisarse a sí mismo.
-        if ($actor === null) {
-            $this->notificarSubsanacionRecibida($solicitud);
+        // respondió y volvió a subir lo pedido — tanto si entró por el
+        // enlace público (sin cuenta) como si lo hizo autenticado desde su
+        // portal; si un funcionario la registró manualmente desde el panel
+        // interno, no hace falta avisarse a sí mismo.
+        if ($actor === null || $actor->hasRole('ciudadano')) {
+            $this->notificarSubsanacionRecibida($solicitud, $tipoDocumento);
+        }
+
+        // El certificado electoral es el único documento que un sistema (no
+        // una persona) evalúa de fondo — si es lo que se corrigió, la IA
+        // debe volver a revisarlo, igual que lo hizo la primera vez.
+        if ($tipoDocumento === 'soporte_electoral') {
+            ValidarCertificadoElectoralConIA::dispatch($solicitud->id);
         }
 
         return $solicitud;
@@ -342,17 +358,18 @@ class ValidacionService
      * El ciudadano ya corrigió y volvió a enviar lo pedido — Secretaría debe
      * volver a revisarlo (correo + campanita). No debe bloquear el flujo si falla.
      */
-    private function notificarSubsanacionRecibida(Solicitud $solicitud): void
+    private function notificarSubsanacionRecibida(Solicitud $solicitud, string $tipoDocumento): void
     {
         try {
-            $mensaje = "El ciudadano respondió la subsanación de la solicitud {$solicitud->radicado} y ya está lista para revisión.";
+            $documentoLabel = TipoDocumentoCatalogo::label($tipoDocumento);
+            $mensaje = "El ciudadano respondió la subsanación de la solicitud {$solicitud->radicado} y cargó: {$documentoLabel}.";
 
             $this->notificaciones->notificarRoles(['secretaria'], $mensaje, $solicitud);
 
             $destinatarios = User::role('secretaria')->get();
 
             if ($destinatarios->isNotEmpty()) {
-                Notification::send($destinatarios, new SubsanacionRecibidaNotification($solicitud));
+                Notification::send($destinatarios, new SubsanacionRecibidaNotification($solicitud, $documentoLabel));
             }
         } catch (\Throwable $e) {
             report($e);
