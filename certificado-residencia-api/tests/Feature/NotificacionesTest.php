@@ -198,4 +198,50 @@ class NotificacionesTest extends TestCase
         $this->patchJson('/api/v1/notificaciones/leer-todas')->assertOk();
         $this->getJson('/api/v1/notificaciones/no-leidas')->assertJsonPath('no_leidas', 0);
     }
+
+    public function test_prevalidacion_rechazada_notifica_al_alcalde_por_campanita_y_correo(): void
+    {
+        \Illuminate\Support\Facades\Notification::fake();
+
+        $alcalde = $this->usuarioCon('alcalde');
+        $secretaria = $this->usuarioCon('secretaria');
+        $solicitud = $this->radicar('electoral', 'secretaria');
+
+        Sanctum::actingAs($secretaria);
+        $this->postJson("/api/v1/solicitudes/{$solicitud->id}/prevalidacion", [
+            'resultado' => 'rechaza',
+            'observacion' => 'No cumple los requisitos.',
+        ])->assertOk();
+
+        $this->assertDatabaseHas('notificaciones', [
+            'user_id' => $alcalde->id,
+            'solicitud_id' => $solicitud->id,
+        ]);
+
+        \Illuminate\Support\Facades\Notification::assertSentTo(
+            $alcalde,
+            \App\Notifications\SolicitudRechazadaNotification::class,
+        );
+    }
+
+    public function test_prevalidacion_aprobada_no_notifica_al_alcalde(): void
+    {
+        \Illuminate\Support\Facades\Notification::fake();
+
+        $alcalde = $this->usuarioCon('alcalde');
+        $secretaria = $this->usuarioCon('secretaria');
+        $secretaria->forceFill(['firma_path' => 'firmas/user_'.$secretaria->id.'.png'])->save();
+        Storage::disk('local')->put($secretaria->firma_path, 'contenido-firma-de-prueba');
+        $solicitud = $this->radicar('electoral', 'secretaria');
+
+        Sanctum::actingAs($secretaria);
+        $this->postJson("/api/v1/solicitudes/{$solicitud->id}/prevalidacion", [
+            'resultado' => 'cumple',
+        ])->assertOk();
+
+        \Illuminate\Support\Facades\Notification::assertNotSentTo(
+            $alcalde,
+            \App\Notifications\SolicitudRechazadaNotification::class,
+        );
+    }
 }

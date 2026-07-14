@@ -8,6 +8,7 @@ use App\Models\Solicitud;
 use App\Models\User;
 use App\Models\Validacion;
 use App\Notifications\ConceptoRegistradoNotification;
+use App\Notifications\SolicitudRechazadaNotification;
 use App\Notifications\SubsanacionRecibidaNotification;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -206,6 +207,14 @@ class ValidacionService
 
         $this->notificarConcepto($solicitud, 'secretaria', $resultado, $observacion);
 
+        // Al Alcalde solo le avisamos cuando se rechaza — es informativo /
+        // de supervisión, no tiene que actuar (la solicitud queda en estado
+        // terminal). Si aprueba ("cumple"), el propio flujo ya lo lleva a su
+        // bandeja de firma, no hace falta un aviso aparte.
+        if ($resultado === ResultadoValidacion::Rechaza) {
+            $this->notificarRechazoAlAlcalde($solicitud, $observacion);
+        }
+
         return $solicitud;
     }
 
@@ -286,6 +295,27 @@ class ValidacionService
         try {
             Notification::route('mail', $solicitud->correo)
                 ->notify(new ConceptoRegistradoNotification($solicitud, $origen, $resultado, $observacion));
+        } catch (\Throwable $e) {
+            report($e);
+        }
+    }
+
+    /**
+     * Avisa al Alcalde (correo + campanita) que una solicitud fue rechazada
+     * en la prevalidación. No debe bloquear el flujo si falla.
+     */
+    private function notificarRechazoAlAlcalde(Solicitud $solicitud, ?string $observacion): void
+    {
+        try {
+            $mensaje = "La solicitud {$solicitud->radicado} de {$solicitud->nombre_completo} fue rechazada en la prevalidación.";
+
+            $this->notificaciones->notificarRoles(['alcalde'], $mensaje, $solicitud);
+
+            $destinatarios = User::role('alcalde')->get();
+
+            if ($destinatarios->isNotEmpty()) {
+                Notification::send($destinatarios, new SolicitudRechazadaNotification($solicitud, $observacion));
+            }
         } catch (\Throwable $e) {
             report($e);
         }
