@@ -6,6 +6,7 @@ use App\Enums\EstadoSolicitud;
 use App\Enums\MedioAcreditacion;
 use App\Enums\TipoCertificado;
 use App\Http\Controllers\Controller;
+use App\Models\PresidenteJac;
 use App\Models\Sector;
 use App\Services\ClienteCore;
 use Illuminate\Http\JsonResponse;
@@ -39,6 +40,21 @@ class CatalogoController extends Controller
             'sectores' => Sector::where('activo', true)
                 ->orderBy('nombre')
                 ->get(['id', 'nombre', 'tipo', 'zona'])
+                ->values(),
+            // Para el formulario público: al elegir JAC como medio de
+            // acreditación, el ciudadano selecciona su presidente/sector de
+            // esta lista (no escribe el sector a mano ni un catálogo de
+            // sectores genérico) — así se sabe a quién enrutar la solicitud.
+            'presidentes_jac' => PresidenteJac::query()
+                ->where('estado', 'activo')
+                ->with('sector:id,nombre')
+                ->get()
+                ->map(fn (PresidenteJac $p) => [
+                    'sector_id' => $p->sector_id,
+                    'sector_nombre' => $p->sector->nombre,
+                    'presidente_nombre' => $p->nombre_completo,
+                ])
+                ->sortBy('sector_nombre')
                 ->values(),
         ]);
     }

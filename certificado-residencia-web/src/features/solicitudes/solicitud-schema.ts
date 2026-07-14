@@ -12,7 +12,11 @@ export const solicitudSchema = z
       .min(7, 'Ingrese un celular válido')
       .max(10, 'El celular no puede tener más de 10 dígitos')
       .regex(/^\d+$/, 'El celular solo debe contener números'),
-    sector_id: z.string().min(1, 'Seleccione el barrio, vereda o sector'),
+    barrio_vereda_sector: z.string().min(2, 'Ingrese el barrio, vereda o sector').max(255),
+    // Solo se exige cuando el medio de acreditación es JAC (ver superRefine
+    // abajo): el ciudadano elige su presidente/sector de una lista, no lo
+    // escribe a mano.
+    sector_id: z.string().optional(),
     motivo: z.string().max(1000).optional(),
     tipo_certificado: z.string().min(1, 'Seleccione el tipo de certificado'),
     medio_acreditacion: z.string().min(1, 'Seleccione el medio de acreditación'),
@@ -24,6 +28,14 @@ export const solicitudSchema = z
         code: z.ZodIssueCode.custom,
         path: ['justificacion_especial'],
         message: 'La justificación es obligatoria para un caso especial',
+      })
+    }
+
+    if (data.medio_acreditacion === 'jac' && !data.sector_id) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['sector_id'],
+        message: 'Seleccione el presidente de Acción Comunal de su sector',
       })
     }
 
@@ -43,6 +55,6 @@ export type SolicitudFormValues = z.infer<typeof solicitudSchema>
 
 /** Campos validados en cada paso del wizard. */
 export const STEP_FIELDS: (keyof SolicitudFormValues)[][] = [
-  ['nombre_completo', 'tipo_documento', 'numero_identificacion', 'direccion', 'correo', 'celular', 'sector_id', 'motivo'],
-  ['tipo_certificado', 'medio_acreditacion', 'justificacion_especial'],
+  ['nombre_completo', 'tipo_documento', 'numero_identificacion', 'direccion', 'correo', 'celular', 'barrio_vereda_sector', 'motivo'],
+  ['tipo_certificado', 'medio_acreditacion', 'justificacion_especial', 'sector_id'],
 ]

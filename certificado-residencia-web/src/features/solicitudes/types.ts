@@ -14,6 +14,7 @@ export interface Catalogos {
   tipos_documento: string[]
   dependencias: { id: number; nombre: string }[]
   sectores: { id: number; nombre: string; tipo: 'barrio' | 'vereda'; zona: 'urbana' | 'rural' }[]
+  presidentes_jac: { sector_id: number; sector_nombre: string; presidente_nombre: string }[]
 }
 
 export interface Documento {

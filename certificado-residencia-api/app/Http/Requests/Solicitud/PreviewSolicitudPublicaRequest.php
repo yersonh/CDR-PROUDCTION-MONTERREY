@@ -34,7 +34,11 @@ class PreviewSolicitudPublicaRequest extends FormRequest
             'direccion' => ['required', 'string', 'max:255'],
             'correo' => ['required', 'email', 'max:255'],
             'celular' => ['required', 'string', 'max:10', 'regex:/^\d{7,10}$/'],
-            'sector_id' => ['required', 'exists:sectores,id'],
+            'barrio_vereda_sector' => ['required', 'string', 'max:255'],
+            'sector_id' => [
+                'nullable', 'exists:sectores,id',
+                Rule::requiredIf(fn () => $this->input('medio_acreditacion') === MedioAcreditacion::Jac->value),
+            ],
             'motivo' => ['nullable', 'string', 'max:1000'],
             'tipo_certificado' => ['required', Rule::enum(TipoCertificado::class)],
             'medio_acreditacion' => ['required', Rule::enum(MedioAcreditacion::class)],
