@@ -12,6 +12,7 @@ import { SolicitudDetallePage } from '@/features/solicitudes/SolicitudDetallePag
 import { FirmaPage } from '@/features/firma/FirmaPage'
 import { VerificarPage } from '@/features/consulta/VerificarPage'
 import { SolicitudPublicaPage } from '@/features/solicitud-publica/SolicitudPublicaPage'
+import { SubsanacionPublicaPage } from '@/features/subsanacion-publica/SubsanacionPublicaPage'
 import { AuditoriaPage } from '@/features/auditoria/AuditoriaPage'
 import { ReportesPage } from '@/features/reportes/ReportesPage'
 import { PerfilPage } from '@/features/perfil/PerfilPage'
@@ -27,6 +28,7 @@ export const router = createBrowserRouter([
   { path: '/restablecer', element: <ResetPasswordPage /> },
   { path: '/verificar', element: <VerificarPage /> },
   { path: '/solicitud-publica', element: <SolicitudPublicaPage /> },
+  { path: '/corregir/:id', element: <SubsanacionPublicaPage /> },
   {
     element: <ProtectedRoute />,
     children: [

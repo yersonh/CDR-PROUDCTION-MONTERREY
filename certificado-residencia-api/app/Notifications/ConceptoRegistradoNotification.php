@@ -7,6 +7,7 @@ use App\Models\Solicitud;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Support\Facades\URL;
 
 /**
  * Aviso al ciudadano cuando se registra un concepto sobre su solicitud:
@@ -35,7 +36,6 @@ class ConceptoRegistradoNotification extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         $s = $this->solicitud;
-        $positivo = $this->resultado === ResultadoValidacion::Cumple;
 
         $quien = match ($this->origen) {
             'sisben' => 'el Funcionario SISBEN',
@@ -53,12 +53,36 @@ class ConceptoRegistradoNotification extends Notification
             $mensaje->line("Observación: {$this->observacion}");
         }
 
-        if ($positivo) {
-            $mensaje->line('Su trámite continúa su curso normal.');
-        } else {
-            $mensaje->line('Para más información sobre los próximos pasos, comuníquese con la Alcaldía indicando el número de radicado.');
-        }
+        match ($this->resultado) {
+            ResultadoValidacion::Cumple => $mensaje->line('Su trámite continúa su curso normal.'),
+            ResultadoValidacion::Subsanar => $mensaje
+                ->line('Para continuar con su trámite, debe corregir y volver a enviar lo solicitado a través del siguiente enlace:')
+                ->action('Corregir mi solicitud', $this->enlacePublico())
+                ->line('El enlace es personal, vence en 30 días y no requiere crear una cuenta.'),
+            ResultadoValidacion::Rechaza => $mensaje
+                ->line('Para más información sobre los próximos pasos, comuníquese con la Alcaldía indicando el número de radicado.'),
+        };
 
         return $mensaje->salutation('Alcaldía de Monterrey · Casanare');
+    }
+
+    /**
+     * Enlace público firmado (sin login) a la vista donde el ciudadano puede
+     * volver a cargar el soporte solicitado. La firma cubre la ruta de la
+     * API; el enlace del correo apunta al frontend con la misma consulta
+     * firmada, que el frontend reenvía tal cual al llamar a la API.
+     */
+    private function enlacePublico(): string
+    {
+        $urlFirmada = URL::temporarySignedRoute(
+            'public.subsanacion.show',
+            now()->addDays(30),
+            ['solicitud' => $this->solicitud->id],
+        );
+
+        $query = parse_url($urlFirmada, PHP_URL_QUERY);
+        $frontend = rtrim(config('app.frontend_url', ''), '/');
+
+        return "{$frontend}/corregir/{$this->solicitud->id}?{$query}";
     }
 }

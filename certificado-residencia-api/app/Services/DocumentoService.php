@@ -22,7 +22,7 @@ class DocumentoService
         Expediente $expediente,
         string $tipo,
         UploadedFile $file,
-        User $actor,
+        ?User $actor,
         bool $esCertificado = false,
     ): ExpedienteDocumento {
         $path = $file->store("expedientes/{$expediente->codigo}", 'local');
@@ -43,7 +43,7 @@ class DocumentoService
         string $contenido,
         string $nombre,
         string $mime,
-        User $actor,
+        ?User $actor,
         bool $esCertificado = false,
         ?string $pathFijo = null,
     ): ExpedienteDocumento {
@@ -62,7 +62,7 @@ class DocumentoService
     /**
      * @param  array<string, mixed>  $datos
      */
-    private function registrar(Expediente $expediente, string $tipo, array $datos, User $actor, bool $esCertificado): ExpedienteDocumento
+    private function registrar(Expediente $expediente, string $tipo, array $datos, ?User $actor, bool $esCertificado): ExpedienteDocumento
     {
         // Versionar: marcar como no vigentes los documentos anteriores del mismo tipo
         $anterior = $expediente->documentos()
@@ -83,14 +83,16 @@ class DocumentoService
             'version' => $anterior ? $anterior->version + 1 : 1,
             'vigente' => true,
             'reemplaza_a' => $anterior?->id,
-            'subido_por' => $actor->id,
+            'subido_por' => $actor?->id,
         ]);
 
         if ($anterior) {
             $this->audit->registrar(
                 accion: 'documento.versionado',
                 auditable: $documento,
-                descripcion: "Nueva versión ({$documento->version}) del documento {$tipo}",
+                descripcion: $actor
+                    ? "Nueva versión ({$documento->version}) del documento {$tipo}"
+                    : "Nueva versión ({$documento->version}) del documento {$tipo}, aportada por el ciudadano vía enlace público",
                 actor: $actor,
             );
         }

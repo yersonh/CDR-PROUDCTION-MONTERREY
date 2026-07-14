@@ -28,9 +28,11 @@ export function GestionSolicitud({ solicitud }: { solicitud: Solicitud }) {
 
   const tieneValidacionDe = (tipo: string) => (solicitud.validaciones ?? []).some((v) => v.tipo === tipo)
 
-  const puedeElectoral = hasPermission('soportes.validar_electoral') && medio === 'electoral'
-  // SISBEN y JAC solo cargan su respuesta una vez — una vez registrada, el
-  // formulario debe desaparecer (la decisión ya quedó en manos de Secretaría).
+  // Electoral, SISBEN y JAC solo se validan una vez — una vez registrada la
+  // decisión (por Secretaría, el especialista, o la IA en electoral), el
+  // formulario debe desaparecer. Si Secretaría no está de acuerdo con lo que
+  // ya se registró, corrige desde la prevalidación, no reenviando esto.
+  const puedeElectoral = hasPermission('soportes.validar_electoral') && medio === 'electoral' && !tieneValidacionDe('electoral')
   const puedeSisben = hasPermission('soportes.cargar_sisben') && medio === 'sisben' && !tieneValidacionDe('sisben')
   const puedeJac = hasPermission('soportes.cargar_jac') && medio === 'jac' && !tieneValidacionDe('jac')
   // Para SISBEN/JAC/electoral la prevalidación de Secretaría oficializa el
@@ -240,19 +242,10 @@ function JacForm({ solicitud }: { solicitud: Solicitud }) {
   )
 }
 
-/**
- * Concepto de prevalidación. Para SISBEN/JAC el especialista ya decidió si
- * cumple o no — Secretaría solo oficializa esa decisión, no vuelve a
- * calificar la calidad del documento, así que "Requiere subsanación" no
- * aplica para esos dos medios (solo Cumple/Rechaza).
- */
+/** Concepto de prevalidación: Secretaría oficializa cumple, pide subsanar o rechaza. */
 function PrevalidarForm({ solicitud }: { solicitud: Solicitud }) {
   const { user } = useAuth()
   const prevalidar = usePrevalidar(solicitud.id)
-  const medio = solicitud.medio_acreditacion.value
-  const resultados = ['sisben', 'jac'].includes(medio)
-    ? RESULTADOS.filter((r) => r.value !== 'subsanar')
-    : RESULTADOS
   const [resultado, setResultado] = useState<'cumple' | 'subsanar' | 'rechaza'>('cumple')
   const [observacion, setObservacion] = useState('')
   const [error, setError] = useState<string>()
@@ -275,7 +268,7 @@ function PrevalidarForm({ solicitud }: { solicitud: Solicitud }) {
       {error && <p className="text-xs font-medium text-danger">{error}</p>}
       <Field label="Concepto" htmlFor="pv-res">
         <Select id="pv-res" value={resultado} onChange={(e) => { setResultado(e.target.value as typeof resultado); setError(undefined) }}>
-          {resultados.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
+          {RESULTADOS.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
         </Select>
       </Field>
       <Field label="Observación" htmlFor="pv-obs" required={resultado !== 'cumple'}>

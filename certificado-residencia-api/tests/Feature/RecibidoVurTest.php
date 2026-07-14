@@ -246,7 +246,7 @@ class RecibidoVurTest extends TestCase
             && $request['estado'] === 'EN_TRAMITE');
     }
 
-    public function test_prevalidacion_no_permite_subsanar_para_sisben_o_jac(): void
+    public function test_prevalidacion_permite_subsanar_para_sisben_o_jac(): void
     {
         $origen = $this->crearSolicitudPublica('sisben');
 
@@ -260,6 +260,6 @@ class RecibidoVurTest extends TestCase
         $this->postJson("/api/v1/solicitudes/{$recibido->solicitud_id}/prevalidacion", [
             'resultado' => 'subsanar',
             'observacion' => 'Documento borroso',
-        ])->assertStatus(422)->assertJsonValidationErrors('resultado');
+        ])->assertOk()->assertJsonPath('data.estado.value', 'pendiente_soporte');
     }
 }

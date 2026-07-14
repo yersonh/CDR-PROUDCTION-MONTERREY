@@ -3,12 +3,12 @@
 namespace App\Services;
 
 use App\Enums\EstadoSolicitud;
-use App\Enums\MedioAcreditacion;
 use App\Enums\ResultadoValidacion;
 use App\Models\Solicitud;
 use App\Models\User;
 use App\Models\Validacion;
 use App\Notifications\ConceptoRegistradoNotification;
+use App\Notifications\SubsanacionRecibidaNotification;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
@@ -69,11 +69,13 @@ class ValidacionService
             }
         }
 
-        // SISBEN y JAC son un concepto único del especialista: una sola
-        // Respuesta de Oficio / certificación por solicitud, no una por
-        // cada intento. Electoral sí admite volver a validar (p. ej. tras
-        // una corrección manual de Secretaría).
-        if (in_array($tipo, ['sisben', 'jac'], true) && $solicitud->validaciones()->where('tipo', $tipo)->exists()) {
+        // SISBEN, JAC y electoral son un concepto único de quien valida de
+        // fondo (especialista o, en electoral, la IA): una sola validación
+        // por solicitud, no una por cada intento. Si Secretaría no está de
+        // acuerdo con lo que registró la IA, su mecanismo de corrección es
+        // la prevalidación ("Emitir concepto"), no volver a enviar este
+        // formulario — por eso ya no se permite re-enviar "electoral" aquí.
+        if (in_array($tipo, ['sisben', 'jac', 'electoral'], true) && $solicitud->validaciones()->where('tipo', $tipo)->exists()) {
             throw ValidationException::withMessages([
                 'tipo' => "Ya se registró la validación de {$tipo} para esta solicitud.",
             ]);
@@ -161,17 +163,6 @@ class ValidacionService
         ?string $observacion,
         User $actor,
     ): Solicitud {
-        // Para SISBEN/JAC el especialista ya determinó si cumple o no —
-        // Secretaría solo oficializa esa decisión, no vuelve a calificar el
-        // documento. "Subsanar" no aplica para esos dos medios.
-        if ($resultado === ResultadoValidacion::Subsanar
-            && in_array($solicitud->medio_acreditacion, [MedioAcreditacion::Sisben, MedioAcreditacion::Jac], true)
-        ) {
-            throw ValidationException::withMessages([
-                'resultado' => 'La subsanación no aplica para solicitudes de SISBEN o JAC — el especialista ya validó si cumple o no.',
-            ]);
-        }
-
         // Quien prevalida "cumple" es quien firma como "Proyectó" en el
         // certificado final (ver CertificadoService::renderPdf) — no debe
         // poder enviarla al Alcalde sin haber cargado antes su propia firma.
@@ -222,12 +213,16 @@ class ValidacionService
     /**
      * Subsanación por el ciudadano: re-carga soporte y/o actualiza la justificación
      * cuando la solicitud está en "Pendiente de soporte", devolviéndola a "En validación".
+     *
+     * $actor es null cuando llega por el enlace público firmado que se envía
+     * por correo (el ciudadano no tiene cuenta en el sistema) — en ese caso
+     * la autorización ya la dio la firma de la URL, no un usuario autenticado.
      */
     public function subsanar(
         Solicitud $solicitud,
         ?UploadedFile $soporte,
         ?string $justificacion,
-        User $actor,
+        ?User $actor,
     ): Solicitud {
         if ($solicitud->estado !== EstadoSolicitud::PendienteSoporte) {
             throw \Illuminate\Validation\ValidationException::withMessages([
@@ -256,24 +251,36 @@ class ValidacionService
                 'tipo' => $tipo,
                 'observacion' => 'Subsanación aportada por el ciudadano.',
                 'documento_id' => $documentoId,
-                'validado_por' => $actor->id,
+                'validado_por' => $actor?->id,
                 'validado_at' => now(),
             ]);
 
             $this->audit->registrar(
                 accion: 'solicitud.subsanada',
                 auditable: $solicitud,
-                descripcion: 'El ciudadano aportó la subsanación solicitada.',
+                descripcion: $actor
+                    ? 'El ciudadano aportó la subsanación solicitada.'
+                    : 'El ciudadano aportó la subsanación solicitada, vía enlace público.',
                 actor: $actor,
             );
         });
 
-        return $this->solicitudes->cambiarEstado(
+        $solicitud = $this->solicitudes->cambiarEstado(
             $solicitud,
             EstadoSolicitud::EnValidacion,
             'Subsanación recibida; regresa a validación.',
             $actor,
         );
+
+        // Aviso a Secretaría (correo + campanita) de que el ciudadano ya
+        // respondió y volvió a subir lo pedido — solo cuando vino por el
+        // enlace público (autoservicio real); si un funcionario la registró
+        // manualmente desde el panel, no hace falta avisarse a sí mismo.
+        if ($actor === null) {
+            $this->notificarSubsanacionRecibida($solicitud);
+        }
+
+        return $solicitud;
     }
 
     /**
@@ -291,12 +298,33 @@ class ValidacionService
     }
 
     /**
+     * El ciudadano ya corrigió y volvió a enviar lo pedido — Secretaría debe
+     * volver a revisarlo (correo + campanita). No debe bloquear el flujo si falla.
+     */
+    private function notificarSubsanacionRecibida(Solicitud $solicitud): void
+    {
+        try {
+            $mensaje = "El ciudadano respondió la subsanación de la solicitud {$solicitud->radicado} y ya está lista para revisión.";
+
+            $this->notificaciones->notificarRoles(['secretaria'], $mensaje, $solicitud);
+
+            $destinatarios = User::role('secretaria')->get();
+
+            if ($destinatarios->isNotEmpty()) {
+                Notification::send($destinatarios, new SubsanacionRecibidaNotification($solicitud));
+            }
+        } catch (\Throwable $e) {
+            report($e);
+        }
+    }
+
+    /**
      * Almacena el archivo en el expediente (versionado) y devuelve el id del
      * documento. Recibe el `tipo` de documento ya resuelto por el llamador
      * (no aplica TIPO_DOC aquí) — cada caller decide si versiona el soporte
      * original del ciudadano o guarda la respuesta del especialista.
      */
-    private function almacenarSoporte(Solicitud $solicitud, string $tipoDocumento, UploadedFile $file, User $actor): int
+    private function almacenarSoporte(Solicitud $solicitud, string $tipoDocumento, UploadedFile $file, ?User $actor): int
     {
         $expediente = $solicitud->expediente()->firstOrFail();
 

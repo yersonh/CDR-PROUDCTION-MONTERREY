@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\V1\RecibidoVurController;
 use App\Http\Controllers\Api\V1\ReportesController;
 use App\Http\Controllers\Api\V1\SolicitudController;
 use App\Http\Controllers\Api\V1\SolicitudPublicaController;
+use App\Http\Controllers\Api\V1\SubsanacionPublicaController;
 use App\Http\Controllers\Api\V1\ValidacionController;
 use Illuminate\Support\Facades\Route;
 
@@ -40,6 +41,17 @@ Route::prefix('v1')->group(function () {
     // Catálogos para alimentar el formulario público (mismos datos que
     // /catalogos, sin autenticación).
     Route::get('public/catalogos', [CatalogoController::class, 'index']);
+
+    // Subsanación pública (sin login): el ciudadano no tiene cuenta en el
+    // sistema, así que la autorización la da la firma de la URL (enlace
+    // enviado por correo, ver ConceptoRegistradoNotification), no una
+    // sesión. Ambas rutas comparten ruta+parámetros para que una misma
+    // firma sirva para consultar y para enviar.
+    Route::get('public/subsanacion/{solicitud}', [SubsanacionPublicaController::class, 'show'])
+        ->name('public.subsanacion.show')
+        ->middleware('signed');
+    Route::post('public/subsanacion/{solicitud}', [SubsanacionPublicaController::class, 'store'])
+        ->middleware(['signed', 'throttle:10,1']);
 
     // ---------------------------------------------------------------
     // Autenticación
