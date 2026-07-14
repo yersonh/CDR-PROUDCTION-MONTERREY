@@ -62,7 +62,8 @@ class ConceptoRegistradoNotification extends Notification
                     ? 'Debe corregir y volver a cargar el siguiente documento: '.TipoDocumentoCatalogo::label($this->tipoDocumento).'.'
                     : 'Para continuar con su trámite, debe corregir y volver a enviar lo solicitado.')
                 ->action('Corregir mi solicitud', $this->enlacePublico())
-                ->line('El enlace es personal, vence en 30 días y no requiere crear una cuenta.'),
+                ->line('El enlace es personal y no requiere crear una cuenta. Vence el '
+                    .$s->fecha_limite_sla->translatedFormat('d \d\e F \d\e Y').', junto con el plazo legal del trámite.'),
             ResultadoValidacion::Rechaza => $mensaje
                 ->line('Para más información sobre los próximos pasos, comuníquese con la Alcaldía indicando el número de radicado.'),
         };
@@ -75,12 +76,16 @@ class ConceptoRegistradoNotification extends Notification
      * volver a cargar el soporte solicitado. La firma cubre la ruta de la
      * API; el enlace del correo apunta al frontend con la misma consulta
      * firmada, que el frontend reenvía tal cual al llamar a la API.
+     *
+     * Vence junto con el plazo legal del trámite (fecha_limite_sla, 15 días
+     * hábiles desde la radicación) — no tendría sentido que el enlace
+     * siguiera vivo después de que el trámite ya venció.
      */
     private function enlacePublico(): string
     {
         $urlFirmada = URL::temporarySignedRoute(
             'public.subsanacion.show',
-            now()->addDays(30),
+            $this->solicitud->fecha_limite_sla,
             ['solicitud' => $this->solicitud->id],
         );
 
