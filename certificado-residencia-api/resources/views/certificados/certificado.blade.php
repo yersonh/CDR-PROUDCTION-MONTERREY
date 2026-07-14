@@ -14,8 +14,9 @@
         .header hr { border: none; border-top: 1.5px solid #000; margin: 6px 0 0; }
 
         .footer { position: fixed; bottom: -100px; left: 0; right: 0; font-size: 9px; color: #000; text-align: center; }
-        .footer hr { border: none; border-top: 1px solid #000; margin-bottom: 5px; }
-        .footer .direccion { margin-bottom: 3px; }
+        .footer hr { border: none; border-top: 1px solid #000; margin-bottom: 6px; }
+        .footer .direccion { text-align: left; line-height: 1.5; margin-bottom: 6px; }
+        .footer .pagina { text-align: center; }
 
         .meta-row { width: 100%; font-size: 9px; color: #000; margin-bottom: 14px; text-align: right; }
 
@@ -41,9 +42,6 @@
         .qr-box { display: inline-block; width: 40%; text-align: right; vertical-align: bottom; }
         .qr-box img { width: 85px; height: 85px; }
 
-        .verif { margin-top: 16px; padding-top: 6px; border-top: 1px solid #000; font-size: 9px; color: #000; }
-        .verif .cod { font-weight: bold; letter-spacing: 1px; }
-        .hash { word-break: break-all; font-family: 'DejaVu Sans Mono', monospace; font-size: 8px; }
     </style>
 </head>
 <body>
@@ -56,9 +54,13 @@
 
     <div class="footer">
         <hr>
-        <div class="direccion">Carrera 6 15-72 · Código Postal 855 010 · Pbx (8) 624 9890 · www.monterrey-casanare.gov.co</div>
-        Documento generado electrónicamente conforme al Decreto 1158 de 2019 y los principios de Gobierno Digital.<br>
-        Verifique su autenticidad en {{ $verificacion_url }}
+        <div class="direccion">
+            Carrera 6 15-72<br>
+            Código Postal 855 010<br>
+            Pbx (8) 624 9890<br>
+            www.monterrey-casanare.gov.co
+        </div>
+        <div class="pagina">Página 1</div>
     </div>
 
     <div class="meta-row">No. {{ $certificado->consecutivo }} · Radicado {{ $certificado->solicitud->radicado }}</div>
@@ -137,13 +139,6 @@
         <div class="qr-box">
             <img src="{{ $qr }}" alt="QR de verificación">
         </div>
-    </div>
-
-    <div class="verif">
-        <strong>Autenticidad:</strong> escanee el código QR o verifique con el código
-        <span class="cod">{{ $certificado->codigo_verificacion }}</span> en {{ $verificacion_url }}.<br>
-        <strong>Integridad:</strong> el hash SHA-256 de este documento se encuentra registrado y puede
-        verificarse en el portal de consulta pública.
     </div>
 </body>
 </html>
