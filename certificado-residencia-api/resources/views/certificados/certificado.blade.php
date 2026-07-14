@@ -15,9 +15,7 @@
         .footer { position: fixed; bottom: -60px; left: 0; right: 0; font-size: 9px; color: #000; text-align: center; }
         .footer hr { border: none; border-top: 1px solid #000; margin-bottom: 4px; }
 
-        .meta-row { width: 100%; font-size: 9px; color: #000; margin-bottom: 18px; }
-        .meta-row .trd { text-align: left; }
-        .meta-row .radicado { text-align: right; }
+        .meta-row { width: 100%; font-size: 9px; color: #000; margin-bottom: 18px; text-align: right; }
 
         .titulo { text-align: center; font-size: 13px; font-weight: bold; margin: 0 0 16px; text-transform: uppercase; }
 
@@ -58,12 +56,7 @@
         Verifique su autenticidad en {{ $verificacion_url }}
     </div>
 
-    <table class="meta-row">
-        <tr>
-            <td class="trd">TRD 100-926</td>
-            <td class="radicado">No. {{ $certificado->consecutivo }} · Radicado {{ $certificado->solicitud->radicado }}</td>
-        </tr>
-    </table>
+    <div class="meta-row">No. {{ $certificado->consecutivo }} · Radicado {{ $certificado->solicitud->radicado }}</div>
 
     <div class="titulo">EL ALCALDE MUNICIPAL DE MONTERREY CASANARE</div>
 
