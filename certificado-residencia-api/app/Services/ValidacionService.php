@@ -10,6 +10,7 @@ use App\Models\Validacion;
 use App\Notifications\ConceptoRegistradoNotification;
 use App\Notifications\SolicitudRechazadaNotification;
 use App\Notifications\SubsanacionRecibidaNotification;
+use App\Support\TipoDocumentoCatalogo;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
@@ -162,6 +163,7 @@ class ValidacionService
         ResultadoValidacion $resultado,
         ?string $observacion,
         User $actor,
+        ?string $tipoDocumento = null,
     ): Solicitud {
         // Quien prevalida "cumple" es quien firma como "Proyectó" en el
         // certificado final (ver CertificadoService::renderPdf) — no debe
@@ -174,11 +176,15 @@ class ValidacionService
             ]);
         }
 
-        DB::transaction(function () use ($solicitud, $resultado, $observacion, $actor) {
+        DB::transaction(function () use ($solicitud, $resultado, $observacion, $actor, $tipoDocumento) {
             $solicitud->validaciones()->create([
                 'tipo' => 'prevalidacion',
                 'resultado' => $resultado,
                 'observacion' => $observacion,
+                'meta' => $tipoDocumento ? [
+                    'tipo_documento_solicitado' => $tipoDocumento,
+                    'tipo_documento_solicitado_label' => TipoDocumentoCatalogo::label($tipoDocumento),
+                ] : null,
                 'validado_por' => $actor->id,
                 'validado_at' => now(),
             ]);
@@ -187,7 +193,7 @@ class ValidacionService
                 accion: 'prevalidacion.concepto',
                 auditable: $solicitud,
                 descripcion: "Prevalidación: {$resultado->label()}",
-                despues: ['resultado' => $resultado->value, 'observacion' => $observacion],
+                despues: ['resultado' => $resultado->value, 'observacion' => $observacion, 'tipo_documento' => $tipoDocumento],
                 actor: $actor,
             );
         });
@@ -205,7 +211,7 @@ class ValidacionService
             $actor,
         );
 
-        $this->notificarConcepto($solicitud, 'secretaria', $resultado, $observacion);
+        $this->notificarConcepto($solicitud, 'secretaria', $resultado, $observacion, $tipoDocumento);
 
         // Al Alcalde solo le avisamos cuando se rechaza — es informativo /
         // de supervisión, no tiene que actuar (la solicitud queda en estado
@@ -239,15 +245,26 @@ class ValidacionService
 
         $tipo = $solicitud->medio_acreditacion->value;
 
-        DB::transaction(function () use ($solicitud, $soporte, $tipo, $actor) {
+        // El documento a corregir es el que Secretaría eligió al pedir la
+        // subsanación (PrevalidacionRequest::tipo_documento, guardado en el
+        // meta de la última validación "prevalidacion"). Solicitudes
+        // antiguas sin ese dato caen al soporte original del medio, que era
+        // el único documento que se podía pedir antes de este cambio.
+        $ultimaPrevalidacion = $solicitud->validaciones()
+            ->where('tipo', 'prevalidacion')
+            ->latest('validado_at')
+            ->first();
+        $tipoDocumento = $ultimaPrevalidacion?->meta['tipo_documento_solicitado'] ?? 'soporte_'.$tipo;
+
+        DB::transaction(function () use ($solicitud, $soporte, $tipo, $tipoDocumento, $actor) {
             $documentoId = null;
 
             if ($soporte) {
-                // El ciudadano corrige el MISMO soporte que trajo al radicar
-                // (SolicitudService::almacenarSoporte usa 'soporte_'.medio),
-                // no la Respuesta de Oficio del especialista — por eso aquí
-                // NO se pasa por TIPO_DOC, para versionar el documento correcto.
-                $documentoId = $this->almacenarSoporte($solicitud, 'soporte_'.$tipo, $soporte, $actor);
+                // Se versiona el documento exacto que se pidió corregir, no
+                // siempre el soporte original — puede ser el documento de
+                // identidad o la solicitud firmada, según lo que Secretaría
+                // haya seleccionado en la prevalidación.
+                $documentoId = $this->almacenarSoporte($solicitud, $tipoDocumento, $soporte, $actor);
             }
 
             $solicitud->validaciones()->create([
@@ -290,11 +307,11 @@ class ValidacionService
      * Avisa al ciudadano por correo el concepto registrado (SISBEN, JAC o
      * Secretaría), positivo o negativo. No debe bloquear el flujo si falla.
      */
-    private function notificarConcepto(Solicitud $solicitud, string $origen, ResultadoValidacion $resultado, ?string $observacion): void
+    private function notificarConcepto(Solicitud $solicitud, string $origen, ResultadoValidacion $resultado, ?string $observacion, ?string $tipoDocumento = null): void
     {
         try {
             Notification::route('mail', $solicitud->correo)
-                ->notify(new ConceptoRegistradoNotification($solicitud, $origen, $resultado, $observacion));
+                ->notify(new ConceptoRegistradoNotification($solicitud, $origen, $resultado, $observacion, $tipoDocumento));
         } catch (\Throwable $e) {
             report($e);
         }

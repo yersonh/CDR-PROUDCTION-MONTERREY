@@ -69,6 +69,7 @@ class ValidacionController extends Controller
             resultado: ResultadoValidacion::from($request->validated('resultado')),
             observacion: $request->validated('observacion'),
             actor: $request->user(),
+            tipoDocumento: $request->validated('tipo_documento'),
         );
 
         $solicitud->load(['expediente.documentos', 'seguimientos.actor', 'validaciones.validadoPor']);

@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Models\ExpedienteDocumento;
+use App\Support\TipoDocumentoCatalogo;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -17,6 +18,7 @@ class DocumentoResource extends JsonResource
         return [
             'id' => $this->id,
             'tipo' => $this->tipo,
+            'tipo_label' => TipoDocumentoCatalogo::label($this->tipo),
             'nombre_original' => $this->nombre_original,
             'mime' => $this->mime,
             'size' => $this->size,

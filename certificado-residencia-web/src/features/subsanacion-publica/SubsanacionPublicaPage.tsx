@@ -17,15 +17,14 @@ export function SubsanacionPublicaPage() {
   const [soporte, setSoporte] = useState<File | null>(null)
   const [errorLocal, setErrorLocal] = useState<string | null>(null)
 
-  const requiereSoporte = data && ['electoral', 'sisben', 'jac'].includes(data.medio_acreditacion)
   const yaNoAplica = data && data.estado !== 'pendiente_soporte'
 
   const submit = () => {
     setErrorLocal(null)
-    if (requiereSoporte && !soporte) { setErrorLocal('Debe adjuntar el documento solicitado.'); return }
+    if (!soporte) { setErrorLocal('Debe adjuntar el documento solicitado.'); return }
 
     const fd = new FormData()
-    if (soporte) fd.append('soporte', soporte)
+    fd.append('soporte', soporte)
     enviar.mutate(fd)
   }
 
@@ -79,17 +78,20 @@ export function SubsanacionPublicaPage() {
                 <div className="rounded-lg bg-institutional-bg px-4 py-3 text-sm">
                   <p><strong>Radicado:</strong> {data.radicado}</p>
                   <p><strong>Solicitante:</strong> {data.nombre_completo}</p>
+                  {data.tipo_documento_label && (
+                    <p className="mt-2"><strong>Documento solicitado:</strong> {data.tipo_documento_label}</p>
+                  )}
                   {data.observacion && (
                     <p className="mt-2 text-institutional-muted"><strong>Motivo indicado:</strong> {data.observacion}</p>
                   )}
                 </div>
 
-                {requiereSoporte && (
-                  <div>
-                    <p className="mb-1.5 text-sm font-medium text-institutional-text">Adjunte el documento corregido</p>
-                    <FileUpload file={soporte} onChange={setSoporte} />
-                  </div>
-                )}
+                <div>
+                  <p className="mb-1.5 text-sm font-medium text-institutional-text">
+                    Adjunte el documento corregido{data.tipo_documento_label && <> ({data.tipo_documento_label})</>}
+                  </p>
+                  <FileUpload file={soporte} onChange={setSoporte} />
+                </div>
 
                 {(errorLocal || enviar.isError) && (
                   <p className="text-sm font-medium text-danger">

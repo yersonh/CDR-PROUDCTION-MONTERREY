@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Solicitud\SubsanacionPublicaRequest;
 use App\Models\Solicitud;
 use App\Services\ValidacionService;
+use App\Support\TipoDocumentoCatalogo;
 use Illuminate\Http\JsonResponse;
 
 /**
@@ -21,17 +22,20 @@ class SubsanacionPublicaController extends Controller
     /** Datos mínimos para que el frontend renderice el formulario. */
     public function show(Solicitud $solicitud): JsonResponse
     {
-        $observacion = $solicitud->validaciones()
+        $ultimaPrevalidacion = $solicitud->validaciones()
             ->where('tipo', 'prevalidacion')
             ->latest('validado_at')
-            ->value('observacion');
+            ->first();
+        $tipoDocumento = $ultimaPrevalidacion?->meta['tipo_documento_solicitado'] ?? null;
 
         return response()->json(['data' => [
             'radicado' => $solicitud->radicado,
             'nombre_completo' => $solicitud->nombre_completo,
             'medio_acreditacion' => $solicitud->medio_acreditacion->value,
             'estado' => $solicitud->estado->value,
-            'observacion' => $observacion,
+            'observacion' => $ultimaPrevalidacion?->observacion,
+            'tipo_documento' => $tipoDocumento,
+            'tipo_documento_label' => $tipoDocumento ? TipoDocumentoCatalogo::label($tipoDocumento) : null,
         ]]);
     }
 

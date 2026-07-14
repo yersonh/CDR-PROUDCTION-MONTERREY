@@ -260,6 +260,7 @@ class RecibidoVurTest extends TestCase
         $this->postJson("/api/v1/solicitudes/{$recibido->solicitud_id}/prevalidacion", [
             'resultado' => 'subsanar',
             'observacion' => 'Documento borroso',
+            'tipo_documento' => 'soporte_sisben',
         ])->assertOk()->assertJsonPath('data.estado.value', 'pendiente_soporte');
     }
 }

@@ -66,6 +66,7 @@ class SubsanacionPublicaTest extends TestCase
         $this->postJson("/api/v1/solicitudes/{$solicitud->id}/prevalidacion", [
             'resultado' => 'subsanar',
             'observacion' => 'El documento no es legible.',
+            'tipo_documento' => 'soporte_sisben',
         ])->assertOk()->assertJsonPath('data.estado.value', 'pendiente_soporte');
     }
 

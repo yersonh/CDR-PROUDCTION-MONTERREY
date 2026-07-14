@@ -128,6 +128,7 @@ export function useSubsanar(solicitudId: number) {
 export interface PrevalidacionPayload {
   resultado: 'cumple' | 'subsanar' | 'rechaza'
   observacion?: string
+  tipo_documento?: string
 }
 
 /** Emitir concepto de prevalidación. */

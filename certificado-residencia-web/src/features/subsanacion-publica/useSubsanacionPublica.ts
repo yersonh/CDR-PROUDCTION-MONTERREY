@@ -7,6 +7,8 @@ export interface SubsanacionPublicaInfo {
   medio_acreditacion: 'electoral' | 'sisben' | 'jac'
   estado: string
   observacion: string | null
+  tipo_documento: string | null
+  tipo_documento_label: string | null
 }
 
 /** Query string firmada (expires + signature) que llega en el enlace del correo. */

@@ -19,6 +19,12 @@ const RESULTADOS = [
   { value: 'rechaza', label: 'Rechazada' },
 ]
 
+/** Meta de la última prevalidación que pidió subsanación, si la hay (documento solicitado al ciudadano). */
+function ultimaSubsanacionSolicitada(solicitud: Solicitud) {
+  const prevalidaciones = (solicitud.validaciones ?? []).filter((v) => v.tipo === 'prevalidacion' && v.meta?.tipo_documento_solicitado)
+  return prevalidaciones.at(-1)?.meta ?? null
+}
+
 export function GestionSolicitud({ solicitud }: { solicitud: Solicitud }) {
   const { hasPermission, hasRole } = useAuth()
   const medio = solicitud.medio_acreditacion.value
@@ -50,6 +56,7 @@ export function GestionSolicitud({ solicitud }: { solicitud: Solicitud }) {
   const hayAcciones = puedeElectoral || puedeSisben || puedeJac || puedePrevalidar || puedeFirmar || puedeSubsanar
   const tieneValidaciones = (solicitud.validaciones?.length ?? 0) > 0
   const cert = solicitud.certificado
+  const documentoSolicitadoLabel = ultimaSubsanacionSolicitada(solicitud)?.tipo_documento_solicitado_label
 
   if (terminal && !tieneValidaciones && !cert) return null
 
@@ -67,7 +74,10 @@ export function GestionSolicitud({ solicitud }: { solicitud: Solicitud }) {
         {esperandoSubsanacion && (
           <div className="flex items-start gap-2 rounded-lg border border-primary-100 bg-primary-50 px-4 py-3 text-sm text-primary-700">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-            <span>Se solicitó subsanación al ciudadano. La solicitud vuelve a validación automáticamente cuando responda.</span>
+            <span>
+              Esperando la respuesta del ciudadano.
+              {documentoSolicitadoLabel && <> Documento solicitado: <strong>{documentoSolicitadoLabel}</strong>.</>}
+            </span>
           </div>
         )}
 
@@ -254,7 +264,12 @@ function PrevalidarForm({ solicitud }: { solicitud: Solicitud }) {
   const prevalidar = usePrevalidar(solicitud.id)
   const [resultado, setResultado] = useState<'cumple' | 'subsanar' | 'rechaza'>('cumple')
   const [observacion, setObservacion] = useState('')
+  const [tipoDocumento, setTipoDocumento] = useState('')
   const [error, setError] = useState<string>()
+
+  // Documentos vigentes del expediente que tiene sentido pedirle corregir al
+  // ciudadano (no certificados generados por el sistema).
+  const documentosSubsanables = (solicitud.expediente?.documentos ?? []).filter((d) => d.vigente && !d.es_certificado)
 
   // Quien prevalida "cumple" queda como "Proyectó" en el certificado final
   // — no puede enviarlo al Alcalde sin haber cargado antes su propia firma.
@@ -265,7 +280,15 @@ function PrevalidarForm({ solicitud }: { solicitud: Solicitud }) {
       setError('Indique el motivo de la subsanación o rechazo')
       return
     }
-    prevalidar.mutate({ resultado, observacion: observacion || undefined })
+    if (resultado === 'subsanar' && !tipoDocumento) {
+      setError('Seleccione cuál documento debe corregir el ciudadano')
+      return
+    }
+    prevalidar.mutate({
+      resultado,
+      observacion: observacion || undefined,
+      tipo_documento: resultado === 'subsanar' ? tipoDocumento : undefined,
+    })
   }
 
   return (
@@ -277,6 +300,14 @@ function PrevalidarForm({ solicitud }: { solicitud: Solicitud }) {
           {RESULTADOS.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
         </Select>
       </Field>
+      {resultado === 'subsanar' && (
+        <Field label="Documento a corregir" htmlFor="pv-doc" required>
+          <Select id="pv-doc" value={tipoDocumento} onChange={(e) => { setTipoDocumento(e.target.value); setError(undefined) }}>
+            <option value="">Seleccione…</option>
+            {documentosSubsanables.map((d) => <option key={d.tipo} value={d.tipo}>{d.tipo_label}</option>)}
+          </Select>
+        </Field>
+      )}
       <Field label="Observación" htmlFor="pv-obs" required={resultado !== 'cumple'}>
         <Textarea id="pv-obs" rows={2} value={observacion} onChange={(e) => setObservacion(e.target.value)}
           placeholder={resultado === 'cumple' ? 'Opcional' : 'Motivo obligatorio'} />
@@ -306,15 +337,15 @@ function PrevalidarForm({ solicitud }: { solicitud: Solicitud }) {
 /** Subsanación del ciudadano cuando la solicitud está en Pendiente de soporte. */
 function SubsanarForm({ solicitud }: { solicitud: Solicitud }) {
   const subsanar = useSubsanar(solicitud.id)
-  const medio = solicitud.medio_acreditacion.value
+  const documentoLabel = ultimaSubsanacionSolicitada(solicitud)?.tipo_documento_solicitado_label
   const [file, setFile] = useState<File | null>(null)
   const [error, setError] = useState<string>()
 
   const submit = () => {
     setError(undefined)
-    if (medio === 'electoral' && !file) { setError('Debe adjuntar nuevamente el certificado electoral'); return }
+    if (!file) { setError('Debe adjuntar el documento solicitado'); return }
     const fd = new FormData()
-    if (file) fd.append('soporte', file)
+    fd.append('soporte', file)
     subsanar.mutate(fd)
   }
 
@@ -322,7 +353,7 @@ function SubsanarForm({ solicitud }: { solicitud: Solicitud }) {
     <FormBox titulo="Subsanar solicitud" icon={Upload} destacado>
       {subsanar.isError && <FormError error={subsanar.error} />}
       <p className="text-sm text-institutional-muted">
-        Su solicitud requiere subsanación. Aporte la corrección solicitada para continuar el trámite.
+        Su solicitud requiere subsanación{documentoLabel && <> — debe volver a cargar: <strong>{documentoLabel}</strong></>}.
       </p>
       <FileUpload file={file} onChange={(f) => { setFile(f); setError(undefined) }} error={error} />
       <Button variant="success" onClick={submit} loading={subsanar.isPending}>Enviar subsanación</Button>

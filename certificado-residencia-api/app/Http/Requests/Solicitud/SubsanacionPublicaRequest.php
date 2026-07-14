@@ -3,7 +3,6 @@
 namespace App\Http\Requests\Solicitud;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 /**
  * Subsanación aportada por el ciudadano vía el enlace público firmado (sin
@@ -22,20 +21,15 @@ class SubsanacionPublicaRequest extends FormRequest
      */
     public function rules(): array
     {
-        $medio = $this->route('solicitud')?->medio_acreditacion?->value;
-
         return [
-            'soporte' => [
-                'nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:20480',
-                Rule::requiredIf(fn () => in_array($medio, ['electoral', 'sisben', 'jac'], true)),
-            ],
+            'soporte' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:20480'],
         ];
     }
 
     public function messages(): array
     {
         return [
-            'soporte.required' => 'Debe adjuntar nuevamente el soporte solicitado.',
+            'soporte.required' => 'Debe adjuntar el documento solicitado.',
         ];
     }
 }

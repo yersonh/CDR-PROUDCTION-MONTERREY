@@ -20,6 +20,7 @@ export interface Catalogos {
 export interface Documento {
   id: number
   tipo: string
+  tipo_label: string
   nombre_original: string
   mime: string | null
   size: number
@@ -54,6 +55,8 @@ export interface Validacion {
     presidente?: string
     sector?: string
     qr?: string
+    tipo_documento_solicitado?: string
+    tipo_documento_solicitado_label?: string
   } | null
   documento?: Documento
   validado_por?: string | null

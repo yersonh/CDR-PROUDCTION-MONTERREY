@@ -4,6 +4,7 @@ namespace App\Notifications;
 
 use App\Enums\ResultadoValidacion;
 use App\Models\Solicitud;
+use App\Support\TipoDocumentoCatalogo;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
@@ -23,6 +24,7 @@ class ConceptoRegistradoNotification extends Notification
         public string $origen,
         public ResultadoValidacion $resultado,
         public ?string $observacion,
+        public ?string $tipoDocumento = null,
     ) {}
 
     /**
@@ -56,7 +58,9 @@ class ConceptoRegistradoNotification extends Notification
         match ($this->resultado) {
             ResultadoValidacion::Cumple => $mensaje->line('Su trámite continúa su curso normal.'),
             ResultadoValidacion::Subsanar => $mensaje
-                ->line('Para continuar con su trámite, debe corregir y volver a enviar lo solicitado a través del siguiente enlace:')
+                ->line($this->tipoDocumento
+                    ? 'Debe corregir y volver a cargar el siguiente documento: '.TipoDocumentoCatalogo::label($this->tipoDocumento).'.'
+                    : 'Para continuar con su trámite, debe corregir y volver a enviar lo solicitado.')
                 ->action('Corregir mi solicitud', $this->enlacePublico())
                 ->line('El enlace es personal, vence en 30 días y no requiere crear una cuenta.'),
             ResultadoValidacion::Rechaza => $mensaje
