@@ -70,7 +70,11 @@ export function UsuariosPage() {
                   <tr key={u.id} className="hover:bg-primary-50/30">
                     <td className="px-5 py-3 font-medium text-institutional-text">{u.name}</td>
                     <td className="px-5 py-3 text-institutional-muted">{u.email}</td>
-                    <td className="px-5 py-3">{u.roles.map((r) => ROL_LABEL[r] ?? r).join(', ')}</td>
+                    <td className="px-5 py-3">
+                      {u.roles.length
+                        ? u.roles.map((r) => ROL_LABEL[r] ?? r).join(', ')
+                        : <span className="text-institutional-muted">Cuenta de sistema</span>}
+                    </td>
                     <td className="px-5 py-3 text-institutional-muted">{dependenciaLabel(u)}</td>
                     <td className="px-5 py-3">
                       <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${u.activo ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
@@ -78,15 +82,17 @@ export function UsuariosPage() {
                       </span>
                     </td>
                     <td className="px-5 py-3 text-right">
-                      <div className="flex justify-end gap-1">
-                        <RowActionButton icon={Pencil} label="Editar" onClick={() => setEditando(u)} />
-                        <RowActionButton
-                          icon={u.activo ? Ban : Power}
-                          label={u.activo ? 'Desactivar' : 'Activar'}
-                          variant={u.activo ? 'danger' : 'success'}
-                          onClick={() => toggle.mutate(u.id)}
-                        />
-                      </div>
+                      {u.roles.length > 0 && (
+                        <div className="flex justify-end gap-1">
+                          <RowActionButton icon={Pencil} label="Editar" onClick={() => setEditando(u)} />
+                          <RowActionButton
+                            icon={u.activo ? Ban : Power}
+                            label={u.activo ? 'Desactivar' : 'Activar'}
+                            variant={u.activo ? 'danger' : 'success'}
+                            onClick={() => toggle.mutate(u.id)}
+                          />
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))}

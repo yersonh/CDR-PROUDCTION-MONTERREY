@@ -14,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
+use Symfony\Component\HttpFoundation\Response;
 
 class UsuarioController extends Controller
 {
@@ -75,6 +76,8 @@ class UsuarioController extends Controller
 
     public function update(UpdateUsuarioRequest $request, User $usuario): JsonResponse
     {
+        $this->abortSiEsCuentaDeSistema($usuario);
+
         $data = $request->validated();
 
         $usuario->fill(collect($data)->except(['rol'])->all());
@@ -95,12 +98,25 @@ class UsuarioController extends Controller
     /** Activar / desactivar (no se elimina físicamente). */
     public function toggle(User $usuario): JsonResponse
     {
+        $this->abortSiEsCuentaDeSistema($usuario);
+
         $usuario->forceFill(['activo' => ! $usuario->activo])->save();
 
         return response()->json([
             'message' => $usuario->activo ? 'Usuario activado.' : 'Usuario desactivado.',
             'activo' => $usuario->activo,
         ]);
+    }
+
+    /**
+     * Cuentas de servicio (VUR, IA de validación electoral, etc.) no tienen
+     * rol — solo el permiso puntual que necesitan (ver UserSeeder). No se
+     * editan ni desactivan desde este panel: si se desactivan, la
+     * integración correspondiente deja de poder autenticarse en silencio.
+     */
+    private function abortSiEsCuentaDeSistema(User $usuario): void
+    {
+        abort_if($usuario->roles->isEmpty(), Response::HTTP_FORBIDDEN, 'Esta es una cuenta de sistema y no se gestiona desde aquí.');
     }
 
     /** Alcalde/Secretaría/Super Admin → siempre Despacho del Alcalde; SISBEN/JAC → sin dependencia (externos). */
