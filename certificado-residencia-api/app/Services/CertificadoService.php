@@ -160,10 +160,15 @@ class CertificadoService
         $verificacionUrl = rtrim(config('app.frontend_url', ''), '/').'/verificar';
         $qr = $this->qr->dataUri($verificacionUrl."?codigo={$certificado->codigo_verificacion}");
 
-        // El escudo vive en el código (resources), no en el volumen de storage
-        $escudoPath = resource_path('branding/escudo.png');
-        $escudo = is_file($escudoPath)
-            ? 'data:image/png;base64,'.base64_encode(file_get_contents($escudoPath))
+        // Logo institucional completo (escudo + "Alcaldía de Monterrey
+        // Casanare" + NIT + franja de colores) — vive en el código
+        // (resources), no en el volumen de storage. Se reduce de tamaño en
+        // servidor por la misma razón que la firma más abajo: DomPDF calcula
+        // el alto a partir del tamaño intrínseco de la imagen, y este PNG
+        // llega a resolución muy alta (1774×887).
+        $logoPath = resource_path('branding/logo-membrete.png');
+        $escudo = is_file($logoPath)
+            ? $this->miniaturaBase64(file_get_contents($logoPath), 480, 240)
             : '';
 
         // Imagen de firma del Alcalde, si la tiene cargada. Se reduce a un

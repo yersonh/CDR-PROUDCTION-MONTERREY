@@ -3,24 +3,15 @@
 <head>
     <meta charset="utf-8">
     <style>
-        @page { margin: 160px 60px 115px 60px; }
+        @page { margin: 175px 60px 115px 60px; }
         body { font-family: 'DejaVu Serif', serif; color: #000; font-size: 11.5px; line-height: 1.42; }
         p { margin: 0 0 9px; }
 
-        .header { position: fixed; top: -145px; left: 0; right: 0; text-align: center; }
-        .header .lockup { width: 320px; margin: 0 auto; }
-        .header .escudo-cell { width: 65px; text-align: center; vertical-align: middle; }
-        .header .escudo { height: 52px; }
-        .header .texto-cell { text-align: left; vertical-align: middle; padding-left: 12px; }
-        .header .entidad-linea1 { font-size: 13px; font-weight: bold; color: #000; letter-spacing: 0.5px; line-height: 1.2; }
-        .header .monterrey { font-size: 19px; font-weight: bold; letter-spacing: 0.5px; line-height: 1.15; color: #1b3a8a; }
-        .header .casanare { font-size: 19px; font-weight: bold; letter-spacing: 0.5px; line-height: 1.15; color: #c0392b; }
-        .header .nit { font-size: 10px; color: #333; margin-top: 2px; }
-        .franja { width: 100%; margin-top: 8px; border-spacing: 0; }
-        .franja td { height: 5px; font-size: 0; line-height: 0; }
-        .franja .v { background: #16a34a; }
-        .franja .a { background: #eab308; }
-        .franja .r { background: #c0392b; }
+        .header { position: fixed; top: -160px; left: 0; right: 0; text-align: center; }
+        .header .logo { max-width: 280px; }
+
+        .qr-esquina { position: fixed; top: -125px; right: 0; text-align: right; }
+        .qr-esquina img { width: 72px; height: 72px; }
 
         .footer { position: fixed; bottom: -100px; left: 0; right: 0; font-size: 9px; color: #000; text-align: center; }
         .footer .direccion { text-align: left; line-height: 1.5; margin-bottom: 6px; }
@@ -41,9 +32,6 @@
         .requisitos td.req-valor { text-align: right; font-weight: bold; }
 
         .firma-wrap { width: 100%; margin-top: 16px; }
-        .firma-col { width: 78%; vertical-align: top; }
-        .qr-col { width: 22%; text-align: right; vertical-align: top; }
-        .qr-col img { width: 85px; height: 85px; }
 
         /* Firma del Alcalde: más grande, centrada — como en el documento físico. */
         .alcalde-firma { text-align: center; }
@@ -63,18 +51,11 @@
 </head>
 <body>
     <div class="header">
-        <table class="lockup">
-            <tr>
-                <td class="escudo-cell"><img src="{{ $escudo }}" class="escudo" alt="Escudo"></td>
-                <td class="texto-cell">
-                    <div class="entidad-linea1">ALCALDÍA DE</div>
-                    <div class="monterrey">MONTERREY</div>
-                    <div class="casanare">CASANARE</div>
-                    <div class="nit">NIT. 891857 824-3</div>
-                </td>
-            </tr>
-        </table>
-        <table class="franja"><tr><td class="v"></td><td class="a"></td><td class="r"></td></tr></table>
+        <img src="{{ $escudo }}" class="logo" alt="Alcaldía de Monterrey, Casanare">
+    </div>
+
+    <div class="qr-esquina">
+        <img src="{{ $qr }}" alt="QR de verificación">
     </div>
 
     <div class="footer">
@@ -138,37 +119,28 @@
     </div>
 
     <div class="firma-wrap">
-        <table style="width: 100%">
-            <tr>
-                <td class="firma-col">
-                    <div class="alcalde-firma">
-                        @if (!empty($firma_img))
-                            <img src="{{ $firma_img }}" alt="Firma" class="firma-img"><br>
-                        @endif
-                        <div class="firma-line">
-                            <span class="firma-nombre">{{ $certificado->firmadoPor->name ?? 'Alcalde Municipal' }}</span><br>
-                            Alcalde Municipal<br>
-                            <span class="firma-tag">Despacho del Alcalde</span>
-                        </div>
-                    </div>
+        <div class="alcalde-firma">
+            @if (!empty($firma_img))
+                <img src="{{ $firma_img }}" alt="Firma" class="firma-img"><br>
+            @endif
+            <div class="firma-line">
+                <span class="firma-nombre">{{ $certificado->firmadoPor->name ?? 'Alcalde Municipal' }}</span><br>
+                Alcalde Municipal<br>
+                <span class="firma-tag">Despacho del Alcalde</span>
+            </div>
+        </div>
 
-                    @if ($proyecto_nombre)
-                        <div class="secretaria-firma">
-                            @if (!empty($proyecto_img))
-                                <img src="{{ $proyecto_img }}" alt="Firma" class="firma-img"><br>
-                            @endif
-                            <div class="firma-line">
-                                <span class="firma-nombre">{{ mb_strtoupper($proyecto_nombre, 'UTF-8') }}</span><br>
-                                <span class="firma-tag">Secretaría Ejecutiva del Despacho del Alcalde</span>
-                            </div>
-                        </div>
-                    @endif
-                </td>
-                <td class="qr-col">
-                    <img src="{{ $qr }}" alt="QR de verificación">
-                </td>
-            </tr>
-        </table>
+        @if ($proyecto_nombre)
+            <div class="secretaria-firma">
+                @if (!empty($proyecto_img))
+                    <img src="{{ $proyecto_img }}" alt="Firma" class="firma-img"><br>
+                @endif
+                <div class="firma-line">
+                    <span class="firma-nombre">{{ mb_strtoupper($proyecto_nombre, 'UTF-8') }}</span><br>
+                    <span class="firma-tag">Secretaría Ejecutiva del Despacho del Alcalde</span>
+                </div>
+            </div>
+        @endif
     </div>
 </body>
 </html>
