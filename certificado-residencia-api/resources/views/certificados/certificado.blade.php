@@ -3,21 +3,26 @@
 <head>
     <meta charset="utf-8">
     <style>
-        @page { margin: 145px 60px 115px 60px; }
+        @page { margin: 160px 60px 115px 60px; }
         body { font-family: 'DejaVu Serif', serif; color: #000; font-size: 11.5px; line-height: 1.42; }
         p { margin: 0 0 9px; }
 
-        .header { position: fixed; top: -128px; left: 0; right: 0; }
-        .header .lockup { width: 100%; }
-        .header .escudo-cell { width: 60px; text-align: center; vertical-align: middle; }
-        .header .escudo { height: 50px; }
+        .header { position: fixed; top: -145px; left: 0; right: 0; text-align: center; }
+        .header .lockup { width: 320px; margin: 0 auto; }
+        .header .escudo-cell { width: 65px; text-align: center; vertical-align: middle; }
+        .header .escudo { height: 52px; }
         .header .texto-cell { text-align: left; vertical-align: middle; padding-left: 12px; }
-        .header .entidad { font-size: 15px; font-weight: bold; color: #000; letter-spacing: 0.5px; }
-        .header .nit { font-size: 10px; color: #000; margin-top: 2px; }
-        .header hr { border: none; border-top: 1.5px solid #000; margin: 6px 0 0; }
+        .header .entidad-linea1 { font-size: 13px; font-weight: bold; color: #000; letter-spacing: 0.5px; line-height: 1.2; }
+        .header .monterrey { font-size: 19px; font-weight: bold; letter-spacing: 0.5px; line-height: 1.15; color: #1b3a8a; }
+        .header .casanare { font-size: 19px; font-weight: bold; letter-spacing: 0.5px; line-height: 1.15; color: #c0392b; }
+        .header .nit { font-size: 10px; color: #333; margin-top: 2px; }
+        .franja { width: 100%; margin-top: 8px; border-spacing: 0; }
+        .franja td { height: 5px; font-size: 0; line-height: 0; }
+        .franja .v { background: #16a34a; }
+        .franja .a { background: #eab308; }
+        .franja .r { background: #c0392b; }
 
         .footer { position: fixed; bottom: -100px; left: 0; right: 0; font-size: 9px; color: #000; text-align: center; }
-        .footer hr { border: none; border-top: 1px solid #000; margin-bottom: 6px; }
         .footer .direccion { text-align: left; line-height: 1.5; margin-bottom: 6px; }
         .footer .pagina { text-align: center; }
 
@@ -62,16 +67,17 @@
             <tr>
                 <td class="escudo-cell"><img src="{{ $escudo }}" class="escudo" alt="Escudo"></td>
                 <td class="texto-cell">
-                    <div class="entidad">ALCALDÍA DE<br>MONTERREY CASANARE</div>
+                    <div class="entidad-linea1">ALCALDÍA DE</div>
+                    <div class="monterrey">MONTERREY</div>
+                    <div class="casanare">CASANARE</div>
                     <div class="nit">NIT. 891857 824-3</div>
                 </td>
             </tr>
         </table>
-        <hr>
+        <table class="franja"><tr><td class="v"></td><td class="a"></td><td class="r"></td></tr></table>
     </div>
 
     <div class="footer">
-        <hr>
         <div class="direccion">
             Carrera 6 15-72<br>
             Código Postal 855 010<br>
