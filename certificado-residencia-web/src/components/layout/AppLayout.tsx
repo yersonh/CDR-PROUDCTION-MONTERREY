@@ -169,7 +169,7 @@ export function AppLayout() {
       <ConfirmDialog
         open={confirmLogoutOpen}
         title="Cerrar sesión"
-        description={`¿Está seguro que desea cerrar la sesión de ${user?.name ?? 'este usuario'}?`}
+        description={<>¿Está seguro que desea cerrar la sesión de <strong>{user?.name ?? 'este usuario'}</strong>?</>}
         confirmLabel="Sí, salir"
         cancelLabel="Cancelar"
         variant="danger"
