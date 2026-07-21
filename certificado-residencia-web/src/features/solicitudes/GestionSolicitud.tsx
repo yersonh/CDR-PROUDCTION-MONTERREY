@@ -204,7 +204,7 @@ function SoporteForm({ solicitud, tipo, titulo }: { solicitud: Solicitud; tipo: 
       {registrar.isError && <FormError error={registrar.error} />}
       {esSisben && (
         <a href={SISBEN_CONSULTA_URL} target="_blank" rel="noreferrer" className="inline-block">
-          <Button type="button" variant="outline" size="sm">
+          <Button type="button" variant="primary" size="sm">
             <ExternalLink className="h-3.5 w-3.5" /> Verificar grupo SISBEN en línea
           </Button>
         </a>
