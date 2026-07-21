@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Solicitud\PreviewSolicitudPublicaRequest;
 use App\Http\Requests\Solicitud\StoreSolicitudPublicaRequest;
+use App\Models\RecibidoVur;
+use App\Models\SolicitudPublica;
 use App\Services\SolicitudPublicaService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response as HttpResponse;
@@ -51,5 +53,112 @@ class SolicitudPublicaController extends Controller
         $pdf = $this->solicitudesPublicas->renderPreview($request->validated());
 
         return response($pdf, Response::HTTP_OK, ['Content-Type' => 'application/pdf']);
+    }
+
+    /**
+     * Consulta pública (sin autenticación) del estado de una solicitud por
+     * su referencia SP-########. El id es secuencial y por lo tanto
+     * adivinable, así que la respuesta no expone datos sensibles (dirección,
+     * número de identificación, documentos): solo el nombre parcialmente
+     * enmascarado y el estado del trámite.
+     */
+    public function consultar(string $referencia): JsonResponse
+    {
+        if (! preg_match('/^SP-0*(\d+)$/i', $referencia, $match)) {
+            return response()->json([
+                'message' => 'No se encontró una solicitud con esa referencia.',
+            ], Response::HTTP_NOT_FOUND);
+        }
+
+        $solicitud = SolicitudPublica::find((int) $match[1]);
+
+        if (! $solicitud) {
+            return response()->json([
+                'message' => 'No se encontró una solicitud con esa referencia.',
+            ], Response::HTTP_NOT_FOUND);
+        }
+
+        $recibido = RecibidoVur::with('solicitud')
+            ->where('referencia_cdr', $solicitud->id)
+            ->first();
+
+        return response()->json([
+            'data' => [
+                'referencia' => 'SP-'.Str::padLeft((string) $solicitud->id, 8, '0'),
+                'nombre' => $this->enmascararNombre($solicitud->nombre_completo),
+                'tipo_certificado' => $solicitud->tipo_certificado->label(),
+                'creado_at' => $solicitud->created_at,
+                ...$this->resolverEstado($solicitud, $recibido),
+            ],
+        ]);
+    }
+
+    /**
+     * @return array{codigo: string, label: string, descripcion: string, radicado_vur: ?string, radicado_cdr: ?string}
+     */
+    private function resolverEstado(SolicitudPublica $solicitud, ?RecibidoVur $recibido): array
+    {
+        // La Solicitud formal en CDR (una vez secretaría la radica desde el
+        // recibido de VUR) es la fuente de verdad más avanzada del trámite.
+        if ($recibido?->solicitud) {
+            $estadoSolicitud = $recibido->solicitud->estado;
+
+            return [
+                'codigo' => $estadoSolicitud->value,
+                'label' => $estadoSolicitud->label(),
+                'descripcion' => "Su trámite fue radicado y se encuentra en estado \"{$estadoSolicitud->label()}\" en la Alcaldía.",
+                'radicado_vur' => $solicitud->radicado_vur,
+                'radicado_cdr' => $recibido->solicitud->radicado,
+            ];
+        }
+
+        if ($recibido) {
+            return [
+                'codigo' => 'radicada_vur',
+                'label' => 'Radicada en VUR',
+                'descripcion' => 'Su solicitud fue radicada por la Ventanilla Única de Registro y está pendiente de ser formalizada por la Alcaldía.',
+                'radicado_vur' => $solicitud->radicado_vur,
+                'radicado_cdr' => null,
+            ];
+        }
+
+        return match ($solicitud->estado) {
+            'enviado' => [
+                'codigo' => 'enviado_vur',
+                'label' => 'Enviada a VUR',
+                'descripcion' => 'Su solicitud fue enviada a la Ventanilla Única de Registro y está pendiente de radicación.',
+                'radicado_vur' => $solicitud->radicado_vur,
+                'radicado_cdr' => null,
+            ],
+            'error' => [
+                'codigo' => 'error_envio',
+                'label' => 'Pendiente de envío',
+                'descripcion' => 'Su solicitud fue recibida pero aún no se ha podido enviar a la Ventanilla Única de Registro. Estamos reintentando automáticamente.',
+                'radicado_vur' => null,
+                'radicado_cdr' => null,
+            ],
+            default => [
+                'codigo' => 'pendiente',
+                'label' => 'Recibida',
+                'descripcion' => 'Su solicitud fue recibida y está a punto de enviarse a la Ventanilla Única de Registro.',
+                'radicado_vur' => null,
+                'radicado_cdr' => null,
+            ],
+        };
+    }
+
+    /** "Luisa Herrera" → "Luisa H." — evita exponer el nombre completo en una consulta sin autenticación. */
+    private function enmascararNombre(string $nombreCompleto): string
+    {
+        $partes = preg_split('/\s+/', trim($nombreCompleto)) ?: [];
+
+        if (count($partes) < 2) {
+            return $nombreCompleto;
+        }
+
+        $primerNombre = array_shift($partes);
+        $iniciales = collect($partes)->map(fn (string $p) => mb_strtoupper(mb_substr($p, 0, 1)).'.')->implode(' ');
+
+        return "{$primerNombre} {$iniciales}";
     }
 }

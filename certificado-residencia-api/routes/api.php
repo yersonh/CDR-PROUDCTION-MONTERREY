@@ -38,6 +38,12 @@ Route::prefix('v1')->group(function () {
     Route::post('public/solicitudes/preview', [SolicitudPublicaController::class, 'preview'])
         ->middleware('throttle:20,1');
 
+    // Consulta pública del estado de una solicitud por su referencia de
+    // seguimiento (SP-########). Throttle contra fuerza bruta sobre el id
+    // secuencial.
+    Route::get('public/solicitudes/{referencia}', [SolicitudPublicaController::class, 'consultar'])
+        ->middleware('throttle:20,1');
+
     // Catálogos para alimentar el formulario público (mismos datos que
     // /catalogos, sin autenticación).
     Route::get('public/catalogos', [CatalogoController::class, 'index']);

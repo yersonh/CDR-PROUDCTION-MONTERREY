@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Link } from 'react-router-dom'
-import { ArrowLeft, ArrowRight, CheckCircle2, Download, FileWarning, Send, ShieldCheck } from 'lucide-react'
+import { ArrowLeft, ArrowRight, CheckCircle2, Download, FileWarning, Search, Send, ShieldCheck } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Field } from '@/components/ui/field'
@@ -199,12 +199,20 @@ export function SolicitudPublicaPage() {
           </div>
           <h1 className="text-xl font-bold">Solicitud de Certificado de Residencia</h1>
           <p className="text-sm text-white/70">Alcaldía de Monterrey, Casanare · Trámite gratuito, sin necesidad de registrarse</p>
-          <Link
-            to="/verificar"
-            className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-gold-light underline-offset-2 hover:underline"
-          >
-            <ShieldCheck className="h-4 w-4" /> Verificar residencia
-          </Link>
+          <div className="mt-3 flex items-center gap-4">
+            <Link
+              to="/consultar-solicitud"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-gold-light underline-offset-2 hover:underline"
+            >
+              <Search className="h-4 w-4" /> Consultar mi solicitud
+            </Link>
+            <Link
+              to="/verificar"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-gold-light underline-offset-2 hover:underline"
+            >
+              <ShieldCheck className="h-4 w-4" /> Verificar residencia
+            </Link>
+          </div>
         </div>
 
         {result ? (
@@ -222,6 +230,13 @@ export function SolicitudPublicaPage() {
                   recibirá el número de radicado oficial en el correo que registró.
                 </p>
               </div>
+
+              <Link
+                to={`/consultar-solicitud?referencia=${result.data.referencia}`}
+                className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-primary underline-offset-2 hover:underline"
+              >
+                <Search className="h-4 w-4" /> Consultar el estado de mi solicitud
+              </Link>
             </CardContent>
           </Card>
         ) : (
