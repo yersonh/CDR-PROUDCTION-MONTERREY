@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
-import { AlertTriangle, Download, Search, ShieldCheck, ShieldX } from 'lucide-react'
+import { Link, useSearchParams } from 'react-router-dom'
+import { AlertTriangle, ArrowLeft, Download, Search, ShieldCheck, ShieldX } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -47,6 +47,12 @@ export function VerificarPage() {
           </div>
           <h1 className="text-xl font-bold">Verificación de autenticidad</h1>
           <p className="text-sm text-white/70">Certificado de Residencia Digital · Alcaldía de Monterrey, Casanare</p>
+          <Link
+            to="/solicitud-publica"
+            className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-gold-light underline-offset-2 hover:underline"
+          >
+            <ArrowLeft className="h-4 w-4" /> Volver a la solicitud
+          </Link>
         </div>
 
         <Card>
