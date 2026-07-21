@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { useConsultarSolicitud } from './useConsultarSolicitud'
 import { NexGovIAInfoModal } from '@/components/nexgovia-info-modal'
 import escudo from '@/assets/logo-alcaldia.png'
-import fondoLogin from '@/assets/fondo-login.png'
+import fondoLogin from '@/assets/fondo-formulario-publico.png'
 
 export function ConsultarSolicitudPage() {
   const [params, setParams] = useSearchParams()
