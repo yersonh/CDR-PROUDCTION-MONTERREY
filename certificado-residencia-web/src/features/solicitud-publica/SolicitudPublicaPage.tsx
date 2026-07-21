@@ -16,7 +16,7 @@ import { solicitudSchema, STEP_FIELDS, type SolicitudFormValues } from '@/featur
 import { useCreateSolicitudPublica, usePreviewSolicitudPublica, type CreateSolicitudPublicaResult } from './api'
 import { NexGovIAInfoModal } from '@/components/nexgovia-info-modal'
 import escudo from '@/assets/logo-alcaldia.png'
-import fondoLogin from '@/assets/fondo-login.png'
+import fondoLogin from '@/assets/fondo-formulario-publico.png'
 
 const STEPS = ['Datos del ciudadano', 'Certificado y soporte', 'Confirmación']
 
