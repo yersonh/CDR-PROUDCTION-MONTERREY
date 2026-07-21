@@ -257,7 +257,11 @@ export function SolicitudPublicaPage() {
         ) : (
           <>
             <div className="mb-6">
-              <Stepper steps={STEPS} current={step} />
+              <Stepper
+                steps={STEPS}
+                current={step}
+                labelClassName={(active) => (active ? 'text-white' : 'text-white/70')}
+              />
             </div>
 
             <Card>

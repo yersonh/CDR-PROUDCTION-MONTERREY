@@ -1,7 +1,15 @@
 import { Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-export function Stepper({ steps, current }: { steps: string[]; current: number }) {
+export function Stepper({
+  steps,
+  current,
+  labelClassName,
+}: {
+  steps: string[]
+  current: number
+  labelClassName?: string | ((active: boolean) => string)
+}) {
   return (
     <ol className="flex items-center gap-2">
       {steps.map((label, i) => {
@@ -23,7 +31,13 @@ export function Stepper({ steps, current }: { steps: string[]; current: number }
               <span
                 className={cn(
                   'hidden text-sm font-medium sm:block',
-                  active ? 'text-primary' : 'text-institutional-muted',
+                  labelClassName
+                    ? typeof labelClassName === 'function'
+                      ? labelClassName(active)
+                      : labelClassName
+                    : active
+                      ? 'text-primary'
+                      : 'text-institutional-muted',
                 )}
               >
                 {label}
