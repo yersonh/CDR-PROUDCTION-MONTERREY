@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils'
+import { AnimatedNumber } from './AnimatedNumber'
 
 interface StatTileProps {
   label: string
@@ -22,7 +23,9 @@ export function StatTile({ label, value, hint, icon: Icon, accent = 'primary' }:
         <p className="text-xs font-medium uppercase tracking-wide text-institutional-muted">{label}</p>
         {Icon && <Icon className={cn('h-4 w-4', ACCENT[accent])} aria-hidden />}
       </div>
-      <p className={cn('mt-2 text-3xl font-bold tabular-nums', ACCENT[accent])}>{value}</p>
+      <p className={cn('mt-2 text-3xl font-bold tabular-nums', ACCENT[accent])}>
+        {typeof value === 'number' ? <AnimatedNumber value={value} /> : value}
+      </p>
       {hint && <p className="mt-1 text-xs text-institutional-muted">{hint}</p>}
     </div>
   )

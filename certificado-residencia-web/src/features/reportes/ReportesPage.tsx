@@ -1,31 +1,43 @@
 import { useState } from 'react'
-import { Download, Loader2, RotateCcw } from 'lucide-react'
+import { Download, FileText, Loader2, RotateCcw } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
 import { StatTile } from '@/components/dashboard/StatTile'
-import { BarList, TrendBars, SEMANTIC_HEX } from '@/components/dashboard/BarList'
+import { SEMANTIC_HEX } from '@/components/dashboard/BarList'
+import { AnimatedBarChart } from '@/components/dashboard/AnimatedBarChart'
+import { AnimatedAreaChart } from '@/components/dashboard/AnimatedAreaChart'
 import { useCatalogos } from '@/features/catalogos/useCatalogos'
-import { useReportes, exportarRadicadosCsv } from './useReportes'
+import { useReportes, exportarRadicadosCsv, exportarReportePdf } from './useReportes'
 import type { ReportesFiltros } from './types'
 
 export function ReportesPage() {
   const [filtros, setFiltros] = useState<ReportesFiltros>({})
-  const [exportando, setExportando] = useState(false)
+  const [exportandoCsv, setExportandoCsv] = useState(false)
+  const [exportandoPdf, setExportandoPdf] = useState(false)
   const { data: catalogos } = useCatalogos()
   const { data, isLoading } = useReportes(filtros, true)
 
   const actualizar = (cambios: Partial<ReportesFiltros>) => setFiltros((f) => ({ ...f, ...cambios }))
   const limpiar = () => setFiltros({})
 
-  const exportar = async () => {
-    setExportando(true)
+  const exportarCsv = async () => {
+    setExportandoCsv(true)
     try {
       await exportarRadicadosCsv(filtros)
     } finally {
-      setExportando(false)
+      setExportandoCsv(false)
+    }
+  }
+
+  const exportarPdf = async () => {
+    setExportandoPdf(true)
+    try {
+      await exportarReportePdf(filtros)
+    } finally {
+      setExportandoPdf(false)
     }
   }
 
@@ -36,9 +48,14 @@ export function ReportesPage() {
           <h1 className="text-2xl font-bold text-white">Reportes</h1>
           <p className="text-white/70">Cumplimiento de SLA, productividad y tendencias por rango de fecha</p>
         </div>
-        <Button variant="gold" onClick={exportar} loading={exportando}>
-          <Download className="h-4 w-4" /> Exportar radicados (CSV)
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={exportarCsv} loading={exportandoCsv}>
+            <Download className="h-4 w-4" /> Radicados (CSV)
+          </Button>
+          <Button variant="gold" onClick={exportarPdf} loading={exportandoPdf}>
+            <FileText className="h-4 w-4" /> Exportar reporte (PDF)
+          </Button>
+        </div>
       </div>
 
       {/* Filtros */}
@@ -144,22 +161,22 @@ function Contenido({ data }: { data: NonNullable<ReturnType<typeof useReportes>[
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader><CardTitle>Solicitudes por estado</CardTitle></CardHeader>
-          <CardContent>{estadoItems.length ? <BarList items={estadoItems} /> : <Empty />}</CardContent>
+          <CardContent><AnimatedBarChart items={estadoItems} /></CardContent>
         </Card>
 
         <Card>
           <CardHeader><CardTitle>Por medio de acreditación</CardTitle></CardHeader>
-          <CardContent>{medioItems.some((m) => m.value > 0) ? <BarList items={medioItems} /> : <Empty />}</CardContent>
+          <CardContent><AnimatedBarChart items={medioItems} defaultColor="#c8a800" /></CardContent>
         </Card>
 
         <Card>
           <CardHeader><CardTitle>Radicados en el tiempo</CardTitle></CardHeader>
-          <CardContent><TrendBars items={tendencia} /></CardContent>
+          <CardContent><AnimatedAreaChart data={tendencia.map((t) => ({ label: t.label, total: t.total }))} /></CardContent>
         </Card>
 
         <Card>
           <CardHeader><CardTitle>Top dependencias</CardTitle></CardHeader>
-          <CardContent>{dependenciaItems.length ? <BarList items={dependenciaItems} /> : <Empty />}</CardContent>
+          <CardContent><AnimatedBarChart items={dependenciaItems} defaultColor="#2b5ba8" /></CardContent>
         </Card>
       </div>
 

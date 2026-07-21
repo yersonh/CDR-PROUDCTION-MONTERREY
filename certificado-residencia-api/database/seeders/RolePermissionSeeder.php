@@ -60,7 +60,7 @@ class RolePermissionSeeder extends Seeder
         'alcalde' => [
             'solicitudes.ver_todas', 'firma.ver_bandeja', 'firma.firmar',
             'certificados.ver', 'certificados.revocar',
-            'expedientes.ver', 'dashboard.ver',
+            'expedientes.ver', 'dashboard.ver', 'reportes.ver',
         ],
         // Secretaría fusiona lo que antes eran Recepcionista (radica,
         // direcciona) y Operador (valida electoral, prevalida) — la misma

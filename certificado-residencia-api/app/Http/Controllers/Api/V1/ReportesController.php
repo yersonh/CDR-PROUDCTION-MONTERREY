@@ -12,11 +12,13 @@ use App\Models\Solicitud;
 use App\Models\User;
 use App\Models\Validacion;
 use App\Services\ClienteCore;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
@@ -30,6 +32,18 @@ class ReportesController extends Controller
 
     public function indicadores(Request $request): JsonResponse
     {
+        return response()->json($this->construirIndicadores($request));
+    }
+
+    /**
+     * Arma el mismo cuerpo de datos que consume el panel de reportes
+     * (JSON) y el PDF exportable — una sola fuente de verdad para no
+     * duplicar las agregaciones.
+     *
+     * @return array<string, mixed>
+     */
+    private function construirIndicadores(Request $request): array
+    {
         $base = $this->filtrar($request);
 
         $solicitudes = (clone $base)->get([
@@ -37,7 +51,7 @@ class ReportesController extends Controller
             'radicado', 'nombre_completo',
         ]);
 
-        return response()->json([
+        return [
             'filtros_aplicados' => [
                 'desde' => $request->date('desde')?->toDateString(),
                 'hasta' => $request->date('hasta')?->toDateString(),
@@ -54,6 +68,33 @@ class ReportesController extends Controller
             'productividad' => $this->productividad($request),
             'rechazos_recientes' => $this->rechazosRecientes($base),
             'vur' => $this->vur($request),
+        ];
+    }
+
+    /** Exporta el reporte gerencial en PDF con los mismos filtros e indicadores del panel. */
+    public function exportarPdf(Request $request): Response
+    {
+        $data = $this->construirIndicadores($request);
+
+        $dependenciaNombre = null;
+        if ($dependenciaId = $data['filtros_aplicados']['dependencia_id']) {
+            try {
+                $dependenciaNombre = collect($this->core->dependencias())->firstWhere('id', $dependenciaId)['nombre'] ?? null;
+            } catch (\Throwable $e) {
+                $dependenciaNombre = null;
+            }
+        }
+
+        $pdf = Pdf::loadView('reportes.reporte', [
+            'data' => $data,
+            'dependenciaNombre' => $dependenciaNombre,
+            'generadoEn' => now()->locale('es')->isoFormat('D [de] MMMM [de] YYYY, h:mm a'),
+            'generadoPor' => $request->user()?->name ?? 'Sistema',
+        ])->setPaper('letter')->output();
+
+        return response($pdf, Response::HTTP_OK, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="reporte_'.now()->format('Ymd_His').'.pdf"',
         ]);
     }
 

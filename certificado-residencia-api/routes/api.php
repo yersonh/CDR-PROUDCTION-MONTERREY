@@ -113,10 +113,12 @@ Route::prefix('v1')->group(function () {
         Route::get('dashboard/indicadores', [DashboardController::class, 'indicadores'])
             ->middleware('permission:dashboard.ver');
 
-        // Reportes gerenciales (Super Admin): SLA, tiempos, productividad, export
+        // Reportes gerenciales (Super Admin, Alcalde): SLA, tiempos, productividad, export
         Route::get('reportes', [ReportesController::class, 'indicadores'])
             ->middleware('permission:reportes.ver');
         Route::get('reportes/radicados/export', [ReportesController::class, 'exportarRadicados'])
+            ->middleware('permission:reportes.ver');
+        Route::get('reportes/export/pdf', [ReportesController::class, 'exportarPdf'])
             ->middleware('permission:reportes.ver');
 
         // Auditoría
