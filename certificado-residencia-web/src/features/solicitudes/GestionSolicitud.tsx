@@ -203,11 +203,16 @@ function SoporteForm({ solicitud, tipo, titulo }: { solicitud: Solicitud; tipo: 
     <FormBox titulo={titulo} icon={Upload}>
       {registrar.isError && <FormError error={registrar.error} />}
       {esSisben && (
-        <a href={SISBEN_CONSULTA_URL} target="_blank" rel="noreferrer" className="inline-block">
-          <Button type="button" variant="outline" size="sm">
-            <ExternalLink className="h-3.5 w-3.5" /> Verificar grupo SISBEN en línea
-          </Button>
-        </a>
+        <div className="flex flex-col items-start gap-2 rounded-lg border border-primary-200 bg-primary-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-primary-700">
+            <strong>Antes de decidir:</strong> consulte el grupo SISBEN del ciudadano en el sitio oficial.
+          </p>
+          <a href={SISBEN_CONSULTA_URL} target="_blank" rel="noreferrer" className="shrink-0">
+            <Button type="button" variant="primary" size="sm">
+              <ExternalLink className="h-3.5 w-3.5" /> Verificar en sisben.gov.co
+            </Button>
+          </a>
+        </div>
       )}
       <FileUpload file={file} onChange={(f) => { setFile(f); setError(undefined) }} error={error} />
       <Field label="Resultado de la validación" htmlFor={`${tipo}-res`}>
