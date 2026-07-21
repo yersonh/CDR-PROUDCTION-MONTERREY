@@ -121,6 +121,17 @@ Route::prefix('v1')->group(function () {
         Route::get('reportes/export/pdf', [ReportesController::class, 'exportarPdf'])
             ->middleware('permission:reportes.ver');
 
+        // Reportes de VUR (todos los tipos de correspondencia), leídos vía el
+        // token de servicio compartido — ver ClienteVur::reportes/catalogos.
+        Route::get('reportes/vur', [ReportesController::class, 'indicadoresVur'])
+            ->middleware('permission:reportes.ver');
+        Route::get('reportes/vur/catalogos', [ReportesController::class, 'catalogosVur'])
+            ->middleware('permission:reportes.ver');
+        Route::get('reportes/vur/export/csv', [ReportesController::class, 'exportarVurCsv'])
+            ->middleware('permission:reportes.ver');
+        Route::get('reportes/vur/export/pdf', [ReportesController::class, 'exportarVurPdf'])
+            ->middleware('permission:reportes.ver');
+
         // Auditoría
         Route::get('auditoria', [AuditoriaController::class, 'index'])
             ->middleware('permission:auditoria.ver');

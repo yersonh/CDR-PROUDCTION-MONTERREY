@@ -12,6 +12,7 @@ use App\Models\Solicitud;
 use App\Models\User;
 use App\Models\Validacion;
 use App\Services\ClienteCore;
+use App\Services\ClienteVur;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -28,7 +29,10 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  */
 class ReportesController extends Controller
 {
-    public function __construct(private readonly ClienteCore $core) {}
+    public function __construct(
+        private readonly ClienteCore $core,
+        private readonly ClienteVur $clienteVur,
+    ) {}
 
     public function indicadores(Request $request): JsonResponse
     {
@@ -136,6 +140,83 @@ class ReportesController extends Controller
 
             fclose($handle);
         }, $filename, ['Content-Type' => 'text/csv; charset=UTF-8']);
+    }
+
+    /**
+     * Indicadores del sistema de radicación de correspondencia VUR (todos
+     * los tipos, no solo residencia) — mismo panel que /admin/reportes de
+     * VUR, servido a través del token de servicio compartido.
+     */
+    public function indicadoresVur(Request $request): JsonResponse
+    {
+        $resultado = $this->clienteVur->reportes($this->filtrosVur($request));
+
+        if (! $resultado['ok']) {
+            return response()->json([
+                'message' => 'No fue posible consultar los reportes de VUR en este momento.',
+            ], Response::HTTP_BAD_GATEWAY);
+        }
+
+        return response()->json($resultado['data']);
+    }
+
+    /** Catálogos de VUR (estados y tipos de correspondencia) para los filtros del panel. */
+    public function catalogosVur(): JsonResponse
+    {
+        return response()->json($this->clienteVur->catalogos());
+    }
+
+    /** Descarga CSV del listado detallado de VUR con los filtros activos. */
+    public function exportarVurCsv(Request $request): Response
+    {
+        $resultado = $this->clienteVur->reportesExportCsv($this->filtrosVur($request));
+
+        if (! $resultado['ok']) {
+            return response()->json([
+                'message' => 'No fue posible exportar los radicados de VUR en este momento.',
+            ], Response::HTTP_BAD_GATEWAY);
+        }
+
+        return response($resultado['body'], Response::HTTP_OK, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="radicados_vur_'.now()->format('Ymd_His').'.csv"',
+        ]);
+    }
+
+    /** Exporta en PDF el reporte de VUR con los mismos filtros e indicadores del panel. */
+    public function exportarVurPdf(Request $request): Response
+    {
+        $resultado = $this->clienteVur->reportes($this->filtrosVur($request));
+
+        if (! $resultado['ok']) {
+            return response()->json([
+                'message' => 'No fue posible generar el reporte de VUR en este momento.',
+            ], Response::HTTP_BAD_GATEWAY);
+        }
+
+        $pdf = Pdf::loadView('reportes.reporte-vur', [
+            'data' => $resultado['data'],
+            'generadoEn' => now()->locale('es')->isoFormat('D [de] MMMM [de] YYYY, h:mm a'),
+            'generadoPor' => $request->user()?->name ?? 'Sistema',
+        ])->setPaper('letter')->output();
+
+        return response($pdf, Response::HTTP_OK, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="reporte_vur_'.now()->format('Ymd_His').'.pdf"',
+        ]);
+    }
+
+    /** Traduce los filtros del panel de CDR (desde/hasta) a los nombres que espera VUR (fecha_desde/fecha_hasta). */
+    private function filtrosVur(Request $request): array
+    {
+        return array_filter([
+            'fecha_desde' => $request->date('desde')?->toDateString(),
+            'fecha_hasta' => $request->date('hasta')?->toDateString(),
+            'estado_id' => $request->integer('estado_id') ?: null,
+            'tipo_correspondencia_id' => $request->integer('tipo_correspondencia_id') ?: null,
+            'dependencia_destino_id' => $request->integer('dependencia_destino_id') ?: null,
+            'operador_id' => $request->integer('operador_id') ?: null,
+        ], fn ($v) => $v !== null);
     }
 
     /** Filtros comunes: rango de fecha de radicación, dependencia, estado y medio. */

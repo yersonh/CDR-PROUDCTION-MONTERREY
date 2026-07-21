@@ -183,4 +183,81 @@ class ClienteVur
 
         return ['ok' => true, 'status' => $response->status(), 'body' => $response->body()];
     }
+
+    /**
+     * Indicadores de reportes de VUR (todos los tipos de correspondencia,
+     * no solo los de CDR) para el panel de Reportes del Alcalde. Mismos
+     * filtros que ReportesAdminController::index del lado de VUR:
+     * fecha_desde, fecha_hasta, estado_id, tipo_correspondencia_id,
+     * dependencia_destino_id, operador_id.
+     *
+     * @param  array<string, mixed>  $filtros
+     * @return array{ok: bool, data: ?array<string, mixed>, status: int}
+     */
+    public function reportes(array $filtros): array
+    {
+        try {
+            $response = $this->cliente()->get("{$this->baseUrl}/v1/cdr/reportes", $filtros);
+        } catch (Throwable $e) {
+            Log::error('Error de conexión al consultar reportes de VUR', ['exception' => $e->getMessage()]);
+
+            return ['ok' => false, 'data' => null, 'status' => 0];
+        }
+
+        if ($response->failed()) {
+            Log::error('Error al consultar reportes de VUR', ['status' => $response->status(), 'body' => $response->body()]);
+
+            return ['ok' => false, 'data' => null, 'status' => $response->status()];
+        }
+
+        return ['ok' => true, 'data' => $response->json(), 'status' => $response->status()];
+    }
+
+    /**
+     * CSV crudo del listado detallado de radicados de VUR, mismos filtros
+     * que reportes().
+     *
+     * @param  array<string, mixed>  $filtros
+     * @return array{ok: bool, body: ?string, status: int}
+     */
+    public function reportesExportCsv(array $filtros): array
+    {
+        try {
+            $response = $this->cliente()->get("{$this->baseUrl}/v1/cdr/reportes/export", $filtros);
+        } catch (Throwable $e) {
+            Log::error('Error de conexión al exportar reportes de VUR', ['exception' => $e->getMessage()]);
+
+            return ['ok' => false, 'body' => null, 'status' => 0];
+        }
+
+        if ($response->failed()) {
+            return ['ok' => false, 'body' => null, 'status' => $response->status()];
+        }
+
+        return ['ok' => true, 'body' => $response->body(), 'status' => $response->status()];
+    }
+
+    /**
+     * Catálogos de VUR (estados y tipos de correspondencia) para alimentar
+     * los filtros del panel de reportes — degrada con gracia a listas
+     * vacías si VUR no responde.
+     *
+     * @return array{estados: array<int, mixed>, tipos_correspondencia: array<int, mixed>}
+     */
+    public function catalogos(): array
+    {
+        try {
+            $estados = $this->cliente()->get("{$this->baseUrl}/v1/cdr/catalogos/estados");
+            $tipos = $this->cliente()->get("{$this->baseUrl}/v1/cdr/catalogos/tipos-correspondencia");
+
+            return [
+                'estados' => $estados->json('data') ?? [],
+                'tipos_correspondencia' => $tipos->json() ?? [],
+            ];
+        } catch (Throwable $e) {
+            Log::error('Error al consultar catálogos de VUR', ['exception' => $e->getMessage()]);
+
+            return ['estados' => [], 'tipos_correspondencia' => []];
+        }
+    }
 }
