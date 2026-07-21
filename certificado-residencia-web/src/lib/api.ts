@@ -36,9 +36,11 @@ api.interceptors.response.use(
 /** Extrae un mensaje de error legible de una respuesta de la API. */
 export function getApiErrorMessage(error: unknown, fallback = 'Ocurrió un error inesperado.'): string {
   if (axios.isAxiosError(error)) {
+    const errors = error.response?.data?.errors
+    const primerError = errors && Object.values(errors)[0]
     return (
+      (Array.isArray(primerError) ? primerError[0] : undefined) ??
       error.response?.data?.message ??
-      error.response?.data?.errors?.email?.[0] ??
       fallback
     )
   }
