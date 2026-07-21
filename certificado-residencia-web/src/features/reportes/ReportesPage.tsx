@@ -337,7 +337,7 @@ function ReportesVur() {
               onChange={(e) => actualizar({ estado_id: e.target.value ? Number(e.target.value) : undefined })}
             >
               <option value="">Todos</option>
-              {catalogosVur?.estados.map((e) => (
+              {(catalogosVur?.estados ?? []).map((e) => (
                 <option key={e.id} value={e.id}>{e.descripcion}</option>
               ))}
             </Select>
@@ -350,7 +350,7 @@ function ReportesVur() {
               onChange={(e) => actualizar({ tipo_correspondencia_id: e.target.value ? Number(e.target.value) : undefined })}
             >
               <option value="">Todos</option>
-              {catalogosVur?.tipos_correspondencia.map((t) => (
+              {(catalogosVur?.tipos_correspondencia ?? []).map((t) => (
                 <option key={t.id} value={t.id}>{t.descripcion}</option>
               ))}
             </Select>

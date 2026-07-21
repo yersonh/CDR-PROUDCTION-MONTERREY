@@ -251,13 +251,24 @@ class ClienteVur
             $tipos = $this->cliente()->get("{$this->baseUrl}/v1/cdr/catalogos/tipos-correspondencia");
 
             return [
-                'estados' => $estados->json('data') ?? [],
-                'tipos_correspondencia' => $tipos->json() ?? [],
+                // array_is_list(): si VUR aún no tiene desplegada la ruta (o
+                // falla por cualquier otro motivo), la respuesta puede ser un
+                // JSON de error tipo {"message": "..."} — un array asociativo
+                // que rompería el .map() del frontend si se dejara pasar tal
+                // cual en lugar de degradar a lista vacía.
+                'estados' => $this->comoLista($estados->successful() ? $estados->json('data') : null),
+                'tipos_correspondencia' => $this->comoLista($tipos->successful() ? $tipos->json() : null),
             ];
         } catch (Throwable $e) {
             Log::error('Error al consultar catálogos de VUR', ['exception' => $e->getMessage()]);
 
             return ['estados' => [], 'tipos_correspondencia' => []];
         }
+    }
+
+    /** @return array<int, mixed> */
+    private function comoLista(mixed $valor): array
+    {
+        return is_array($valor) && array_is_list($valor) ? $valor : [];
     }
 }
