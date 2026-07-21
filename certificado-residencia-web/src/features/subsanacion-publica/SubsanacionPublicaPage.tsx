@@ -7,6 +7,7 @@ import { FileUpload } from '@/components/ui/file-upload'
 import { getApiErrorMessage } from '@/lib/api'
 import { useEnviarSubsanacionPublica, useSubsanacionPublicaInfo } from './useSubsanacionPublica'
 import escudo from '@/assets/logo-alcaldia.png'
+import fondoLogin from '@/assets/fondo-login.png'
 
 export function SubsanacionPublicaPage() {
   const { id } = useParams<{ id: string }>()
@@ -29,8 +30,14 @@ export function SubsanacionPublicaPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#00031e] via-primary-700 to-[#00031e] px-4 py-10">
-      <div className="mx-auto max-w-xl">
+    <main className="relative min-h-screen w-full overflow-hidden">
+      <img src={fondoLogin} alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover" />
+      <div
+        className="absolute inset-0 bg-gradient-to-br from-[#00031e]/25 via-primary-700/10 to-[#00031e]/30"
+        aria-hidden
+      />
+
+      <div className="relative z-10 mx-auto max-w-xl px-4 py-10">
         <div className="mb-6 flex flex-col items-center text-center text-white">
           <div className="mb-3 flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-white/95 p-1.5 ring-2 ring-gold-light ring-offset-2 ring-offset-primary-700">
             <img src={escudo} alt="Escudo Alcaldía de Monterrey" className="h-full w-full rounded-full object-cover" />
@@ -107,6 +114,6 @@ export function SubsanacionPublicaPage() {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </main>
   )
 }

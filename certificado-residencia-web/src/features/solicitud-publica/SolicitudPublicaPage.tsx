@@ -16,6 +16,7 @@ import { solicitudSchema, STEP_FIELDS, type SolicitudFormValues } from '@/featur
 import { useCreateSolicitudPublica, usePreviewSolicitudPublica, type CreateSolicitudPublicaResult } from './api'
 import { NexGovIAInfoModal } from '@/components/nexgovia-info-modal'
 import escudo from '@/assets/logo-alcaldia.png'
+import fondoLogin from '@/assets/fondo-login.png'
 
 const STEPS = ['Datos del ciudadano', 'Certificado y soporte', 'Confirmación']
 
@@ -165,34 +166,48 @@ export function SolicitudPublicaPage() {
 
   if (pendingDraft) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-[#00031e] via-primary-700 to-[#00031e] px-4 py-10">
-        <div className="mx-auto w-full max-w-md">
-          <div className="mb-6 flex flex-col items-center text-center text-white">
-            <div className="mb-3 flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-white/95 p-1.5 ring-2 ring-gold-light ring-offset-2 ring-offset-primary-700">
-              <img src={escudo} alt="Escudo Alcaldía de Monterrey" className="h-full w-full rounded-full object-cover" />
-            </div>
-            <h1 className="text-xl font-bold">Tienes una solicitud sin terminar</h1>
-          </div>
-          <Card>
-            <CardContent className="space-y-4 text-center">
-              <p className="text-sm text-institutional-muted">
-                Guardamos el progreso de una solicitud del {new Date(pendingDraft.savedAt).toLocaleString('es-CO')}.
-                ¿Quieres continuar donde quedaste o empezar de nuevo?
-              </p>
-              <div className="flex flex-col gap-2 sm:flex-row">
-                <Button variant="outline" className="flex-1" onClick={empezarDeNuevo}>Empezar de nuevo</Button>
-                <Button variant="primary" className="flex-1" onClick={continuarBorrador}>Continuar</Button>
+      <main className="relative min-h-screen w-full overflow-hidden">
+        <img src={fondoLogin} alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover" />
+        <div
+          className="absolute inset-0 bg-gradient-to-br from-[#00031e]/25 via-primary-700/10 to-[#00031e]/30"
+          aria-hidden
+        />
+
+        <div className="relative z-10 flex min-h-screen items-center justify-center px-4 py-10">
+          <div className="mx-auto w-full max-w-md">
+            <div className="mb-6 flex flex-col items-center text-center text-white">
+              <div className="mb-3 flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-white/95 p-1.5 ring-2 ring-gold-light ring-offset-2 ring-offset-primary-700">
+                <img src={escudo} alt="Escudo Alcaldía de Monterrey" className="h-full w-full rounded-full object-cover" />
               </div>
-            </CardContent>
-          </Card>
+              <h1 className="text-xl font-bold">Tienes una solicitud sin terminar</h1>
+            </div>
+            <Card>
+              <CardContent className="space-y-4 text-center">
+                <p className="text-sm text-institutional-muted">
+                  Guardamos el progreso de una solicitud del {new Date(pendingDraft.savedAt).toLocaleString('es-CO')}.
+                  ¿Quieres continuar donde quedaste o empezar de nuevo?
+                </p>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <Button variant="outline" className="flex-1" onClick={empezarDeNuevo}>Empezar de nuevo</Button>
+                  <Button variant="primary" className="flex-1" onClick={continuarBorrador}>Continuar</Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
-      </div>
+      </main>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#00031e] via-primary-700 to-[#00031e] px-4 py-10">
-      <div className="mx-auto max-w-2xl">
+    <main className="relative min-h-screen w-full overflow-hidden">
+      <img src={fondoLogin} alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover" />
+      <div
+        className="absolute inset-0 bg-gradient-to-br from-[#00031e]/25 via-primary-700/10 to-[#00031e]/30"
+        aria-hidden
+      />
+
+      <div className="relative z-10 mx-auto max-w-2xl px-4 py-10">
         <div className="mb-6 flex flex-col items-center text-center text-white">
           <div className="mb-3 flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-white/95 p-1.5 ring-2 ring-gold-light ring-offset-2 ring-offset-primary-700">
             <img src={escudo} alt="Escudo Alcaldía de Monterrey" className="h-full w-full rounded-full object-cover" />
@@ -349,6 +364,6 @@ export function SolicitudPublicaPage() {
       </div>
 
       <NexGovIAInfoModal open={showNexGovIA} onClose={() => setShowNexGovIA(false)} />
-    </div>
+    </main>
   )
 }

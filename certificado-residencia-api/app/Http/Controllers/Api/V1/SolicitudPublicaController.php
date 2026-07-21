@@ -59,8 +59,8 @@ class SolicitudPublicaController extends Controller
      * Consulta pública (sin autenticación) del estado de una solicitud por
      * su referencia SP-########. El id es secuencial y por lo tanto
      * adivinable, así que la respuesta no expone datos sensibles (dirección,
-     * número de identificación, documentos): solo el nombre parcialmente
-     * enmascarado y el estado del trámite.
+     * número de identificación, documentos): solo el nombre y el estado del
+     * trámite.
      */
     public function consultar(string $referencia): JsonResponse
     {
@@ -85,7 +85,7 @@ class SolicitudPublicaController extends Controller
         return response()->json([
             'data' => [
                 'referencia' => 'SP-'.Str::padLeft((string) $solicitud->id, 8, '0'),
-                'nombre' => $this->enmascararNombre($solicitud->nombre_completo),
+                'nombre' => $solicitud->nombre_completo,
                 'tipo_certificado' => $solicitud->tipo_certificado->label(),
                 'creado_at' => $solicitud->created_at,
                 ...$this->resolverEstado($solicitud, $recibido),
@@ -145,20 +145,5 @@ class SolicitudPublicaController extends Controller
                 'radicado_cdr' => null,
             ],
         };
-    }
-
-    /** "Luisa Herrera" → "Luisa H." — evita exponer el nombre completo en una consulta sin autenticación. */
-    private function enmascararNombre(string $nombreCompleto): string
-    {
-        $partes = preg_split('/\s+/', trim($nombreCompleto)) ?: [];
-
-        if (count($partes) < 2) {
-            return $nombreCompleto;
-        }
-
-        $primerNombre = array_shift($partes);
-        $iniciales = collect($partes)->map(fn (string $p) => mb_strtoupper(mb_substr($p, 0, 1)).'.')->implode(' ');
-
-        return "{$primerNombre} {$iniciales}";
     }
 }
