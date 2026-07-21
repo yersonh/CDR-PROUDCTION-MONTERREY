@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { AlertTriangle, CheckCircle2, ClipboardCheck, Download, Gavel, ShieldCheck, Stamp, Upload } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, ClipboardCheck, Download, ExternalLink, Gavel, Sparkles, ShieldCheck, Stamp, Upload } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -10,7 +10,7 @@ import { Field } from '@/components/ui/field'
 import { FileUpload } from '@/components/ui/file-upload'
 import { getApiErrorMessage } from '@/lib/api'
 import { useAuth } from '@/features/auth/useAuth'
-import { useRegistrarValidacion, usePrevalidar, useFirmar, useSubsanar, descargarCertificadoPdf } from './api'
+import { useRegistrarValidacion, useRedactarObservacionSisben, usePrevalidar, useFirmar, useSubsanar, descargarCertificadoPdf } from './api'
 import type { Solicitud } from './types'
 
 const RESULTADOS = [
@@ -176,9 +176,13 @@ const RESULTADOS_SOPORTE = [
   { value: 'rechaza', label: 'No cumple requisitos' },
 ]
 
-/** Carga de soporte con archivo (SISBEN): el funcionario decide aquí si cumple o no. */
+const SISBEN_CONSULTA_URL = 'https://www.sisben.gov.co/Paginas/consulta-tu-grupo.html'
+
+/** Carga de soporte con archivo (SISBEN/JAC): el funcionario decide aquí si cumple o no. */
 function SoporteForm({ solicitud, tipo, titulo }: { solicitud: Solicitud; tipo: string; titulo: string }) {
+  const esSisben = tipo === 'sisben'
   const registrar = useRegistrarValidacion(solicitud.id)
+  const redactarConIA = useRedactarObservacionSisben(solicitud.id)
   const [file, setFile] = useState<File | null>(null)
   const [resultado, setResultado] = useState<'cumple' | 'rechaza'>('cumple')
   const [observacion, setObservacion] = useState('')
@@ -198,6 +202,13 @@ function SoporteForm({ solicitud, tipo, titulo }: { solicitud: Solicitud; tipo: 
   return (
     <FormBox titulo={titulo} icon={Upload}>
       {registrar.isError && <FormError error={registrar.error} />}
+      {esSisben && (
+        <a href={SISBEN_CONSULTA_URL} target="_blank" rel="noreferrer" className="inline-block">
+          <Button type="button" variant="outline" size="sm">
+            <ExternalLink className="h-3.5 w-3.5" /> Verificar grupo SISBEN en línea
+          </Button>
+        </a>
+      )}
       <FileUpload file={file} onChange={(f) => { setFile(f); setError(undefined) }} error={error} />
       <Field label="Resultado de la validación" htmlFor={`${tipo}-res`}>
         <Select id={`${tipo}-res`} value={resultado}
@@ -209,6 +220,20 @@ function SoporteForm({ solicitud, tipo, titulo }: { solicitud: Solicitud; tipo: 
         <Textarea id={`${tipo}-obs`} rows={2} value={observacion} onChange={(e) => { setObservacion(e.target.value); setError(undefined) }}
           placeholder={resultado === 'cumple' ? 'Antigüedad mínima de 1 año verificada' : 'Motivo obligatorio'} />
       </Field>
+      {esSisben && (
+        <div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            loading={redactarConIA.isPending}
+            onClick={() => redactarConIA.mutate(resultado, { onSuccess: (texto) => { setObservacion(texto); setError(undefined) } })}
+          >
+            <Sparkles className="h-3.5 w-3.5" /> Redactar observación con IA
+          </Button>
+          {redactarConIA.isError && <p className="mt-1 text-xs text-danger">No fue posible generar la observación con IA.</p>}
+        </div>
+      )}
       <Button variant={resultado === 'rechaza' ? 'danger' : 'primary'} onClick={submit} loading={registrar.isPending}>
         Cargar certificación
       </Button>

@@ -99,6 +99,7 @@ Route::prefix('v1')->group(function () {
 
         // Validación de soportes y prevalidación
         Route::post('solicitudes/{solicitud}/validaciones', [ValidacionController::class, 'store']);
+        Route::post('solicitudes/{solicitud}/sisben/redactar-observacion', [ValidacionController::class, 'redactarObservacionSisben']);
         Route::post('solicitudes/{solicitud}/subsanar', [ValidacionController::class, 'subsanar']);
         Route::post('solicitudes/{solicitud}/prevalidacion', [ValidacionController::class, 'prevalidar'])
             ->middleware('permission:validacion.prevalidar');

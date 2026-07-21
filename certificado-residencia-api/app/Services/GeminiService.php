@@ -101,4 +101,64 @@ class GeminiService
             'motivo' => (string) ($datos['motivo'] ?? ''),
         ];
     }
+
+    /**
+     * Redacta una observación breve para la validación SISBEN a partir del
+     * resultado que el funcionario ya seleccionó en el formulario — le
+     * ahorra escribirla a mano, no decide el resultado (eso lo elige el
+     * funcionario en el combo antes de pedir la redacción).
+     */
+    public function redactarObservacionSisben(string $resultado, string $ciudadano, string $tipoCertificado): string
+    {
+        if (! $this->apiKey) {
+            throw new RuntimeException('GEMINI_API_KEY no está configurada.');
+        }
+
+        $textoResultado = $resultado === 'cumple'
+            ? 'SÍ cumple con la antigüedad de residencia requerida'
+            : 'NO cumple con la antigüedad de residencia requerida';
+
+        $prompt = <<<PROMPT
+            Eres un asistente de redacción para un funcionario de SISBEN de la Alcaldía de
+            Monterrey, Casanare, Colombia, que revisa solicitudes de certificado de residencia.
+
+            El funcionario ya verificó la certificación de antigüedad SISBEN y determinó que el
+            ciudadano "{$ciudadano}", quien solicita un "{$tipoCertificado}", {$textoResultado}
+            según el Sistema de Identificación de Potenciales Beneficiarios (SISBEN).
+
+            Redacta la observación que el funcionario dejará registrada, en español, breve
+            (máximo 280 caracteres), profesional, en tercera persona, sin comillas ni markdown.
+            No inventes datos específicos (fechas, direcciones, números) que no se te dieron —
+            limítate a explicar el resultado de forma genérica y verificable.
+
+            Responde ÚNICAMENTE con un JSON con esta forma exacta, sin texto adicional:
+            {"observacion": "texto de la observación"}
+            PROMPT;
+
+        $response = Http::timeout(60)->post(
+            "https://generativelanguage.googleapis.com/v1beta/models/{$this->model}:generateContent?key={$this->apiKey}",
+            [
+                'contents' => [['parts' => [['text' => $prompt]]]],
+                'generationConfig' => ['responseMimeType' => 'application/json'],
+            ],
+        );
+
+        if ($response->failed()) {
+            throw new RuntimeException("Gemini respondió HTTP {$response->status()}: {$response->body()}");
+        }
+
+        $texto = $response->json('candidates.0.content.parts.0.text');
+
+        if (! $texto) {
+            throw new RuntimeException('Gemini no devolvió contenido analizable: '.$response->body());
+        }
+
+        $datos = json_decode((string) $texto, true);
+
+        if (! is_array($datos) || ! array_key_exists('observacion', $datos)) {
+            throw new RuntimeException("Respuesta de Gemini no tiene el formato esperado: {$texto}");
+        }
+
+        return (string) $datos['observacion'];
+    }
 }

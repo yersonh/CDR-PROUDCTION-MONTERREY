@@ -62,6 +62,19 @@ export function useRegistrarValidacion(solicitudId: number) {
   })
 }
 
+/** Sugerencia con IA del texto de la observación SISBEN, según cumple/no cumple ya seleccionado. */
+export function useRedactarObservacionSisben(solicitudId: number) {
+  return useMutation({
+    mutationFn: async (resultado: 'cumple' | 'rechaza') => {
+      const { data } = await api.post<{ data: { observacion: string } }>(
+        `/solicitudes/${solicitudId}/sisben/redactar-observacion`,
+        { resultado },
+      )
+      return data.data.observacion
+    },
+  })
+}
+
 export interface FirmarResult {
   message: string
   firmadas: string[]

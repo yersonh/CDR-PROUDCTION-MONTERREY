@@ -6,10 +6,12 @@ use App\Enums\ResultadoValidacion;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Solicitud\SubsanarRequest;
 use App\Http\Requests\Validacion\PrevalidacionRequest;
+use App\Http\Requests\Validacion\RedactarObservacionSisbenRequest;
 use App\Http\Requests\Validacion\StoreValidacionRequest;
 use App\Http\Resources\SolicitudResource;
 use App\Http\Resources\ValidacionResource;
 use App\Models\Solicitud;
+use App\Services\GeminiService;
 use App\Services\ValidacionService;
 use Illuminate\Http\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -39,6 +41,22 @@ class ValidacionController extends Controller
             ->additional(['message' => 'Soporte registrado correctamente.'])
             ->response()
             ->setStatusCode(Response::HTTP_CREATED);
+    }
+
+    /**
+     * Sugiere, con IA, el texto de la observación para la validación SISBEN
+     * a partir del resultado (cumple/no cumple) que el funcionario ya
+     * seleccionó en el formulario — no decide el resultado, solo redacta.
+     */
+    public function redactarObservacionSisben(RedactarObservacionSisbenRequest $request, Solicitud $solicitud, GeminiService $gemini): JsonResponse
+    {
+        $observacion = $gemini->redactarObservacionSisben(
+            resultado: $request->validated('resultado'),
+            ciudadano: $solicitud->nombre_completo,
+            tipoCertificado: $solicitud->tipo_certificado->label(),
+        );
+
+        return response()->json(['data' => ['observacion' => $observacion]]);
     }
 
     /**
