@@ -49,7 +49,7 @@ const NAV: NavItem[] = [
 ]
 
 export function AppLayout() {
-  const { clearSession, hasPermission } = useAuth()
+  const { user, clearSession, hasPermission } = useAuth()
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   const [confirmLogoutOpen, setConfirmLogoutOpen] = useState(false)
@@ -169,7 +169,7 @@ export function AppLayout() {
       <ConfirmDialog
         open={confirmLogoutOpen}
         title="Cerrar sesión"
-        description="¿Está seguro que desea cerrar la sesión actual?"
+        description={`¿Está seguro que desea cerrar la sesión de ${user?.name ?? 'este usuario'}?`}
         confirmLabel="Sí, salir"
         cancelLabel="Cancelar"
         variant="danger"
