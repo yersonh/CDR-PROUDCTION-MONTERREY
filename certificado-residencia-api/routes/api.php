@@ -131,6 +131,7 @@ Route::prefix('v1')->group(function () {
 
         // Perfil
         Route::post('perfil/firma', [ProfileController::class, 'subirFirma']);
+        Route::get('perfil/firma', [ProfileController::class, 'verFirma']);
         Route::post('perfil/foto', [ProfileController::class, 'subirFoto']);
         Route::get('perfil/foto', [ProfileController::class, 'verFoto']);
 

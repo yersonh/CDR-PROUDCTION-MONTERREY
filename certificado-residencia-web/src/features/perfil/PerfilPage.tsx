@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { api, getApiErrorMessage } from '@/lib/api'
 import { useAuth } from '@/features/auth/useAuth'
 import { useFotoPerfil } from './useFotoPerfil'
+import { useFirmaPreview } from './useFirmaPreview'
 import type { Funcionario } from '@/types/auth'
 
 export function PerfilPage() {
@@ -187,10 +188,25 @@ function DatoFuncionario({ label, value }: { label: string; value: string | null
 }
 
 function SubirFirma({ tieneFirma }: { tieneFirma: boolean }) {
+  const { refreshUser } = useAuth()
+  const firmaActual = useFirmaPreview(tieneFirma)
   const [file, setFile] = useState<File | null>(null)
+  const [previewLocal, setPreviewLocal] = useState<string | null>(null)
   const [estado, setEstado] = useState<'idle' | 'ok' | 'error'>(tieneFirma ? 'ok' : 'idle')
   const [loading, setLoading] = useState(false)
   const [msg, setMsg] = useState<string>()
+
+  // Libera la URL de la vista previa local cada vez que cambia o al desmontar.
+  useEffect(() => () => {
+    if (previewLocal) URL.revokeObjectURL(previewLocal)
+  }, [previewLocal])
+
+  const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0] ?? null
+    setFile(f)
+    if (previewLocal) URL.revokeObjectURL(previewLocal)
+    setPreviewLocal(f ? URL.createObjectURL(f) : null)
+  }
 
   const subir = async () => {
     if (!file) return
@@ -200,12 +216,19 @@ function SubirFirma({ tieneFirma }: { tieneFirma: boolean }) {
       fd.append('firma', file)
       const { data } = await api.post('/perfil/firma', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
       setEstado('ok'); setMsg(data.message); setFile(null)
+      if (previewLocal) URL.revokeObjectURL(previewLocal)
+      setPreviewLocal(null)
+      await refreshUser()
     } catch (e) {
       setEstado('error'); setMsg(getApiErrorMessage(e, 'No fue posible cargar la firma.'))
     } finally {
       setLoading(false)
     }
   }
+
+  // Firma sobre fondo cuadriculado: la mayoría son PNG con fondo
+  // transparente y sobre blanco no se nota si el recorte quedó bien.
+  const previewBg = 'bg-[length:16px_16px] bg-[image:repeating-conic-gradient(#e5e7eb_0%_25%,#ffffff_0%_50%)]'
 
   return (
     <Card>
@@ -216,6 +239,23 @@ function SubirFirma({ tieneFirma }: { tieneFirma: boolean }) {
         <p className="text-sm text-institutional-muted">
           Cargue una imagen de su firma (PNG con fondo transparente recomendado). Se incrustará en los certificados que firme.
         </p>
+
+        {previewLocal ? (
+          <div>
+            <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-institutional-muted">Vista previa (sin guardar)</p>
+            <div className={`flex h-32 items-center justify-center rounded-lg border border-institutional-border p-3 ${previewBg}`}>
+              <img src={previewLocal} alt="Vista previa de la nueva firma" className="max-h-full max-w-full object-contain" />
+            </div>
+          </div>
+        ) : firmaActual ? (
+          <div>
+            <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-institutional-muted">Firma registrada</p>
+            <div className={`flex h-32 items-center justify-center rounded-lg border border-institutional-border p-3 ${previewBg}`}>
+              <img src={firmaActual} alt="Firma electrónica registrada" className="max-h-full max-w-full object-contain" />
+            </div>
+          </div>
+        ) : null}
+
         {tieneFirma && estado === 'ok' && !file && (
           <div className="flex items-center gap-2 rounded-lg border border-success/40 bg-green-50 px-4 py-2.5 text-sm text-success">
             <CheckCircle2 className="h-4 w-4" /> Ya tiene una firma registrada. Puede reemplazarla cargando una nueva.
@@ -226,7 +266,7 @@ function SubirFirma({ tieneFirma }: { tieneFirma: boolean }) {
             {msg}
           </div>
         )}
-        <input type="file" accept=".png,.jpg,.jpeg" onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+        <input type="file" accept=".png,.jpg,.jpeg" onChange={onFileChange}
           className="block w-full text-sm text-institutional-muted file:mr-3 file:rounded-lg file:border-0 file:bg-primary file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-primary-700" />
         <Button variant="primary" onClick={subir} disabled={!file} loading={loading}>
           <Upload className="h-4 w-4" /> Guardar firma

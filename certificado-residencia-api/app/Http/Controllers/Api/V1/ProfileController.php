@@ -71,4 +71,13 @@ class ProfileController extends Controller
 
         return Storage::disk('local')->response($path);
     }
+
+    /** Sirve la imagen de firma del usuario autenticado (requiere token, no es una URL pública). */
+    public function verFirma(Request $request): StreamedResponse
+    {
+        $path = $request->user()->firma_path;
+        abort_if(! $path || ! Storage::disk('local')->exists($path), 404);
+
+        return Storage::disk('local')->response($path);
+    }
 }
