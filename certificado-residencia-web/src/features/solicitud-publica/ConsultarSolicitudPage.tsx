@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, CircleDot, Search, ShieldX } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
@@ -8,13 +8,6 @@ import { useConsultarSolicitud } from './useConsultarSolicitud'
 import { NexGovIAInfoModal } from '@/components/nexgovia-info-modal'
 import escudo from '@/assets/logo-alcaldia.png'
 import fondoLogin from '@/assets/fondo-formulario-publico.png'
-
-const PAGE_FONT_STYLE: CSSProperties = {
-  fontFamily: 'Outfit, sans-serif',
-  letterSpacing: '-0.02em',
-  WebkitFontSmoothing: 'antialiased',
-  MozOsxFontSmoothing: 'grayscale',
-}
 
 export function ConsultarSolicitudPage() {
   const [params, setParams] = useSearchParams()
@@ -36,7 +29,7 @@ export function ConsultarSolicitudPage() {
   }
 
   return (
-    <main className="relative min-h-screen w-full overflow-hidden" style={PAGE_FONT_STYLE}>
+    <main className="relative min-h-screen w-full overflow-hidden">
       <img src={fondoLogin} alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover" />
       <div
         className="absolute inset-0 bg-gradient-to-br from-[#00031e]/25 via-primary-700/10 to-[#00031e]/30"

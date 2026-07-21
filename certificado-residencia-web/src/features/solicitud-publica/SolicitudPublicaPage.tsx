@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Link } from 'react-router-dom'
@@ -19,13 +19,6 @@ import escudo from '@/assets/logo-alcaldia.png'
 import fondoLogin from '@/assets/fondo-formulario-publico.png'
 
 const STEPS = ['Datos del ciudadano', 'Certificado y soporte', 'Confirmación']
-
-const PAGE_FONT_STYLE: CSSProperties = {
-  fontFamily: 'Outfit, sans-serif',
-  letterSpacing: '-0.02em',
-  WebkitFontSmoothing: 'antialiased',
-  MozOsxFontSmoothing: 'grayscale',
-}
 
 const DEFAULT_VALUES: SolicitudFormValues = {
   nombre_completo: '', tipo_documento: '', numero_identificacion: '', direccion: '',
@@ -173,7 +166,7 @@ export function SolicitudPublicaPage() {
 
   if (pendingDraft) {
     return (
-      <main className="relative min-h-screen w-full overflow-hidden" style={PAGE_FONT_STYLE}>
+      <main className="relative min-h-screen w-full overflow-hidden">
         <img src={fondoLogin} alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover" />
         <div
           className="absolute inset-0 bg-gradient-to-br from-[#00031e]/25 via-primary-700/10 to-[#00031e]/30"
@@ -207,7 +200,7 @@ export function SolicitudPublicaPage() {
   }
 
   return (
-    <main className="relative min-h-screen w-full overflow-hidden" style={PAGE_FONT_STYLE}>
+    <main className="relative min-h-screen w-full overflow-hidden">
       <img src={fondoLogin} alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover" />
       <div
         className="absolute inset-0 bg-gradient-to-br from-[#00031e]/25 via-primary-700/10 to-[#00031e]/30"
