@@ -68,7 +68,7 @@
         <div class="pagina">Página 1</div>
     </div>
 
-    <div class="meta-row">No. {{ $certificado->consecutivo }} · Radicado {{ $certificado->solicitud->radicado }}</div>
+    <div class="meta-row">No. {{ $certificado->consecutivo }} · Radicado {{ $certificado->solicitud->radicado }} · Código de verificación {{ $certificado->codigo_verificacion }}</div>
 
     <div class="titulo">EL ALCALDE MUNICIPAL DE MONTERREY CASANARE</div>
 
