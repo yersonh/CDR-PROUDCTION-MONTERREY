@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Solicitud\PreviewSolicitudPublicaRequest;
+use App\Http\Requests\Solicitud\RegistrarSolicitudPublicaDesdeVurRequest;
 use App\Http\Requests\Solicitud\StoreSolicitudPublicaRequest;
 use App\Models\RecibidoVur;
 use App\Models\SolicitudPublica;
@@ -41,6 +42,36 @@ class SolicitudPublicaController extends Controller
                 'estado' => $solicitud->estado,
             ],
             'message' => 'Solicitud recibida. Será enviada a la Ventanilla Única de Registro (VUR) para su radicación.',
+        ], Response::HTTP_CREATED);
+    }
+
+    /**
+     * Registra una Solicitud Carta de Residencia que VUR radicó
+     * directamente (correo o ventanilla presencial), sin pasar por el
+     * formulario público de CDR. Autenticado con el token de servicio
+     * "vur-integration" (mismo que usa VUR para /recibidos-vur).
+     *
+     * A diferencia de store(), esta fila nace ya "enviado" (el radicado en
+     * VUR ya existe, no hay nada que encolar) y sin tipo_certificado ni
+     * medio_acreditacion (VUR no captura esos conceptos). Solo existe para
+     * darle a VUR un código de seguimiento SP-######## real y consultable
+     * en /consultar-solicitud, igual que el que ya recibe el ciudadano que
+     * usa el formulario web — VUR lo incluye en su correo de confirmación
+     * de radicado.
+     */
+    public function registrarDesdeVur(RegistrarSolicitudPublicaDesdeVurRequest $request): JsonResponse
+    {
+        $solicitud = SolicitudPublica::create([
+            ...$request->validated(),
+            'estado' => 'enviado',
+            'enviado_at' => now(),
+        ]);
+
+        return response()->json([
+            'data' => [
+                'referencia_cdr' => $solicitud->id,
+                'codigo_seguimiento_cdr' => 'SP-'.Str::padLeft((string) $solicitud->id, 8, '0'),
+            ],
         ], Response::HTTP_CREATED);
     }
 
@@ -86,7 +117,11 @@ class SolicitudPublicaController extends Controller
             'data' => [
                 'referencia' => 'SP-'.Str::padLeft((string) $solicitud->id, 8, '0'),
                 'nombre' => $solicitud->nombre_completo,
-                'tipo_certificado' => $solicitud->tipo_certificado->label(),
+                // tipo_certificado es null en solicitudes radicadas
+                // directamente en VUR (correo/presencial, ver
+                // registrarDesdeVur) — ese canal no distingue tipo de
+                // certificado como sí lo hace el formulario público.
+                'tipo_certificado' => $solicitud->tipo_certificado?->label() ?? 'Carta de residencia',
                 'creado_at' => $solicitud->created_at,
                 ...$this->resolverEstado($solicitud, $recibido),
             ],

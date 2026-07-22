@@ -69,7 +69,7 @@ class UserSeeder extends Seeder
                 'email_verified_at' => now(),
             ],
         );
-        $servicioVur->syncPermissions(['recibidos-vur.crear']);
+        $servicioVur->syncPermissions(['recibidos-vur.crear', 'solicitudes-publicas.crear-desde-vur']);
 
         // Cuenta de servicio "actor" para las validaciones electorales que
         // registra la IA (ver ValidarCertificadoElectoralConIA) — sin rol ni

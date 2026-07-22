@@ -29,6 +29,9 @@ class RolePermissionSeeder extends Seeder
         // Recibidos de VUR (bandeja peer-to-peer, no pasa por el Core)
         'recibidos-vur.crear',
         'recibidos-vur.ver',
+        // Registro de solicitudes públicas radicadas directamente en VUR
+        // (correo/ventanilla presencial, sin pasar por el formulario web)
+        'solicitudes-publicas.crear-desde-vur',
         // Soportes / documentos
         'soportes.subir',
         'soportes.validar_electoral',

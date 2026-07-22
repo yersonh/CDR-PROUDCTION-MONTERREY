@@ -90,6 +90,12 @@ Route::prefix('v1')->group(function () {
         Route::get('recibidos-vur/{recibidoVur}/pdf', [RecibidoVurController::class, 'descargarPdf'])
             ->middleware('permission:recibidos-vur.ver');
 
+        // Registro de Solicitud Carta de Residencia radicada directamente en
+        // VUR (correo/ventanilla presencial) — le devuelve a VUR un código
+        // de seguimiento SP-######## real para su correo de confirmación.
+        Route::post('solicitudes-publicas/registrar-desde-vur', [SolicitudPublicaController::class, 'registrarDesdeVur'])
+            ->middleware('permission:solicitudes-publicas.crear-desde-vur');
+
         // Solicitudes / radicación (la radicación manual se retiró — todas las
         // solicitudes entran vía el formulario público + VUR, ver SolicitudPublicaController
         // y RecibidoVurService::procesarAutomaticamente)
