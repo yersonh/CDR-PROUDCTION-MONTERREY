@@ -7,6 +7,7 @@ use App\Services\ClienteVur;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use RuntimeException;
 use Throwable;
 
@@ -54,6 +55,11 @@ class EnviarSolicitudPublicaAVur implements ShouldQueue
                 'tipo_certificado' => $solicitud->tipo_certificado->value,
                 'medio_acreditacion' => $solicitud->medio_acreditacion->value,
                 'referencia_cdr' => $solicitud->id,
+                // Código de seguimiento que el ciudadano usa en "Consultar
+                // solicitud" (mismo formato que SolicitudPublicaController::
+                // store/consultar) — VUR lo puede incluir en sus propias
+                // comunicaciones/respuestas al ciudadano.
+                'codigo_seguimiento_cdr' => 'SP-'.Str::padLeft((string) $solicitud->id, 8, '0'),
             ],
             pdfPath: $pdfPath,
             pdfNombre: "solicitud_firmada_{$solicitud->id}.pdf",

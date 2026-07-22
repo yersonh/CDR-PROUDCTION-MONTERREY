@@ -203,6 +203,8 @@ class SolicitudPublicaTest extends TestCase
         $this->assertStringContainsString('name="pdf_solicitud"; filename="solicitud_firmada_1.pdf"', $bodyEnviado);
         $this->assertStringContainsString('contenido-pdf-firmado-de-prueba', $bodyEnviado);
         $this->assertStringNotContainsString('contenido-pdf-borrador-de-prueba', $bodyEnviado);
+        $this->assertStringContainsString('name="codigo_seguimiento_cdr"', $bodyEnviado);
+        $this->assertStringContainsString('SP-'.str_pad((string) $solicitud->id, 8, '0', STR_PAD_LEFT), $bodyEnviado);
     }
 
     public function test_job_marca_error_y_reintenta_si_vur_falla(): void
