@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\CatalogoController;
 use App\Http\Controllers\Api\V1\CertificadoController;
 use App\Http\Controllers\Api\V1\ConsultaPublicaController;
 use App\Http\Controllers\Api\V1\DashboardController;
+use App\Http\Controllers\Api\V1\ManualController;
 use App\Http\Controllers\Api\V1\Admin\DependenciaController;
 use App\Http\Controllers\Api\V1\Admin\PresidenteJacController;
 use App\Http\Controllers\Api\V1\Admin\RolController;
@@ -28,6 +29,9 @@ Route::prefix('v1')->group(function () {
     // ---------------------------------------------------------------
     Route::get('public/verificar/{codigo}', [ConsultaPublicaController::class, 'verificar']);
     Route::get('public/certificados/{codigo}/pdf', [ConsultaPublicaController::class, 'descargar']);
+
+    // Manual de usuario del Ciudadano (sin autenticación).
+    Route::get('public/manual-ciudadano', [ManualController::class, 'descargarPublico']);
 
     // Formulario público de solicitud (sin login): captación ciudadana que
     // se envía a VUR para su radicación. Throttle por IP contra abuso.
@@ -153,6 +157,7 @@ Route::prefix('v1')->group(function () {
         Route::get('perfil/firma', [ProfileController::class, 'verFirma']);
         Route::post('perfil/foto', [ProfileController::class, 'subirFoto']);
         Route::get('perfil/foto', [ProfileController::class, 'verFoto']);
+        Route::get('perfil/manual', [ManualController::class, 'descargar']);
 
         // Administración
         Route::prefix('admin')->group(function () {

@@ -125,13 +125,23 @@ export function VerificarPage() {
           </CardContent>
         </Card>
 
-        <button
-          type="button"
-          onClick={() => setShowNexGovIA(true)}
-          className="mt-6 block w-full text-center text-xs text-white/60 underline-offset-2 transition hover:text-gold-light hover:underline"
-        >
-          Desarrollado por NexGovIA · Sovereign Data and AI
-        </button>
+        <p className="mt-6 text-center text-xs text-white/60">
+          <a
+            href={`${import.meta.env.VITE_API_URL}/v1/public/manual-ciudadano`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline-offset-2 transition hover:text-gold-light hover:underline"
+          >
+            Manual de ayuda
+          </a>{' · '}
+          <button
+            type="button"
+            onClick={() => setShowNexGovIA(true)}
+            className="underline-offset-2 transition hover:text-gold-light hover:underline"
+          >
+            Desarrollado por NexGovIA · Sovereign Data and AI
+          </button>
+        </p>
       </div>
 
       <NexGovIAInfoModal open={showNexGovIA} onClose={() => setShowNexGovIA(false)} />
