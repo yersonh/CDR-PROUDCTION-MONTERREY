@@ -9,9 +9,15 @@ use Illuminate\Validation\Rule;
  * Registro de una Solicitud Carta de Residencia que VUR radicó directamente
  * (correo o ventanilla presencial, sin pasar por el formulario público de
  * CDR). A diferencia de StoreSolicitudPublicaRequest, el operador de VUR no
- * captura tipo_certificado/medio_acreditacion/barrio_vereda_sector (son
- * conceptos propios del formulario web) — por eso casi todo es nullable,
- * igual que StoreRecibidoVurRequest (incoming) trata estos mismos datos.
+ * captura tipo_certificado/medio_acreditacion (son conceptos propios del
+ * formulario web) — por eso casi todo es nullable, igual que
+ * StoreRecibidoVurRequest (incoming) trata estos mismos datos.
+ *
+ * barrio_vereda_sector sí se captura desde VUR (a partir de la versión que
+ * agrega ese campo al radicado de Carta de Residencia) porque
+ * RecibidoVurService::procesarAutomaticamente() lo exige para poder
+ * auto-formalizar este canal sin intervención manual, y el certificado final
+ * lo imprime literalmente.
  */
 class RegistrarSolicitudPublicaDesdeVurRequest extends FormRequest
 {
@@ -33,6 +39,7 @@ class RegistrarSolicitudPublicaDesdeVurRequest extends FormRequest
             'correo' => ['nullable', 'email', 'max:255'],
             'celular' => ['nullable', 'string', 'max:30'],
             'motivo' => ['nullable', 'string', 'max:1000'],
+            'barrio_vereda_sector' => ['nullable', 'string', 'max:255'],
             // El radicado ya asignado en VUR (ej. "2026-000050") — se guarda
             // de una vez para que el correo de confirmación de VUR tenga el
             // código de seguimiento antes de que termine de armarse el
