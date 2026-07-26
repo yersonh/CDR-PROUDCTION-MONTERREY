@@ -21,6 +21,7 @@ class RecibidoVurService
     public function __construct(
         private readonly SolicitudService $solicitudes,
         private readonly DocumentoService $documentos,
+        private readonly NotificacionService $notificaciones,
     ) {}
 
     /**
@@ -38,9 +39,9 @@ class RecibidoVurService
      *
      * @param  array<string, mixed>  $datos
      */
-    public function crear(array $datos, UploadedFile $pdf): RecibidoVur
+    public function crear(array $datos, UploadedFile $pdf, ?UploadedFile $soporte = null): RecibidoVur
     {
-        return DB::transaction(function () use ($datos, $pdf) {
+        return DB::transaction(function () use ($datos, $pdf, $soporte) {
             $existente = filled($datos['referencia_cdr'] ?? null)
                 ? RecibidoVur::where('referencia_cdr', $datos['referencia_cdr'])->first()
                 : RecibidoVur::where('radicado_vur', $datos['radicado_vur'])->first();
@@ -55,6 +56,8 @@ class RecibidoVurService
                 ...$datos,
                 'nombre_original_pdf' => $pdf->getClientOriginalName(),
                 'ruta_pdf' => $ruta,
+                'ruta_soporte' => $soporte?->store('recibidos-vur', 'local'),
+                'nombre_original_soporte' => $soporte?->getClientOriginalName(),
                 'estado' => 'pendiente',
             ]);
         });
@@ -66,10 +69,11 @@ class RecibidoVurService
      * JAC son quienes validan de fondo), electoral (validado por IA, ver
      * ValidarCertificadoElectoralConIA — reemplaza el chequeo manual que
      * antes hacía Secretaría con ElectoralForm, ella sigue prevalidando
-     * igual después) y VUR-directo (correo/ventanilla, sin medio_acreditacion
-     * — VUR ya radicó el trámite, no requiere revisión de fondo). Casos sin
-     * referencia_cdr (el recibido no vino de nuestro formulario público) se
-     * quedan `pendiente` para el flujo manual existente ("Crear solicitud").
+     * igual después) y VUR-directo legacy (correo/ventanilla sin
+     * medio_acreditacion, de antes de que VUR empezara a capturarlo — ver
+     * MedioAcreditacion::VurDirecto). Casos sin referencia_cdr (el recibido
+     * no vino de nuestro formulario público) se quedan `pendiente` para el
+     * flujo manual existente ("Crear solicitud").
      *
      * No lanza — cualquier fallo queda logueado y el recibido se queda tal
      * cual estaba (pendiente), disponible para manejo manual.
@@ -86,38 +90,37 @@ class RecibidoVurService
             return null;
         }
 
-        // VUR-directo: no viene con medio_acreditacion (VUR no captura ese
-        // concepto, ver RegistrarSolicitudPublicaDesdeVurRequest) — se trata
-        // como un canal más de auto-formalización, no como un dato faltante.
-        $esVurDirecto = $origen->medio_acreditacion === null;
-
-        if (! $esVurDirecto && ! in_array($origen->medio_acreditacion, [
-            MedioAcreditacion::Sisben, MedioAcreditacion::Jac, MedioAcreditacion::Electoral,
-        ], true)) {
-            return null;
-        }
+        // VUR ya captura y reenvía medio_acreditacion (electoral/sisben/jac)
+        // desde su propio formulario de radicación — solo cae a VurDirecto
+        // si viene vacío (radicados viejos, de antes de ese campo).
+        $medioAcreditacion = $origen->medio_acreditacion ?? MedioAcreditacion::VurDirecto;
 
         // La Solicitud formal exige numero_identificacion/direccion/correo/
         // celular/barrio_vereda_sector no nulos (van directo en el
-        // certificado) — VUR-directo puede no traer todos. Si falta alguno,
-        // se deja pendiente para completarlo a mano en vez de fabricar un
+        // certificado) — VUR puede no traer todos. Si falta alguno, se deja
+        // pendiente para completarlo a mano en vez de fabricar un
         // certificado con datos de contacto incompletos.
-        if ($esVurDirecto && (
-            blank($origen->numero_identificacion)
+        if (blank($origen->numero_identificacion)
             || blank($origen->direccion)
             || blank($origen->correo)
             || blank($origen->celular)
             || blank($origen->barrio_vereda_sector)
-        )) {
+        ) {
             return null;
         }
 
         try {
             $sistema = User::where('email', 'servicio-vur@sistema.local')->firstOrFail();
 
-            $soporte = $origen->ruta_soporte
-                ? $this->comoUploadedFile($origen->ruta_soporte)
-                : null;
+            // El soporte de acreditación puede llegar por dos rutas
+            // distintas según el canal de origen: el formulario público de
+            // CDR lo guarda en la propia SolicitudPublica (ruta_soporte); un
+            // radicado directo en VUR lo trae como anexo dentro del mismo
+            // recibido (ver ClienteCdr::enviarRecibido en el repo VUR). Son
+            // mutuamente excluyentes en la práctica, por eso alcanza con
+            // preferir uno u otro.
+            $rutaSoporte = $recibido->ruta_soporte ?: $origen->ruta_soporte;
+            $soporte = $rutaSoporte ? $this->comoUploadedFile($rutaSoporte) : null;
 
             $solicitud = $this->solicitudes->radicar(new CreateSolicitudData(
                 nombreCompleto: $origen->nombre_completo,
@@ -130,7 +133,7 @@ class RecibidoVurService
                 sectorId: $origen->sector_id,
                 motivo: $origen->motivo,
                 tipoCertificado: $origen->tipo_certificado ?? TipoCertificado::General,
-                medioAcreditacion: $origen->medio_acreditacion ?? MedioAcreditacion::VurDirecto,
+                medioAcreditacion: $medioAcreditacion,
                 soporte: $soporte,
                 ciudadanoId: null,
                 createdBy: $sistema->id,
@@ -158,8 +161,24 @@ class RecibidoVurService
                 );
             }
 
-            if ($origen->medio_acreditacion === MedioAcreditacion::Electoral) {
-                ValidarCertificadoElectoralConIA::dispatch($solicitud->id);
+            if ($medioAcreditacion === MedioAcreditacion::Electoral) {
+                if ($soporte) {
+                    ValidarCertificadoElectoralConIA::dispatch($solicitud->id);
+                } else {
+                    // Llegó marcada como Certificado Electoral pero sin el
+                    // soporte adjunto (el operador de VUR no lo cargó) — no
+                    // tiene sentido lanzar la validación IA sobre nada. Se
+                    // avisa a Secretaría por la campanita para que gestione
+                    // la subsanación con el ciudadano; cuando el certificado
+                    // llegue después (subsanar()), ValidarCertificadoElectoralConIA
+                    // se dispara desde ahí como con cualquier otra solicitud.
+                    $this->notificaciones->notificarRoles(
+                        ['secretaria'],
+                        "La solicitud {$solicitud->radicado} llegó marcada como Certificado Electoral pero sin el soporte adjunto — sugiera al ciudadano una subsanación para que lo cargue.",
+                        $solicitud,
+                        'solicitud.falta_soporte_electoral',
+                    );
+                }
             }
 
             return $solicitud;

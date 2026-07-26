@@ -31,7 +31,11 @@ class StoreRecibidoVurRequest extends FormRequest
             'celular' => ['nullable', 'string', 'max:30'],
             'direccion' => ['nullable', 'string', 'max:255'],
             'motivo' => ['nullable', 'string', 'max:1000'],
+            'medio_acreditacion' => ['nullable', 'string', Rule::in(['electoral', 'sisben', 'jac'])],
             'pdf' => ['required', 'file', 'mimes:pdf', 'max:20480'],
+            // Soporte opcional del medio de acreditación (hoy solo aplica a
+            // electoral) — ver RecibidoVurService::procesarAutomaticamente.
+            'soporte' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:20480'],
         ];
     }
 
@@ -40,6 +44,8 @@ class StoreRecibidoVurRequest extends FormRequest
         return [
             'pdf.mimes' => 'El archivo debe ser un PDF.',
             'pdf.max' => 'El archivo no puede superar los 20 MB.',
+            'soporte.mimes' => 'El soporte debe ser un archivo PDF, JPG o PNG.',
+            'soporte.max' => 'El soporte no puede superar los 20 MB.',
         ];
     }
 }

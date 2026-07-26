@@ -17,6 +17,7 @@ class RecibidoVur extends Model
         'radicado_vur', 'referencia_cdr', 'nombre_completo', 'tipo_documento',
         'numero_identificacion', 'correo', 'celular',
         'direccion', 'motivo',
+        'medio_acreditacion', 'ruta_soporte', 'nombre_original_soporte',
         'nombre_original_pdf', 'ruta_pdf', 'estado',
         'solicitud_id', 'procesado_at',
     ];
