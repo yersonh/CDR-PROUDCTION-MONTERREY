@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\DTOs\CreateSolicitudData;
 use App\Enums\MedioAcreditacion;
+use App\Enums\TipoCertificado;
 use App\Exceptions\RecibidoVurDuplicadoException;
 use App\Jobs\ValidarCertificadoElectoralConIA;
 use App\Models\RecibidoVur;
@@ -62,12 +63,13 @@ class RecibidoVurService
     /**
      * Crea automáticamente la Solicitud a partir de un recibido de VUR, sin
      * intervención manual — para sisben/jac (Funcionario SISBEN / Presidente
-     * JAC son quienes validan de fondo) y electoral (validado por IA, ver
+     * JAC son quienes validan de fondo), electoral (validado por IA, ver
      * ValidarCertificadoElectoralConIA — reemplaza el chequeo manual que
      * antes hacía Secretaría con ElectoralForm, ella sigue prevalidando
-     * igual después). Casos sin referencia_cdr (el recibido no vino de
-     * nuestro formulario público) se quedan `pendiente` para el flujo manual
-     * existente ("Crear solicitud").
+     * igual después) y VUR-directo (correo/ventanilla, sin medio_acreditacion
+     * — VUR ya radicó el trámite, no requiere revisión de fondo). Casos sin
+     * referencia_cdr (el recibido no vino de nuestro formulario público) se
+     * quedan `pendiente` para el flujo manual existente ("Crear solicitud").
      *
      * No lanza — cualquier fallo queda logueado y el recibido se queda tal
      * cual estaba (pendiente), disponible para manejo manual.
@@ -80,9 +82,33 @@ class RecibidoVurService
 
         $origen = SolicitudPublica::find($recibido->referencia_cdr);
 
-        if (! $origen || ! in_array($origen->medio_acreditacion, [
+        if (! $origen) {
+            return null;
+        }
+
+        // VUR-directo: no viene con medio_acreditacion (VUR no captura ese
+        // concepto, ver RegistrarSolicitudPublicaDesdeVurRequest) — se trata
+        // como un canal más de auto-formalización, no como un dato faltante.
+        $esVurDirecto = $origen->medio_acreditacion === null;
+
+        if (! $esVurDirecto && ! in_array($origen->medio_acreditacion, [
             MedioAcreditacion::Sisben, MedioAcreditacion::Jac, MedioAcreditacion::Electoral,
         ], true)) {
+            return null;
+        }
+
+        // La Solicitud formal exige numero_identificacion/direccion/correo/
+        // celular/barrio_vereda_sector no nulos (van directo en el
+        // certificado) — VUR-directo puede no traer todos. Si falta alguno,
+        // se deja pendiente para completarlo a mano en vez de fabricar un
+        // certificado con datos de contacto incompletos.
+        if ($esVurDirecto && (
+            blank($origen->numero_identificacion)
+            || blank($origen->direccion)
+            || blank($origen->correo)
+            || blank($origen->celular)
+            || blank($origen->barrio_vereda_sector)
+        )) {
             return null;
         }
 
@@ -103,8 +129,8 @@ class RecibidoVurService
                 barrioVeredaSector: $origen->barrio_vereda_sector,
                 sectorId: $origen->sector_id,
                 motivo: $origen->motivo,
-                tipoCertificado: $origen->tipo_certificado,
-                medioAcreditacion: $origen->medio_acreditacion,
+                tipoCertificado: $origen->tipo_certificado ?? TipoCertificado::General,
+                medioAcreditacion: $origen->medio_acreditacion ?? MedioAcreditacion::VurDirecto,
                 soporte: $soporte,
                 ciudadanoId: null,
                 createdBy: $sistema->id,

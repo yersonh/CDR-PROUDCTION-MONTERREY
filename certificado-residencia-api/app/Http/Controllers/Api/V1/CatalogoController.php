@@ -24,7 +24,13 @@ class CatalogoController extends Controller
     {
         return response()->json([
             'tipos_certificado' => $this->enumOptions(TipoCertificado::cases()),
-            'medios_acreditacion' => $this->enumOptions(MedioAcreditacion::cases()),
+            // VurDirecto queda fuera a propósito: es de uso interno (solicitudes
+            // radicadas directo en VUR), nunca una opción elegible en el
+            // formulario público.
+            'medios_acreditacion' => $this->enumOptions(array_filter(
+                MedioAcreditacion::cases(),
+                fn (MedioAcreditacion $m) => $m !== MedioAcreditacion::VurDirecto,
+            )),
             'estados' => collect(EstadoSolicitud::cases())->map(fn ($e) => [
                 'value' => $e->value,
                 'label' => $e->label(),

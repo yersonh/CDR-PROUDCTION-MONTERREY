@@ -45,7 +45,15 @@ class StoreSolicitudPublicaRequest extends FormRequest
             ],
             'motivo' => ['nullable', 'string', 'max:1000'],
             'tipo_certificado' => ['required', Rule::enum(TipoCertificado::class)],
-            'medio_acreditacion' => ['required', Rule::enum(MedioAcreditacion::class)],
+            // Whitelist explícita (no Rule::enum) porque el enum también
+            // tiene MedioAcreditacion::VurDirecto, que es de uso interno
+            // (ver RecibidoVurService::procesarAutomaticamente) y nunca debe
+            // poder elegirse desde este formulario público.
+            'medio_acreditacion' => ['required', Rule::in([
+                MedioAcreditacion::Electoral->value,
+                MedioAcreditacion::Sisben->value,
+                MedioAcreditacion::Jac->value,
+            ])],
 
             // A diferencia del wizard interno (donde el funcionario puede
             // cargar el soporte de SISBEN después), en el formulario público

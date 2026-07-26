@@ -148,12 +148,17 @@ class SolicitudPublicaController extends Controller
         }
 
         if ($recibido) {
+            // Aún no existe una Solicitud formal en CDR (nadie la ha
+            // procesado desde la bandeja "Recibidos VUR"), pero el trámite
+            // ya está radicado: el número de radicado de la Alcaldía es el
+            // mismo que asignó VUR, no hace falta esperar una formalización
+            // aparte para mostrarlo.
             return [
                 'codigo' => 'radicada_vur',
-                'label' => 'Radicada en VUR',
-                'descripcion' => 'Su solicitud fue radicada por la Ventanilla Única de Registro y está pendiente de ser formalizada por la Alcaldía.',
+                'label' => 'Radicada',
+                'descripcion' => "Su trámite fue radicado y se encuentra en estado \"Radicada\" en la Alcaldía.",
                 'radicado_vur' => $solicitud->radicado_vur,
-                'radicado_cdr' => null,
+                'radicado_cdr' => $solicitud->radicado_vur,
             ];
         }
 
