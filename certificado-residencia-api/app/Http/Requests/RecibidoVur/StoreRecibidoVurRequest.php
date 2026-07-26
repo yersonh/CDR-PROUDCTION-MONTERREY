@@ -36,6 +36,9 @@ class StoreRecibidoVurRequest extends FormRequest
             // Soporte opcional del medio de acreditación (hoy solo aplica a
             // electoral) — ver RecibidoVurService::procesarAutomaticamente.
             'soporte' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:20480'],
+            // Cédula de ciudadanía (anexo obligatorio de Carta de Residencia
+            // en VUR) — se adjunta al expediente como "documento_identidad".
+            'documento_identidad' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:20480'],
         ];
     }
 
@@ -46,6 +49,8 @@ class StoreRecibidoVurRequest extends FormRequest
             'pdf.max' => 'El archivo no puede superar los 20 MB.',
             'soporte.mimes' => 'El soporte debe ser un archivo PDF, JPG o PNG.',
             'soporte.max' => 'El soporte no puede superar los 20 MB.',
+            'documento_identidad.mimes' => 'El documento de identidad debe ser un archivo PDF, JPG o PNG.',
+            'documento_identidad.max' => 'El documento de identidad no puede superar los 20 MB.',
         ];
     }
 }

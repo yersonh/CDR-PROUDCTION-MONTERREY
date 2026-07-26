@@ -18,6 +18,7 @@ class RecibidoVur extends Model
         'numero_identificacion', 'correo', 'celular',
         'direccion', 'motivo',
         'medio_acreditacion', 'ruta_soporte', 'nombre_original_soporte',
+        'ruta_documento_identidad', 'nombre_original_documento_identidad',
         'nombre_original_pdf', 'ruta_pdf', 'estado',
         'solicitud_id', 'procesado_at',
     ];

@@ -26,7 +26,12 @@ class RecibidoVurController extends Controller
     public function store(StoreRecibidoVurRequest $request): JsonResponse
     {
         try {
-            $recibido = $this->recibidos->crear($request->validated(), $request->file('pdf'), $request->file('soporte'));
+            $recibido = $this->recibidos->crear(
+                $request->validated(),
+                $request->file('pdf'),
+                $request->file('soporte'),
+                $request->file('documento_identidad'),
+            );
         } catch (RecibidoVurDuplicadoException $e) {
             return response()->json([
                 'message' => 'Ya existe un recibido para este envío.',

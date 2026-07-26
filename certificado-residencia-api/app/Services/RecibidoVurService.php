@@ -39,9 +39,13 @@ class RecibidoVurService
      *
      * @param  array<string, mixed>  $datos
      */
-    public function crear(array $datos, UploadedFile $pdf, ?UploadedFile $soporte = null): RecibidoVur
-    {
-        return DB::transaction(function () use ($datos, $pdf, $soporte) {
+    public function crear(
+        array $datos,
+        UploadedFile $pdf,
+        ?UploadedFile $soporte = null,
+        ?UploadedFile $documentoIdentidad = null,
+    ): RecibidoVur {
+        return DB::transaction(function () use ($datos, $pdf, $soporte, $documentoIdentidad) {
             $existente = filled($datos['referencia_cdr'] ?? null)
                 ? RecibidoVur::where('referencia_cdr', $datos['referencia_cdr'])->first()
                 : RecibidoVur::where('radicado_vur', $datos['radicado_vur'])->first();
@@ -58,6 +62,8 @@ class RecibidoVurService
                 'ruta_pdf' => $ruta,
                 'ruta_soporte' => $soporte?->store('recibidos-vur', 'local'),
                 'nombre_original_soporte' => $soporte?->getClientOriginalName(),
+                'ruta_documento_identidad' => $documentoIdentidad?->store('recibidos-vur', 'local'),
+                'nombre_original_documento_identidad' => $documentoIdentidad?->getClientOriginalName(),
                 'estado' => 'pendiente',
             ]);
         });
@@ -143,20 +149,29 @@ class RecibidoVurService
 
             $expediente = $solicitud->expediente;
 
-            if ($origen->ruta_documento_identidad) {
+            // El documento de identidad y la carta de solicitud pueden venir
+            // por dos rutas según el canal de origen: el formulario público
+            // de CDR los guarda en la propia SolicitudPublica; un radicado
+            // directo en VUR los trae dentro del mismo recibido (la cédula
+            // como anexo, ver ClienteCdr::enviarRecibido, y el PDF principal
+            // en recibidos_vur.ruta_pdf — ese PDF ES la carta de solicitud ya
+            // radicada, no hace falta que el ciudadano la firme aparte).
+            $rutaDocumentoIdentidad = $origen->ruta_documento_identidad ?: $recibido->ruta_documento_identidad;
+            if ($rutaDocumentoIdentidad) {
                 $this->documentos->guardarSubido(
                     $expediente,
                     'documento_identidad',
-                    $this->comoUploadedFile($origen->ruta_documento_identidad),
+                    $this->comoUploadedFile($rutaDocumentoIdentidad),
                     $sistema,
                 );
             }
 
-            if ($origen->ruta_pdf_firmado) {
+            $rutaSolicitudFirmada = $origen->ruta_pdf_firmado ?: $recibido->ruta_pdf;
+            if ($rutaSolicitudFirmada) {
                 $this->documentos->guardarSubido(
                     $expediente,
                     'solicitud_firmada',
-                    $this->comoUploadedFile($origen->ruta_pdf_firmado),
+                    $this->comoUploadedFile($rutaSolicitudFirmada),
                     $sistema,
                 );
             }
