@@ -20,6 +20,13 @@ use Illuminate\Validation\Rule;
  * validación (IA electoral / Funcionario SISBEN / Presidente JAC) que si
  * hubiera venido del formulario público — y barrio_vereda_sector además lo
  * imprime literalmente el certificado final.
+ *
+ * sector_id (solo aplica cuando medio_acreditacion=jac) identifica al
+ * Presidente JAC exacto que debe certificar — sin esto,
+ * SolicitudService::notificarNuevaSolicitud() no puede notificar al
+ * presidente puntual del sector y cae al aviso genérico a Secretaría. VUR lo
+ * captura mostrando el mismo catálogo de presidentes/sectores que expone
+ * GET /v1/public/catalogos (ver ClienteCdr::presidentesJac en el repo VUR).
  */
 class RegistrarSolicitudPublicaDesdeVurRequest extends FormRequest
 {
@@ -43,6 +50,7 @@ class RegistrarSolicitudPublicaDesdeVurRequest extends FormRequest
             'motivo' => ['nullable', 'string', 'max:1000'],
             'barrio_vereda_sector' => ['nullable', 'string', 'max:255'],
             'medio_acreditacion' => ['nullable', 'string', Rule::in(['electoral', 'sisben', 'jac'])],
+            'sector_id' => ['nullable', 'integer', 'exists:sectores,id'],
             // El radicado ya asignado en VUR (ej. "2026-000050") — se guarda
             // de una vez para que el correo de confirmación de VUR tenga el
             // código de seguimiento antes de que termine de armarse el
