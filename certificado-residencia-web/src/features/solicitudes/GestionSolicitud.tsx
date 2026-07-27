@@ -50,10 +50,19 @@ export function GestionSolicitud({ solicitud }: { solicitud: Solicitud }) {
   // "pendiente_soporte" esperando al ciudadano — no debe poder prevalidarse
   // de nuevo hasta que él responda y la solicitud regrese a "en_validacion".
   const puedePrevalidar = hasPermission('validacion.prevalidar') && estado === 'en_validacion'
+  // Certificado Electoral radicado directo en VUR sin el anexo (ver
+  // RecibidoVurService::procesarAutomaticamente en el repo CDR): la
+  // solicitud nunca recibe ningún soporte, así que se queda en "radicada"
+  // para siempre y jamás llega a "en_validacion" — sin esto, Secretaría no
+  // tendría ninguna acción disponible para pedirle al ciudadano el
+  // certificado. Solo aplica antes de que exista una validación electoral
+  // (si ya se registró una, sigue el camino normal de puedePrevalidar).
+  const faltaSoporteElectoral = hasPermission('validacion.prevalidar')
+    && medio === 'electoral' && estado === 'radicada' && !tieneValidacionDe('electoral')
   const puedeFirmar = hasPermission('firma.firmar') && estado === 'preaprobada'
   const esperandoSubsanacion = hasPermission('validacion.prevalidar') && estado === 'pendiente_soporte' && !puedeSubsanar
 
-  const hayAcciones = puedeElectoral || puedeSisben || puedeJac || puedePrevalidar || puedeFirmar || puedeSubsanar
+  const hayAcciones = puedeElectoral || puedeSisben || puedeJac || puedePrevalidar || faltaSoporteElectoral || puedeFirmar || puedeSubsanar
   const tieneValidaciones = (solicitud.validaciones?.length ?? 0) > 0
   const cert = solicitud.certificado
   const documentoSolicitadoLabel = ultimaSubsanacionSolicitada(solicitud)?.tipo_documento_solicitado_label
@@ -86,7 +95,9 @@ export function GestionSolicitud({ solicitud }: { solicitud: Solicitud }) {
             {puedeElectoral && <ElectoralForm solicitud={solicitud} />}
             {puedeSisben && <SoporteForm solicitud={solicitud} tipo="sisben" titulo="Cargar Respuesta de Oficio SISBEN" />}
             {puedeJac && <JacForm solicitud={solicitud} />}
-            {puedePrevalidar && <PrevalidarForm solicitud={solicitud} />}
+            {(puedePrevalidar || faltaSoporteElectoral) && (
+              <PrevalidarForm solicitud={solicitud} soloSubsanarElectoral={faltaSoporteElectoral && !puedePrevalidar} />
+            )}
             {puedeFirmar && <FirmaForm solicitud={solicitud} />}
             {puedeSubsanar && <SubsanarForm solicitud={solicitud} />}
           </div>
@@ -283,13 +294,22 @@ function JacForm({ solicitud }: { solicitud: Solicitud }) {
   )
 }
 
-/** Concepto de prevalidación: Secretaría oficializa cumple, pide subsanar o rechaza. */
-function PrevalidarForm({ solicitud }: { solicitud: Solicitud }) {
+/**
+ * Concepto de prevalidación: Secretaría oficializa cumple, pide subsanar o
+ * rechaza.
+ *
+ * soloSubsanarElectoral: caso especial de una Carta de Residencia radicada
+ * directo en VUR como Certificado Electoral pero sin el anexo — no hay
+ * ningún documento que evaluar (Cumple/Rechaza no tienen sentido) y el
+ * documento a pedir siempre es el mismo, así que se fijan ambos campos y
+ * solo se pide la observación.
+ */
+function PrevalidarForm({ solicitud, soloSubsanarElectoral = false }: { solicitud: Solicitud; soloSubsanarElectoral?: boolean }) {
   const { user } = useAuth()
   const prevalidar = usePrevalidar(solicitud.id)
-  const [resultado, setResultado] = useState<'cumple' | 'subsanar' | 'rechaza'>('cumple')
+  const [resultado, setResultado] = useState<'cumple' | 'subsanar' | 'rechaza'>(soloSubsanarElectoral ? 'subsanar' : 'cumple')
   const [observacion, setObservacion] = useState('')
-  const [tipoDocumento, setTipoDocumento] = useState('')
+  const [tipoDocumento, setTipoDocumento] = useState(soloSubsanarElectoral ? 'soporte_electoral' : '')
   const [error, setError] = useState<string>()
 
   // Documentos vigentes del expediente que tiene sentido pedirle corregir al
@@ -317,15 +337,22 @@ function PrevalidarForm({ solicitud }: { solicitud: Solicitud }) {
   }
 
   return (
-    <FormBox titulo="Prevalidación" icon={Gavel} destacado>
+    <FormBox titulo={soloSubsanarElectoral ? 'Certificado electoral faltante' : 'Prevalidación'} icon={Gavel} destacado>
       {prevalidar.isError && <FormError error={prevalidar.error} />}
       {error && <p className="text-xs font-medium text-danger">{error}</p>}
-      <Field label="Concepto" htmlFor="pv-res">
-        <Select id="pv-res" value={resultado} onChange={(e) => { setResultado(e.target.value as typeof resultado); setError(undefined) }}>
-          {RESULTADOS.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
-        </Select>
-      </Field>
-      {resultado === 'subsanar' && (
+      {soloSubsanarElectoral ? (
+        <p className="text-sm text-institutional-muted">
+          Este trámite se radicó directo en VUR marcado como Certificado Electoral, pero sin el soporte adjunto.
+          La única acción posible aquí es pedirle al ciudadano que lo cargue.
+        </p>
+      ) : (
+        <Field label="Concepto" htmlFor="pv-res">
+          <Select id="pv-res" value={resultado} onChange={(e) => { setResultado(e.target.value as typeof resultado); setError(undefined) }}>
+            {RESULTADOS.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
+          </Select>
+        </Field>
+      )}
+      {resultado === 'subsanar' && !soloSubsanarElectoral && (
         <Field label="Documento a corregir" htmlFor="pv-doc" required>
           <Select id="pv-doc" value={tipoDocumento} onChange={(e) => { setTipoDocumento(e.target.value); setError(undefined) }}>
             <option value="">Seleccione…</option>
@@ -335,7 +362,7 @@ function PrevalidarForm({ solicitud }: { solicitud: Solicitud }) {
       )}
       <Field label="Observación" htmlFor="pv-obs" required={resultado !== 'cumple'}>
         <Textarea id="pv-obs" rows={2} value={observacion} onChange={(e) => setObservacion(e.target.value)}
-          placeholder={resultado === 'cumple' ? 'Opcional' : 'Motivo obligatorio'} />
+          placeholder={soloSubsanarElectoral ? 'Ej: Falta adjuntar el certificado electoral' : (resultado === 'cumple' ? 'Opcional' : 'Motivo obligatorio')} />
       </Field>
       {requiereFirma && (
         <div className="flex items-start gap-2 rounded-lg border border-warning/40 bg-amber-50 px-4 py-3 text-sm text-institutional-text">
@@ -353,7 +380,7 @@ function PrevalidarForm({ solicitud }: { solicitud: Solicitud }) {
         loading={prevalidar.isPending}
         disabled={requiereFirma}
       >
-        Emitir concepto
+        {soloSubsanarElectoral ? 'Pedir subsanación' : 'Emitir concepto'}
       </Button>
     </FormBox>
   )
