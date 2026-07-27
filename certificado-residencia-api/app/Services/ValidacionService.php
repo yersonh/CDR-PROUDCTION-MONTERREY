@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\EstadoSolicitud;
 use App\Enums\ResultadoValidacion;
 use App\Jobs\ValidarCertificadoElectoralConIA;
+use App\Models\PresidenteJac;
 use App\Models\Solicitud;
 use App\Models\User;
 use App\Models\Validacion;
@@ -355,8 +356,14 @@ class ValidacionService
     }
 
     /**
-     * El ciudadano ya corrigió y volvió a enviar lo pedido — Secretaría debe
-     * volver a revisarlo (correo + campanita). No debe bloquear el flujo si falla.
+     * El ciudadano ya corrigió y volvió a enviar lo pedido — quien debe
+     * revisarlo de nuevo (correo + campanita) depende de QUÉ documento se
+     * corrigió, no solo del medio de acreditación de la solicitud: un
+     * soporte SISBEN/JAC vuelve al especialista correspondiente (igual que
+     * en el radicado inicial, ver SolicitudService::notificarNuevaSolicitud);
+     * el documento de identidad, la solicitud firmada o el soporte
+     * electoral son dominio de Secretaría incluso en una solicitud
+     * SISBEN o JAC. No debe bloquear el flujo si falla.
      */
     private function notificarSubsanacionRecibida(Solicitud $solicitud, string $tipoDocumento): void
     {
@@ -364,9 +371,24 @@ class ValidacionService
             $documentoLabel = TipoDocumentoCatalogo::label($tipoDocumento);
             $mensaje = "El ciudadano respondió la subsanación de la solicitud {$solicitud->radicado} y cargó: {$documentoLabel}.";
 
-            $this->notificaciones->notificarRoles(['secretaria'], $mensaje, $solicitud);
+            if ($tipoDocumento === 'soporte_jac') {
+                $userId = PresidenteJac::where('sector_id', $solicitud->sector_id)
+                    ->where('estado', 'activo')
+                    ->value('user_id');
 
-            $destinatarios = User::role('secretaria')->get();
+                if ($userId) {
+                    $this->notificaciones->notificarUsuarios([$userId], $mensaje, $solicitud);
+                    $destinatarios = User::whereKey($userId)->get();
+                } else {
+                    $this->notificaciones->notificarRoles(['secretaria'], $mensaje, $solicitud);
+                    $destinatarios = User::role('secretaria')->get();
+                }
+            } else {
+                $rol = $tipoDocumento === 'soporte_sisben' ? 'funcionario_sisben' : 'secretaria';
+
+                $this->notificaciones->notificarRoles([$rol], $mensaje, $solicitud);
+                $destinatarios = User::role($rol)->get();
+            }
 
             if ($destinatarios->isNotEmpty()) {
                 Notification::send($destinatarios, new SubsanacionRecibidaNotification($solicitud, $documentoLabel));

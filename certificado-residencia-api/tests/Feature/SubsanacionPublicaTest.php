@@ -79,10 +79,11 @@ class SubsanacionPublicaTest extends TestCase
         ])->assertForbidden();
     }
 
-    public function test_ciudadano_sube_correccion_con_enlace_firmado_y_secretaria_es_notificada(): void
+    public function test_ciudadano_sube_correccion_con_enlace_firmado_y_sisben_es_notificado(): void
     {
         Notification::fake();
 
+        $this->usuarioCon('funcionario_sisben');
         $solicitud = $this->radicar();
         $this->ponerEnPendienteSoporte($solicitud);
 
@@ -99,7 +100,7 @@ class SubsanacionPublicaTest extends TestCase
         ])->assertOk()->assertJsonPath('data.estado', 'en_validacion');
 
         Notification::assertSentTo(
-            User::role('secretaria')->get(),
+            User::role('funcionario_sisben')->get(),
             SubsanacionRecibidaNotification::class,
         );
     }
